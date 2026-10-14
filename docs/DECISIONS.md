@@ -101,3 +101,10 @@ Status: Accepted
 Date: 2026-10-14   Made by: assistant
 Decision: Run traces are stored as JSON Lines in `runs/<run_id>/trace.jsonl`. Each line wraps timestamp, run_id, event_type, and typed payload (`plan`, `tool_call`, `evidence`, `plan_revision`, `failure`, `status`). Final report is saved as `runs/<run_id>/report.json`.
 Reason: Allows streaming append-only logging during execution and complete round-trip replay for evaluation and auditing.
+
+## D-014: GitHub push requires verified destination access
+Status: Open
+Date: 2026-10-14   Made by: Copilot
+Decision: Defer pushing to `https://github.com/Despacito64/data-analysis-report-generator.git` until the owner signs in and verifies that the destination is accessible. Do not force-push; inspect remote refs before retrying.
+Reason: The anonymous GitHub API request returned HTTP 404, and Git could not prompt for credentials in this environment.
+Consequences: No Git remote is configured and no push occurred. The owner prioritized the requested push over the pending D-006 model spike; resume D-006 after the push is resolved.

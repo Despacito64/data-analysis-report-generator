@@ -1,6 +1,6 @@
 # PROGRESS.md: what is done and what is pending
 
-Last updated: 2026-10-14 by owner (initial state). Tick items only after you ran the tests in the current session.
+Last updated: 2026-10-14 by Copilot. Tick items only after you ran the tests in the current session.
 Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 
 ## Module checklist
@@ -35,3 +35,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 
 2026-10-14 | owner | setup | project memory files created | n/a | n/a
 2026-10-14 | antigravity | M0 | project setup, contracts, config, trace writer, dataset registry, tests | uv run pytest: 27 passed | c81fa80
+2026-10-14 | Copilot | repo push | inspected GitHub destination; push blocked pending owner sign-in/access verification (no remote configured; no push performed) | no tests run (docs/status only) | local handoff commit
