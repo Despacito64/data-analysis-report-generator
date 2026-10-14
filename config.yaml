@@ -1,0 +1,31 @@
+# Configuration for da_agent
+
+budgets:
+  max_llm_calls: 15
+  max_tool_calls: 25
+  max_replans: 3
+  max_identical_retries: 2
+  per_call_timeout_s: 60.0
+  max_total_tokens: 30000
+
+model:
+  name: "candidate-local-model"
+  provider: "ollama"  # or llama.cpp / local server
+  base_url: "http://localhost:11434/v1"
+  temperature: 0.0
+  top_p: 1.0
+  seed: 42
+
+sampling:
+  seed: 42
+  temperature: 0.0
+
+input_limits:
+  max_file_size_mb: 50.0
+  max_rows: 100000
+  allowed_extensions:
+    - ".csv"
+    - ".xlsx"
+
+run_trace:
+  base_dir: "runs"

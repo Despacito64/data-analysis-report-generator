@@ -1,0 +1,10 @@
+runs/
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+# Raw dataset files: commit only if the license allows (see docs/DECISIONS.md D-007)
+datasets/raw/
