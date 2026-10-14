@@ -34,4 +34,4 @@ Update this table as modules pass their gates, naming the test or artifact.
 Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | commit`
 
 2026-10-14 | owner | setup | project memory files created | n/a | n/a
-2026-10-14 | antigravity | M0 | project setup, contracts, config, trace writer, dataset registry, tests | uv run pytest: 27 passed | pending commit
+2026-10-14 | antigravity | M0 | project setup, contracts, config, trace writer, dataset registry, tests | uv run pytest: 27 passed | c81fa80

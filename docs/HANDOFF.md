@@ -15,6 +15,7 @@ M0 Foundations and contracts:
 - `tests/`: 27 tests in `test_contracts.py`, `test_trace.py`, `test_dataset_registry.py`, and `test_import_rules.py`.
 - Tests status: 27 passed in 0.23s (`uv run pytest`).
 - Linter status: 0 errors (`uv run ruff check .` and `uv run ruff format --check .`).
+- Last commit: `c81fa80`
 
 ## What was just finished
 - Implemented `pyproject.toml` and synchronized dependencies via `uv sync`.
