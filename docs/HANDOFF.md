@@ -1,50 +1,49 @@
 # HANDOFF.md: current task and continuation
 
-Updated: 2026-10-14 by Copilot
+Updated: 2026-10-21 by owner
 
 ## Current task
-Push the project to `https://github.com/Despacito64/data-analysis-report-generator.git`.
-The push is blocked pending owner authentication and confirmation that the repository is accessible (D-014).
-After access is available, inspect remote refs and push without force. Then resume the remaining M0 local model spike and candidate choice (D-006).
+M1, steps 1 and 2: test fixtures first, then the loader (see docs/MODULES.md, section M1).
+Do not write the profiler or dataset hash code yet. That is a separate follow-up session.
 
 ## State of the repository
-- Before this handoff update, local branch `master` was clean at `1e91e08` (`docs: update HANDOFF.md and PROGRESS.md with commit hash`).
-- No Git remote is configured. The target repository has not been pushed to.
-- Anonymous GitHub API request returned HTTP 404; `git ls-remote` could not prompt for credentials because user interactivity is disabled. GitHub CLI is not installed.
-- `.gitignore` excludes `.venv/`, `.env`, `runs/`, and caches. Tracked files include the project sources, tests, docs, and the benchmark CSV registered in D-007.
-- `pyproject.toml` and `.venv` created with Python 3.12.8, uv, ruff, pytest, pandas, openpyxl, pydantic, langgraph, plotly, streamlit, duckdb.
-- `src/da_agent/contracts/`: all Pydantic v2 data models matching `docs/CONTRACTS.md`.
-- `src/da_agent/core/`: `config.py` (YAML config loader with typed `Budgets`) and `trace.py` (`RunTraceWriter` recording events and reports to `runs/<run_id>/`).
-- `src/da_agent/data/`: `registry.py` with `Sample-Superstore.csv` registered benchmark and SHA-256 verification.
-- `tests/`: 27 tests in `test_contracts.py`, `test_trace.py`, `test_dataset_registry.py`, and `test_import_rules.py`.
-- Tests status: 27 passed in 0.23s (`uv run pytest`).
-- Linter status: 0 errors (`uv run ruff check .` and `uv run ruff format --check .`).
-- Last implementation commit: `c81fa80`.
+- Branch `master` is clean and pushed to `origin`: https://github.com/Despacito64/data-analysis-report-generator.git. Latest commit: `f7fa8b5 (HEAD -> main, origin/main, origin/HEAD) Defer M0 model spike; start M1`.
+- Python 3.12.8, uv, ruff, pytest. Dependencies: pandas, openpyxl, pydantic, langgraph, plotly, streamlit, duckdb.
+- `src/da_agent/contracts/`: all Pydantic v2 models matching docs/CONTRACTS.md (CONTRACT_VERSION 0.1.0).
+- `src/da_agent/core/`: `config.py` (YAML loader, typed Budgets) and `trace.py` (RunTraceWriter, JSONL traces in `runs/<run_id>/`).
+- `src/da_agent/data/`: `registry.py` with Sample-Superstore.csv registered (D-007) and SHA-256 verification. No loader or profiler yet.
+- `tests/`: 27 tests (contracts, trace, dataset registry, import rules). 27 passed, ruff clean at the last M0 run.
+- `Sample-Superstore.csv` is tracked in git.
 
-## What was attempted this session
-- The owner chose to prioritize the GitHub push over the pending M0 model spike.
-- Checked local Git status, branch, history, tracked files, and `.gitignore`.
-- Checked the target anonymously: GitHub API returned HTTP 404; `git ls-remote https://github.com/Despacito64/data-analysis-report-generator.git HEAD refs/heads/*` failed because credentials could not be requested interactively.
-- No remote was configured, no commit was created by the push attempt, and no push occurred. The owner will sign in and verify access before asking for a retry.
+## M0 status
+- M0 is NOT fully closed. Done: project setup, contracts, config, trace writer, dataset registration, import-rule test.
+- Deferred: local model spike (D-006). Ollama could not be downloaded because of network issues. M1 to M4 need no LLM.
+- D-006 MUST be resolved before M5 starts. Options: another local runtime (LM Studio, llama.cpp) or a hosted free-tier API. A hosted API needs a new decision entry. `scripts/model_spike.py` can test any Ollama-served model when one is available.
+
+## What was just finished
+- Pushed the repository to GitHub without force.
+- Recorded the model-spike deferral.
 
 ## Exact next steps
-1. After the owner has signed in and verified the repository, check the configured destination and remote refs.
-2. Configure `origin` for the supplied URL if it is the intended repository, then push `master` without force. Report authentication or remote-history problems explicitly.
-3. Resume D-006: confirm the local model runtime and candidate weights, then run the 10-prompt spike and record measured results in `config.yaml` and `DECISIONS.md`.
-4. Verify the M0 exit gate before proceeding to M1.
+1. Write fixtures in `tests/fixtures/`: small CSV and XLSX files with hand-computed expected values (missing counts, duplicate rows, dates in more than one format, numeric identifiers such as postal codes), plus an empty file, a corrupt XLSX and a wrong-extension file.
+2. Write the M1 loader tests from the exit gate: both formats load, every invalid input fails clearly, the same data as CSV and XLSX gives identical data.
+3. Implement `src/da_agent/data/loader.py`: configurable CSV parsing (delimiter, encoding, date format), Excel sheet selection, `data_only` XLSX loading, input checks using limits from `config.yaml`, clear error messages.
+4. Run pytest, ruff check and ruff format --check. Show exact commands and output. Commit and push.
+5. Next session: profiler and dataset hash (M1 steps 3 and 4).
 
 ## Open questions for the owner
-- Is the supplied GitHub repository the intended destination and can the current machine access it after sign-in?
-- Which local model runtime is installed or preferred on your machine (e.g. Ollama, llama.cpp, LM Studio)? Which local model weights are already downloaded?
+- Which model route for M5: LM Studio, llama.cpp, or a hosted free-tier API? (D-006)
+- Does the Sample Superstore license allow keeping the CSV in the repository? The file is already tracked; check the source's terms and record the answer in D-007.
+- The registered CSV has 22 columns, but Sample Superstore is usually described as having 21. Check the header in the M1 profiler session and note the extra column in D-007.
 
 ## Gotchas and warnings
-- `Sample-Superstore.csv` has 9,994 data rows (+ 1 header row) and 22 columns; use the registered SHA-256 hash `dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c`.
-- `validation` package must never import `tools` directly; pass metadata as `ToolSpec`.
-- Oracle (`evaluation/oracle.py`) must be implemented in a dedicated clean session that does not read `da_agent.tools`.
-- Do not force-push; inspect remote history before pushing.
+- The dataset has 9,994 data rows and 22 columns with SHA-256 `dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c`. Counts are facts about this registered file only. Do not assume them for other files.
+- `validation` must never import `tools`; pass metadata as `ToolSpec`.
+- The oracle (`evaluation/oracle.py`) must be written in a separate session that has not read `src/da_agent/tools/`.
+- Do not force-push. Do not start M5 before D-006 is resolved.
 
 ## How to run things
-- Install/sync dependencies: `uv sync`
-- Run test suite: `uv run pytest -v`
-- Run linter: `uv run ruff check .`
-- Run format check: `uv run ruff format --check .`
+- Sync dependencies: `uv sync`
+- Tests: `uv run pytest -v`
+- Lint: `uv run ruff check .`
+- Format check: `uv run ruff format --check .`
