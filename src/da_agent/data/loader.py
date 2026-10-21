@@ -195,4 +195,7 @@ def load_data(
             f"Row count {len(df)} exceeds maximum allowed limit of {limits.max_rows} rows."
         )
 
+    # Clean zero-width BOM markers from column headers
+    df.columns = [col.lstrip("\ufeff") if isinstance(col, str) else col for col in df.columns]
+
     return df

@@ -123,3 +123,15 @@ Date: 2026-10-21   Made by: Antigravity
 Decision: Missing-value interpretation follows Pandas defaults ("", "NA", "N/A", "null", "NULL", "NaN", "None"). Literal "-" or " - " is treated as a valid string value by default, but custom missing tokens can be specified via `na_values` in `load_data`. For dates, blank cells increment `missing_count`, while non-blank unparseable strings (e.g. "not-a-date") increment `DateCoverage.parse_failures`.
 Reason: Guarantees deterministic, reproducible distinction between missing data and corrupted/unparseable data across CSV and XLSX, adhering to `CONTRACTS.md` schemas.
 Consequences: Profiler and loader share exact expected metrics for missing counts and date parse failures.
+
+## D-017: Profiler architecture, semantic type classification, and BOM normalization
+Status: Accepted
+Date: 2026-10-21   Made by: Antigravity
+Decision: `src/da_agent/data/profiler.py` implements `compute_profile`, `profile_file`, `compute_dataset_hash`, and `infer_semantic_type`, returning a validated `DatasetProfile` (`TRANSFORMATION_VERSION = "0.1.0"`).
+- In `load_data`, zero-width BOM markers (`\ufeff`) are automatically stripped from column headers.
+- Semantic type classification strictly assigns postal codes, ZIP codes, and ID columns to `SemanticType.IDENTIFIER` (never `NUMERIC_MEASURE`).
+- Date columns identify temporal bounds (`min`, `max` ISO format) and count unparseable non-blank tokens as `parse_failures`.
+- Descriptive statistics (`StatBlock`) are computed exclusively for `NUMERIC_MEASURE` columns. Identifiers (e.g., postal codes, row IDs) are never populated in `descriptive_stats`.
+- Free text columns (`notes`, descriptions, long strings) are classified as `SemanticType.TEXT`, while low-cardinality discrete values are `SemanticType.CATEGORY`.
+Reason: Conforms strictly to M1 requirements and exit gate contracts (`CONTRACTS.md` v0.1.0); prevents numeric identifiers from being misinterpreted as continuous numerical measures in downstream tools.
+Consequences: Closes Module M1. Module M2 (deterministic analytical tools) can rely on a fully validated `DatasetProfile`.
