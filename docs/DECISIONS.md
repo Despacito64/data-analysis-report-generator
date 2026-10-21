@@ -55,6 +55,7 @@ Consequences: An import-check test enforces it. The oracle session prompt is in 
 Status: Open
 Decision: To be chosen in M0 from the model spike (valid-JSON rate, tool-name accuracy, latency on 10 sample prompts).
 Consequences: Record the choice, measured numbers and sampling settings here and in `config.yaml`.
+Update (2026-10-14): Model spike deferred because Ollama could not be downloaded (network issues). Not needed for M1 to M4. MUST be resolved before M5 starts. Options to evaluate then: another local runtime (LM Studio, llama.cpp) or a hosted free-tier API. If a hosted API is used, add a new decision entry and re-check the scope rule about local models.
 
 ## D-007: Benchmark dataset registration
 Status: Accepted

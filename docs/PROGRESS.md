@@ -6,7 +6,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 ## Module checklist
 
 - [ ] M0 Foundations and contracts
-  - [x] project and dependencies  - [x] contracts  - [x] config.yaml  - [x] run-trace writer  - [x] dataset registered (D-007)  - [ ] model spike and choice (D-006)  - [x] import-rule test
+  - [x] project and dependencies  - [x] contracts  - [x] config.yaml  - [x] run-trace writer  - [x] dataset registered (D-007)  - [ ] model spike and choice (D-006) (deferred item: model spike, blocks M5) - [x] import-rule test
   - [ ] GATE passed
 - [ ] M1 Data layer: loader, checks, profiler, hash. GATE passed: [ ]
 - [ ] M2 Analytical tools: filter, group, rank, period compare, trend, contribution, correlation, anomaly, charts. GATE passed: [ ]
