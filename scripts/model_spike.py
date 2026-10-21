@@ -9,12 +9,14 @@ Usage (from the repo root, Ollama running):
     python scripts/model_spike.py qwen2.5:7b llama3.1:8b
 Results are printed and saved to scripts/model_spike_results.json
 """
+
 import json
+import math
 import statistics
 import sys
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 HOST = "http://localhost:11434"
@@ -30,8 +32,21 @@ TOOLS = {
     "correlation": "Correlation between two numeric columns. args: column_a, column_b",
     "anomaly_flags": "IQR outlier flags. args: metric_column, group_by (optional)",
 }
-COLUMNS = ["Order Date", "Ship Date", "Segment", "Country", "City", "State", "Region",
-           "Category", "Sub-Category", "Sales", "Quantity", "Discount", "Profit"]
+COLUMNS = [
+    "Order Date",
+    "Ship Date",
+    "Segment",
+    "Country",
+    "City",
+    "State",
+    "Region",
+    "Category",
+    "Sub-Category",
+    "Sales",
+    "Quantity",
+    "Discount",
+    "Profit",
+]
 COLUMN_KEYS = {"column", "group_by", "metric_column", "column_a", "column_b", "date_column"}
 
 # (question, acceptable tools: at least one must appear, min tasks, must_decline)
@@ -44,8 +59,12 @@ PROMPTS = [
     ("Is Discount correlated with Profit?", {"correlation"}, 1, False),
     ("Flag unusual Sales values within each Sub-Category.", {"anomaly_flags"}, 1, False),
     ("What were total Sales for the Consumer segment only?", {"filter_rows"}, 1, False),
-    ("Sales fell in some regions from 2016 to 2017. Find which Category in the worst region drove the drop.",
-     {"period_compare", "contribution", "group_aggregate"}, 2, False),
+    (
+        "Sales fell in some regions from 2016 to 2017. Find which Category in the worst region drove the drop.",
+        {"period_compare", "contribution", "group_aggregate"},
+        2,
+        False,
+    ),
     ("Predict next year's Sales.", set(), 0, True),
 ]
 
@@ -55,17 +74,25 @@ SYSTEM = (
     '"decline_reason":null}\n'
     "Use only these tools and only these columns.\nTools:\n"
     + "\n".join(f"- {n}: {d}" for n, d in TOOLS.items())
-    + "\nColumns: " + ", ".join(COLUMNS)
+    + "\nColumns: "
+    + ", ".join(COLUMNS)
     + "\nIf the question cannot be answered with these tools, return an empty tasks list and a decline_reason."
 )
 
 
 def ask(model, question):
-    body = json.dumps({
-        "model": model, "stream": False, "format": "json",
-        "options": {"temperature": 0, "seed": SEED},
-        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": question}],
-    }).encode()
+    body = json.dumps(
+        {
+            "model": model,
+            "stream": False,
+            "format": "json",
+            "options": {"temperature": 0, "seed": SEED},
+            "messages": [
+                {"role": "system", "content": SYSTEM},
+                {"role": "user", "content": question},
+            ],
+        }
+    ).encode()
     req = urllib.request.Request(HOST + "/api/chat", body, {"Content-Type": "application/json"})
     start = time.perf_counter()
     with urllib.request.urlopen(req, timeout=600) as resp:
@@ -95,21 +122,36 @@ def flat(value):
 
 
 def check(raw, expected, min_tasks, must_decline):
-    r = {"json_valid": False, "schema_valid": False, "allowlist": False, "columns": False, "expected_tool": False}
+    r = {
+        "json_valid": False,
+        "schema_valid": False,
+        "allowlist": False,
+        "columns": False,
+        "expected_tool": False,
+    }
     try:
         obj = json.loads(raw)
         r["json_valid"] = isinstance(obj, dict)
         tasks = obj["tasks"]
-    except Exception:
+    except (json.JSONDecodeError, KeyError, TypeError):
         return r
     try:
         ids = [t["id"] for t in tasks]
-        ok = (isinstance(tasks, list) and len(set(ids)) == len(ids)
-              and all(isinstance(t["id"], str) and isinstance(t["tool"], str) and isinstance(t["args"], dict)
-                      and isinstance(t["depends_on"], list) and t["id"] not in t["depends_on"]
-                      and all(d in ids for d in t["depends_on"]) for t in tasks))
+        ok = (
+            isinstance(tasks, list)
+            and len(set(ids)) == len(ids)
+            and all(
+                isinstance(t["id"], str)
+                and isinstance(t["tool"], str)
+                and isinstance(t["args"], dict)
+                and isinstance(t["depends_on"], list)
+                and t["id"] not in t["depends_on"]
+                and all(d in ids for d in t["depends_on"])
+                for t in tasks
+            )
+        )
         r["schema_valid"] = bool(ok and acyclic(tasks))
-    except Exception:
+    except (KeyError, TypeError):
         return r
     r["allowlist"] = all(t["tool"] in TOOLS for t in tasks)
     bad = False
@@ -136,23 +178,38 @@ def main(models):
         for q, expected, min_tasks, decline in PROMPTS:
             try:
                 raw, secs = ask(model, q)
-            except Exception as e:  # server down, model missing, timeout
+            except Exception as e:  # noqa: BLE001  # server down, model missing, timeout
                 print(f"  ERROR: {e}")
                 raw, secs = "", float("nan")
             r = check(raw, expected, min_tasks, decline)
             times.append(secs)
             rows.append({"question": q, "latency_s": round(secs, 2), **r, "raw": raw})
-            print(f"  {secs:6.1f}s  " + " ".join(f"{k}={'Y' if v else 'N'}" for k, v in r.items()) + f"  | {q[:45]}")
+            print(
+                f"  {secs:6.1f}s  "
+                + " ".join(f"{k}={'Y' if v else 'N'}" for k, v in r.items())
+                + f"  | {q[:45]}"
+            )
         n = len(rows)
-        good = [t for t in times if t == t]
-        summary = {k: f"{sum(r[k] for r in rows)}/{n}"
-                   for k in ("json_valid", "schema_valid", "allowlist", "columns", "expected_tool")}
+        good = [t for t in times if not math.isnan(t)]
+        summary = {
+            k: f"{sum(r[k] for r in rows)}/{n}"
+            for k in ("json_valid", "schema_valid", "allowlist", "columns", "expected_tool")
+        }
         summary["median_latency_s"] = round(statistics.median(good), 2) if good else None
         results[model] = {"summary": summary, "rows": rows}
         print("  SUMMARY", summary)
     out = Path(__file__).with_name("model_spike_results.json")
-    out.write_text(json.dumps({"run_at": datetime.now(timezone.utc).isoformat(), "seed": SEED,
-                               "temperature": 0, "results": results}, indent=2))
+    out.write_text(
+        json.dumps(
+            {
+                "run_at": datetime.now(UTC).isoformat(),
+                "seed": SEED,
+                "temperature": 0,
+                "results": results,
+            },
+            indent=2,
+        )
+    )
     print(f"\nSaved {out}")
 
 

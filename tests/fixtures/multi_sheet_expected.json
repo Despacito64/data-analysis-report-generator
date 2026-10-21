@@ -1,0 +1,19 @@
+{
+  "sheets": {
+    "Orders": {
+      "row_count": 2,
+      "columns": [
+        "order_id",
+        "amount"
+      ]
+    },
+    "Returns": {
+      "row_count": 1,
+      "columns": [
+        "return_id",
+        "order_id",
+        "reason"
+      ]
+    }
+  }
+}

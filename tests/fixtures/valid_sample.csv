@@ -1,0 +1,11 @@
+row_id,order_id,postal_code,order_date,category,sales
+1,ORD-1001,01002,2023-01-15,Furniture,250.5
+2,ORD-1002,07030,01/16/2023,Technology,
+3,ORD-1003,90210,2023/01/17,,120.0
+4,ORD-1004,01002,2023-01-18,Furniture,45.0
+5,ORD-1005,07030,,Office Supplies,80.0
+6,ORD-1006,90210,2023-01-20,Technology,310.25
+7,ORD-1007,01002,2023-01-21,Furniture,
+8,ORD-1008,07030,01/22/2023,,95.5
+9,ORD-1009,90210,2023-01-23,Office Supplies,15.0
+9,ORD-1009,90210,2023-01-23,Office Supplies,15.0

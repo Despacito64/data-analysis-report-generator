@@ -1,0 +1,44 @@
+{
+  "description": "Hand-computed expected values for valid_sample.csv and valid_sample.xlsx",
+  "row_count": 10,
+  "column_count": 6,
+  "columns": [
+    "row_id",
+    "order_id",
+    "postal_code",
+    "order_date",
+    "category",
+    "sales"
+  ],
+  "duplicate_row_count": 1,
+  "missing_counts": {
+    "row_id": 0,
+    "order_id": 0,
+    "postal_code": 0,
+    "order_date": 1,
+    "category": 2,
+    "sales": 2
+  },
+  "postal_codes": [
+    "01002",
+    "07030",
+    "90210",
+    "01002",
+    "07030",
+    "90210",
+    "01002",
+    "07030",
+    "90210",
+    "90210"
+  ],
+  "date_formats_present": [
+    "YYYY-MM-DD",
+    "MM/DD/YYYY",
+    "YYYY/MM/DD"
+  ],
+  "sales_sum": 931.25,
+  "duplicate_rows_indices": [
+    8,
+    9
+  ]
+}

@@ -109,3 +109,10 @@ Date: 2026-10-14   Made by: Copilot
 Decision: Defer pushing to `https://github.com/Despacito64/data-analysis-report-generator.git` until the owner signs in and verifies that the destination is accessible. Do not force-push; inspect remote refs before retrying.
 Reason: The anonymous GitHub API request returned HTTP 404, and Git could not prompt for credentials in this environment.
 Consequences: No Git remote is configured and no push occurred. The owner prioritized the requested push over the pending D-006 model spike; resume D-006 after the push is resolved.
+
+## D-015: Data loader architecture, exceptions hierarchy, and limits enforcement
+Status: Accepted
+Date: 2026-10-21   Made by: Antigravity
+Decision: `src/da_agent/data/loader.py` implements `load_data` with configurable CSV/XLSX loading and raises domain-specific exceptions inheriting from `DataLoadError`: `InvalidExtensionError`, `EmptyDataError`, `CorruptFileError`, `FileLimitExceededError`, and `InvalidSheetError`. Input limits (`max_file_size_mb`, `max_rows`, `allowed_extensions`) are enforced using `config.yaml` via `InputLimitsConfig`. Excel loading uses `openpyxl` with `engine_kwargs={"data_only": True}`.
+Reason: Enforces Layer 3 import rules and fail-visibly design before data enters analytical tools; prevents silent loading errors or unbounded memory consumption on malicious/corrupted files.
+Consequences: All upstream data ingest (Streamlit, evaluation pipelines) should catch `DataLoadError` subclasses for clear user-facing diagnostics.
