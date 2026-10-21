@@ -37,4 +37,5 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-10-14 | owner | setup | project memory files created | n/a | n/a
 2026-10-14 | antigravity | M0 | project setup, contracts, config, trace writer, dataset registry, tests | uv run pytest: 27 passed | c81fa80
 2026-10-14 | Copilot | repo push | inspected GitHub destination; push blocked pending owner sign-in/access verification (no remote configured; no push performed) | no tests run (docs/status only) | local handoff commit
-2026-10-21 | antigravity | M1 | test fixtures and data loader with configurable parsing and input checks | uv run pytest: 47 passed | 4ef9572
+2026-10-21 | antigravity | M1 | test fixtures and data loader with configurable parsing and input checks | uv run pytest: 47 passed | 71797c1
+2026-10-21 | antigravity | M1 | addressed fixture gaps (junk date parse failures, missing-value rule and na_values) | uv run pytest: 49 passed | 24365ae

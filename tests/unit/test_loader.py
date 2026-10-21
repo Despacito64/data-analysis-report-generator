@@ -34,7 +34,7 @@ def test_load_csv_matches_expected_hand_computations(expected_sample) -> None:
     assert list(df.columns) == expected_sample["columns"]
     assert df.duplicated().sum() == expected_sample["duplicate_row_count"]
 
-    # Verify missing counts per column
+    # Verify missing counts per column under default pandas interpretation
     for col, expected_missing in expected_sample["missing_counts"].items():
         assert df[col].isna().sum() == expected_missing
 
@@ -86,6 +86,46 @@ def test_postal_code_identifier_preserved_with_dtype() -> None:
     pd.testing.assert_frame_equal(df_csv, df_xlsx)
 
 
+def test_date_coverage_with_junk_date_nonzero_parse_failures(expected_sample) -> None:
+    """Verify exact nonzero parse failure count and date range on mixed-format and junk dates."""
+    df = load_data(FIXTURES_DIR / "valid_sample.csv")
+    raw_dates = df["order_date"]
+
+    # Hand-computed checks from expected JSON
+    date_exp = expected_sample["date_coverage"]
+    assert raw_dates.isna().sum() == date_exp["missing_count"]
+
+    # Parse dates with mixed formats, coercing unparseable entries
+    parsed = pd.to_datetime(raw_dates, format="mixed", errors="coerce")
+    parse_failures = (raw_dates.notna() & parsed.isna()).sum()
+    valid_dates = parsed.dropna()
+
+    assert parse_failures == date_exp["parse_failures"]
+    assert len(valid_dates) == date_exp["valid_count"]
+    assert valid_dates.min().strftime("%Y-%m-%d") == date_exp["min"]
+    assert valid_dates.max().strftime("%Y-%m-%d") == date_exp["max"]
+
+
+def test_missing_value_rule_default_vs_custom_na(expected_sample) -> None:
+    """Verify that default missing tokens (blank, NA, N/A, null) are treated as NaN,
+
+    while non-default tokens ('-') require explicit na_values.
+    """
+    # 1. Default loading
+    df_default = load_data(FIXTURES_DIR / "valid_sample.csv")
+    assert df_default["notes"].isna().sum() == expected_sample["missing_counts"]["notes"]
+
+    # 2. Custom na_values recognizing "-" and " - "
+    custom_tokens = expected_sample["missing_counts_with_custom_na"]["custom_na_values"]
+    df_custom_csv = load_data(FIXTURES_DIR / "valid_sample.csv", na_values=custom_tokens)
+    df_custom_xlsx = load_data(FIXTURES_DIR / "valid_sample.xlsx", na_values=custom_tokens)
+
+    expected_custom_na = expected_sample["missing_counts_with_custom_na"]["notes"]
+    assert df_custom_csv["notes"].isna().sum() == expected_custom_na
+    assert df_custom_xlsx["notes"].isna().sum() == expected_custom_na
+    pd.testing.assert_frame_equal(df_custom_csv, df_custom_xlsx)
+
+
 def test_configurable_csv_delimiter(tmp_path: Path) -> None:
     """Loader supports custom delimiters such as semicolon."""
     tsv_file = tmp_path / "custom_delim.csv"
@@ -100,7 +140,6 @@ def test_configurable_csv_delimiter(tmp_path: Path) -> None:
 def test_configurable_csv_encoding(tmp_path: Path) -> None:
     """Loader supports non-UTF8 encodings like latin-1."""
     latin1_file = tmp_path / "latin1_sample.csv"
-    # Write characters specific to latin-1
     content = "id,city,cost\n1,Montréal,45.5\n2,Zürich,55.0\n"
     latin1_file.write_bytes(content.encode("latin-1"))
 
@@ -162,8 +201,6 @@ def test_excel_invalid_sheet_index_fails() -> None:
 def test_excel_data_only_loads_evaluated_values() -> None:
     """Verify openpyxl data_only flag is used when loading."""
     file_path = FIXTURES_DIR / "formula.xlsx"
-    # Even if cached formula value is not present from Excel calculation,
-    # the loader must execute without error using data_only=True
     df = load_data(file_path)
     assert len(df) == 1
     assert list(df.columns) == ["base", "multiplier", "total"]
@@ -217,7 +254,6 @@ def test_reject_corrupt_xlsx() -> None:
 def test_reject_corrupt_csv_malformed_encoding(tmp_path: Path) -> None:
     """CSV with invalid byte sequence fails clearly."""
     bad_csv = tmp_path / "bad_bytes.csv"
-    # Invalid UTF-8 sequence
     bad_csv.write_bytes(b"col1,col2\n\xff\xfe\x00\x01\n")
 
     with pytest.raises(CorruptFileError) as exc_info:
@@ -230,7 +266,6 @@ def test_reject_file_size_exceeded(tmp_path: Path) -> None:
     large_csv = tmp_path / "large.csv"
     large_csv.write_text("a,b\n1,2\n", encoding="utf-8")
 
-    # Set threshold lower than the file size
     strict_limits = InputLimitsConfig(max_file_size_mb=0.000001, max_rows=1000)
     with pytest.raises(FileLimitExceededError) as exc_info:
         load_data(large_csv, limits=strict_limits)

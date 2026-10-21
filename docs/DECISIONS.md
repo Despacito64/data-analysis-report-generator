@@ -116,3 +116,10 @@ Date: 2026-10-21   Made by: Antigravity
 Decision: `src/da_agent/data/loader.py` implements `load_data` with configurable CSV/XLSX loading and raises domain-specific exceptions inheriting from `DataLoadError`: `InvalidExtensionError`, `EmptyDataError`, `CorruptFileError`, `FileLimitExceededError`, and `InvalidSheetError`. Input limits (`max_file_size_mb`, `max_rows`, `allowed_extensions`) are enforced using `config.yaml` via `InputLimitsConfig`. Excel loading uses `openpyxl` with `engine_kwargs={"data_only": True}`.
 Reason: Enforces Layer 3 import rules and fail-visibly design before data enters analytical tools; prevents silent loading errors or unbounded memory consumption on malicious/corrupted files.
 Consequences: All upstream data ingest (Streamlit, evaluation pipelines) should catch `DataLoadError` subclasses for clear user-facing diagnostics.
+
+## D-016: Missing-value interpretation and date parse failure semantics
+Status: Accepted
+Date: 2026-10-21   Made by: Antigravity
+Decision: Missing-value interpretation follows Pandas defaults ("", "NA", "N/A", "null", "NULL", "NaN", "None"). Literal "-" or " - " is treated as a valid string value by default, but custom missing tokens can be specified via `na_values` in `load_data`. For dates, blank cells increment `missing_count`, while non-blank unparseable strings (e.g. "not-a-date") increment `DateCoverage.parse_failures`.
+Reason: Guarantees deterministic, reproducible distinction between missing data and corrupted/unparseable data across CSV and XLSX, adhering to `CONTRACTS.md` schemas.
+Consequences: Profiler and loader share exact expected metrics for missing counts and date parse failures.

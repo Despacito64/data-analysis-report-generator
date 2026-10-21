@@ -1,23 +1,69 @@
 {
-  "description": "Hand-computed expected values for valid_sample.csv and valid_sample.xlsx",
+  "description": "Hand-computed expected values and missing-value rules for valid_sample.csv and valid_sample.xlsx",
   "row_count": 10,
-  "column_count": 6,
+  "column_count": 7,
   "columns": [
     "row_id",
     "order_id",
     "postal_code",
     "order_date",
     "category",
-    "sales"
+    "sales",
+    "notes"
   ],
   "duplicate_row_count": 1,
+  "duplicate_rows_indices": [
+    8,
+    9
+  ],
+  "missing_value_rule": {
+    "default_engine": "pandas_default",
+    "default_missing_tokens": [
+      "",
+      "NA",
+      "N/A",
+      "null",
+      "NULL",
+      "NaN",
+      "None"
+    ],
+    "non_default_missing_tokens": [
+      "-",
+      " - "
+    ],
+    "explanation": "Pandas default read_csv/read_excel treats empty strings, 'NA', 'N/A', and 'null' as NaN/missing. Literal '-' and ' - ' are treated as valid strings unless na_values=['-', ' - '] is explicitly configured."
+  },
   "missing_counts": {
     "row_id": 0,
     "order_id": 0,
     "postal_code": 0,
     "order_date": 1,
-    "category": 2,
-    "sales": 2
+    "category": 3,
+    "sales": 3,
+    "notes": 3
+  },
+  "missing_counts_with_custom_na": {
+    "custom_na_values": [
+      "-",
+      " - "
+    ],
+    "notes": 5
+  },
+  "date_coverage": {
+    "column": "order_date",
+    "min": "2023-01-15",
+    "max": "2023-01-23",
+    "missing_count": 1,
+    "parse_failures": 1,
+    "valid_count": 8,
+    "date_formats_present": [
+      "YYYY-MM-DD",
+      "MM/DD/YYYY",
+      "YYYY/MM/DD"
+    ],
+    "junk_dates": [
+      "not-a-date"
+    ]
   },
   "postal_codes": [
     "01002",
@@ -31,14 +77,5 @@
     "90210",
     "90210"
   ],
-  "date_formats_present": [
-    "YYYY-MM-DD",
-    "MM/DD/YYYY",
-    "YYYY/MM/DD"
-  ],
-  "sales_sum": 931.25,
-  "duplicate_rows_indices": [
-    8,
-    9
-  ]
+  "sales_sum": 851.25
 }

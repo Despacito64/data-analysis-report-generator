@@ -42,6 +42,8 @@ def load_data(
     date_format: str | None = None,
     parse_dates: bool | list[str] | None = None,
     dtype: dict[str, Any] | type | None = None,
+    na_values: list[str] | dict[str, list[str]] | None = None,
+    keep_default_na: bool = True,
     limits: InputLimitsConfig | None = None,
     config_path: str | Path = "config.yaml",
 ) -> pd.DataFrame:
@@ -55,6 +57,8 @@ def load_data(
         date_format: Date format string for parsing date columns.
         parse_dates: Column names or boolean indicating whether to parse dates.
         dtype: Explicit column data types mapping.
+        na_values: Additional strings to recognize as NA/null.
+        keep_default_na: Whether to include default pandas NA values.
         limits: InputLimitsConfig instance. If None, loaded from config_path.
         config_path: Path to YAML configuration file if limits are not provided.
 
@@ -99,6 +103,7 @@ def load_data(
     if ext == ".csv":
         read_csv_kwargs: dict[str, Any] = {
             "encoding": encoding,
+            "keep_default_na": keep_default_na,
         }
         if delimiter is not None:
             read_csv_kwargs["sep"] = delimiter
@@ -108,6 +113,8 @@ def load_data(
             read_csv_kwargs["date_format"] = date_format
         if dtype is not None:
             read_csv_kwargs["dtype"] = dtype
+        if na_values is not None:
+            read_csv_kwargs["na_values"] = na_values
 
         try:
             df = pd.read_csv(path, **read_csv_kwargs)
@@ -159,6 +166,7 @@ def load_data(
             "sheet_name": target_sheet,
             "engine": "openpyxl",
             "engine_kwargs": {"data_only": True},
+            "keep_default_na": keep_default_na,
         }
         if parse_dates is not None:
             read_excel_kwargs["parse_dates"] = parse_dates
@@ -166,6 +174,8 @@ def load_data(
             read_excel_kwargs["date_format"] = date_format
         if dtype is not None:
             read_excel_kwargs["dtype"] = dtype
+        if na_values is not None:
+            read_excel_kwargs["na_values"] = na_values
 
         try:
             df = pd.read_excel(path, **read_excel_kwargs)

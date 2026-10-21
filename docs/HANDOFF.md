@@ -11,27 +11,30 @@ M1, steps 3 and 4: profiler (physical type, semantic type, missing counts, exact
 - `src/da_agent/core/`: `config.py` (YAML loader, typed Budgets, InputLimitsConfig) and `trace.py` (RunTraceWriter, JSONL traces in `runs/<run_id>/`).
 - `src/da_agent/data/`:
   - `registry.py`: benchmark dataset registered (D-007) and SHA-256 verification.
-  - `loader.py`: configurable CSV parsing (delimiter, encoding, date format), openpyxl sheet selection, `data_only` XLSX loading, input limits validation, and domain exception hierarchy (`DataLoadError`, `InvalidExtensionError`, `EmptyDataError`, `CorruptFileError`, `FileLimitExceededError`, `InvalidSheetError`).
+  - `loader.py`: configurable CSV parsing (delimiter, encoding, date format, na_values), openpyxl sheet selection, `data_only` XLSX loading, input limits validation, and domain exception hierarchy (`DataLoadError`, `InvalidExtensionError`, `EmptyDataError`, `CorruptFileError`, `FileLimitExceededError`, `InvalidSheetError`).
 - `tests/fixtures/`:
-  - `valid_sample.csv` and `valid_sample.xlsx` (identical paired datasets with mixed dates, postal code numeric identifiers, missing values, duplicates).
-  - `valid_sample_expected.json` (hand-computed expected missing counts, duplicate counts, row/col counts, postal codes, sales sum).
+  - `valid_sample.csv` and `valid_sample.xlsx` (identical paired datasets with mixed dates, junk unparseable date `not-a-date`, postal code numeric identifiers, missing values under pandas default rules and custom `na_values`, duplicates).
+  - `valid_sample_expected.json` (explicit missing value rules, hand-computed missing counts, duplicate counts, date coverage metrics with 1 parse failure, postal codes, sales sum).
   - `multi_sheet.xlsx` and `multi_sheet_expected.json`.
   - `formula.xlsx` (openpyxl `data_only` test).
   - Negative edge case fixtures: `empty.csv`, `corrupt.xlsx`, `wrong_extension.txt`.
-- `tests/`: 47 tests (contracts, trace, dataset registry, import rules, loader). All 47 passed, ruff clean.
+- `tests/`: 49 tests (contracts, trace, dataset registry, import rules, loader). All 49 passed, ruff clean.
 
 ## M0 status
 - M0 is closed except for the deferred local model spike (D-006).
 - D-006 MUST be resolved before M5 starts. M1 to M4 do not need an LLM.
 
 ## What was just finished
-- Generated test fixtures in `tests/fixtures/` with hand-computed expected metrics in JSON files.
-- Added comprehensive loader test suite in `tests/unit/test_loader.py` covering format parity, input checks, sheet selection, encoding/delimiter configuration, and limit rejections.
-- Implemented `src/da_agent/data/loader.py` with fail-visibly input validation against `config.yaml` limits.
-- Cleaned and formatted repository code to pass `ruff check` and `ruff format --check`.
+- Addressed fixture gaps:
+  - Added an invalid date string (`"not-a-date"`) to test and verify exact nonzero date parse failures (`DateCoverage.parse_failures == 1`).
+  - Added multi-token missing value representations (`""`, `"NA"`, `"N/A"`, `"null"`, and non-default `"-"` / `" - "`).
+  - Specified explicit missing-value rules and hand-computed expectations in `valid_sample_expected.json`.
+  - Added support for `na_values` and `keep_default_na` in `load_data`.
+  - Added tests in `tests/unit/test_loader.py` for date coverage parse failures and default vs custom missing-value interpretation.
+- Recorded D-016 in `docs/DECISIONS.md`.
 
 ## Exact next steps
-1. Write profiler tests from the M1 exit gate: profile matches hand calculations (`valid_sample_expected.json`), semantic types properly distinguish identifiers from measures, duplicate counts match, date coverage detected, and `DatasetProfile` serializes to JSON.
+1. Write profiler tests from the M1 exit gate: profile matches hand calculations (`valid_sample_expected.json`), semantic types properly distinguish identifiers from measures, duplicate counts match, date coverage detected with parse failures, and `DatasetProfile` serializes to JSON.
 2. Implement `src/da_agent/data/profiler.py` and dataset hash / transformation version.
 3. Run `uv run pytest -v`, `uv run ruff check .`, `uv run ruff format --check .`.
 4. Close M1 exit gate.
