@@ -163,3 +163,10 @@ Decision: Module M3 implemented in `src/da_agent/validation/` (`args.py`, `resul
 - `export_tool_specs()` generates `ToolSpec` metadata for all allowlisted tools directly from registry definitions with JSON schemas and no data values.
 Reason: Satisfies FR05 and FR07 recording-side requirements, Layer 4/Layer 5 boundary rules, deterministic auditability, and fail-visibly design.
 Consequences: Closes Module M3. Module M5 (Question resolution and plan generation) can use `ToolSpec` exports and expect strict validation and invariant enforcement on execution.
+
+## D-020: Ollama model spike runner
+Status: Accepted
+Date: 2026-10-29   Made by: Copilot
+Decision: Add `evaluation/model_spike.py` as the deferred M0 Ollama benchmark runner. It evaluates `qwen3:4b`, `qwen3:8b`, and `llama3.1:8b` with temperature 0 and seed 42, three runs per question, bounded validation retries, and the registered tool contract/argument validator. It writes per-run records to `evaluation/results/model_spike.csv` and prints model-level metrics. Real measurements remain pending because the frozen question JSON and independent oracle answers are not yet implemented.
+Reason: Provides the reproducible harness required by D-006 without changing existing contracts, tool definitions, model prompts, or oracle independence boundaries.
+Consequences: D-006 remains open until the benchmark artifacts exist and the runner has been executed against Ollama.

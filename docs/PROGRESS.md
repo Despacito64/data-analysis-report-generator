@@ -46,3 +46,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-10-21 | antigravity | M1 | profiler, semantic types, date coverage, descriptive stats, hash (M1 gate passed) | uv run pytest: 54 passed | fa108b5
 2026-10-29 | antigravity | M2 | deterministic analytical tools (filter, group, rank, period compare, trend, contribution, correlation, anomalies, charts), ToolError, canonical envelope, edge cases (M2 gate passed) | uv run pytest: 95 passed | 81f4320
 2026-10-29 | antigravity | M3 | tool registry allowlist, argument validation, numerical invariants, task executor with timeout & trace, ToolSpec export (M3 gate passed) | uv run pytest: 128 passed | 8d0becf
+2026-10-29 | copilot | M0 | added Ollama model-spike runner and focused tests; real model run blocked until benchmark questions exist (D-006 still open) | uv run pytest -q: 134 passed; ruff check/format passed | pending
