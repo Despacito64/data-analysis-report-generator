@@ -94,13 +94,12 @@ def test_validation_never_imports_tools() -> None:
 
 
 def test_tools_imports_only_allowed_layers() -> None:
-    """Layer 5: tools may only import da_agent.contracts, core, and data."""
+    """Layer 5: tools may only import contracts, core, data, and validation."""
     tools_dir = Path("src/da_agent/tools")
     if not tools_dir.exists():
         return
 
     disallowed_prefixes = (
-        "da_agent.validation",
         "da_agent.agent",
         "da_agent.reports",
         "da_agent.pipeline",

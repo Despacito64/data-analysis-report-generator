@@ -8,6 +8,7 @@ from da_agent.tools.charts import (
     build_trend_chart,
 )
 from da_agent.tools.errors import ToolError
+from da_agent.tools.executor import compute_args_hash, execute_task
 from da_agent.tools.models import (
     AggregationType,
     AnomaliesIQRArgs,
@@ -101,8 +102,10 @@ __all__ = [
     "build_rank_chart",
     "build_trend_chart",
     "canonical_dumps",
+    "compute_args_hash",
     "correlation",
     "detect_anomalies_iqr",
+    "execute_task",
     "filter_data",
     "group_aggregate",
     "normalize_canonical_value",
