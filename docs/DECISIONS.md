@@ -135,3 +135,18 @@ Decision: `src/da_agent/data/profiler.py` implements `compute_profile`, `profile
 - Free text columns (`notes`, descriptions, long strings) are classified as `SemanticType.TEXT`, while low-cardinality discrete values are `SemanticType.CATEGORY`.
 Reason: Conforms strictly to M1 requirements and exit gate contracts (`CONTRACTS.md` v0.1.0); prevents numeric identifiers from being misinterpreted as continuous numerical measures in downstream tools.
 Consequences: Closes Module M1. Module M2 (deterministic analytical tools) can rely on a fully validated `DatasetProfile`.
+
+## D-018: Deterministic analytical tools conventions, canonical serialization, and error handling
+Status: Accepted
+Date: 2026-10-29   Made by: Antigravity
+Decision: Module M2 tools implemented in `src/da_agent/tools/` (`pandas_tools.py`, `statistics.py`, `charts.py`, `errors.py`, `models.py`):
+- Pure functional tools taking a DataFrame + typed Pydantic args, returning a typed `ToolResultEnvelope[T]`.
+- Errors: `ToolError` carries `failure_class` (`INVALID_ARGS` or `EMPTY_RESULT`), JSON-serializable factual context, and derived `recoverable=True`. Empty input DataFrames (0 rows) and filters yielding 0 rows raise `EMPTY_RESULT`. Missing DataFrame columns raise `INVALID_ARGS`. Invariant/schema violations are deferred to M3.
+- Canonical serialization: `ToolResultEnvelope` serializes canonically with `canonical_dumps` (sorted keys, `NaN`/`inf` mapped to `None`, `-0.0` normalized to `0.0`, no display rounding in payload) for byte-identical reproducibility and downstream M3 hashing.
+- Ranking: Standard competition ranking (1, 2, 2, 4) with tie evaluation rounded to `tie_decimals` (default 9), secondary sort by entity label ascending, explicit `tie_groups`, `ties_at_cutoff` detection with omitted tied labels listed, and null values counted and excluded.
+- Period comparison: Distinguishes absent period (`present=False`, `value=None`, `row_count=0`), present period with all nulls (`present=True`, `value=None`, `row_count > 0`), and present period with `0.0`. Undefined relative growth classifications: `ZERO_BASE`, `MISSING_BASE`, `MISSING_CURRENT`. For negative base values, `(current - base) / abs(base)` is used and `base_negative=True` is set.
+- Segment contribution: Total is computed independently from the column (not sum of segments). Reconciles shares to 1.0 within 1e-9 absolute tolerance and segment sums to total within 1e-9 relative tolerance. Missing segment keys are mapped to `<missing>`. Zero total sets `undefined_reason=ZERO_TOTAL`. Negative segments are permitted and flagged (`has_negative_segments=True`).
+- Correlation & IQR anomaly detection: Pearson $r$ requires at least 3 valid pairs, detects zero variance (`CONSTANT_COLUMN`), and reports documented limitations. IQR detection uses linear interpolation (`method="linear"`), $k=1.5$, minimum 4 valid points, zero-IQR caveat (`zero_iqr`), and caps output list length while preserving `flagged_count`. Limitations are exposed in docstrings and result models.
+- Plotly charts: Chart builders consume typed tool result models only, reject raw DataFrames with `TypeError`, put units in titles and axes, and handle missing/undefined metrics cleanly.
+Reason: Enforces FR05 tool-side requirements, strict deterministic reproducibility, Layer 5 architectural boundaries, and mathematical stability across edge cases.
+Consequences: Closes Module M2. Module M3 can wrap these tools in the allowlisted registry and executor without modifying tool logic.
