@@ -1,12 +1,24 @@
 """Deterministic analytical tools for da_agent."""
 
+from da_agent.tools.charts import (
+    build_anomalies_chart,
+    build_contribution_chart,
+    build_period_compare_chart,
+    build_rank_chart,
+    build_trend_chart,
+)
 from da_agent.tools.errors import ToolError
 from da_agent.tools.models import (
     AggregationType,
     AnomaliesIQRArgs,
     AnomaliesIQRResult,
+    AnomalyPoint,
+    AnomalyStatus,
+    ContributionUndefinedReason,
     CorrelationArgs,
     CorrelationResult,
+    CorrelationStatus,
+    CorrelationUndefinedReason,
     FilterArgs,
     FilterCondition,
     FilterOperator,
@@ -41,6 +53,8 @@ from da_agent.tools.pandas_tools import (
     rank,
 )
 from da_agent.tools.statistics import (
+    correlation,
+    detect_anomalies_iqr,
     segment_contribution,
     trend,
 )
@@ -49,8 +63,13 @@ __all__ = [
     "AggregationType",
     "AnomaliesIQRArgs",
     "AnomaliesIQRResult",
+    "AnomalyPoint",
+    "AnomalyStatus",
+    "ContributionUndefinedReason",
     "CorrelationArgs",
     "CorrelationResult",
+    "CorrelationStatus",
+    "CorrelationUndefinedReason",
     "FilterArgs",
     "FilterCondition",
     "FilterOperator",
@@ -76,7 +95,14 @@ __all__ = [
     "TrendDirection",
     "TrendPoint",
     "TrendResult",
+    "build_anomalies_chart",
+    "build_contribution_chart",
+    "build_period_compare_chart",
+    "build_rank_chart",
+    "build_trend_chart",
     "canonical_dumps",
+    "correlation",
+    "detect_anomalies_iqr",
     "filter_data",
     "group_aggregate",
     "normalize_canonical_value",

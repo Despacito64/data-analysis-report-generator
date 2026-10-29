@@ -1,7 +1,10 @@
-"""Statistical analytical tools: trend and segment contribution.
+"""Statistical analytical tools: trend, segment contribution, correlation, and detect_anomalies_iqr.
 
-(Correlation and IQR anomaly detection are implemented in Stage 3).
+All tools implement pure functions over DataFrames and typed Pydantic models.
+Documented statistical limitations are included in docstrings and returned in result models.
 """
+
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -10,7 +13,15 @@ from da_agent.contracts.models import FailureClass
 from da_agent.tools.errors import ToolError
 from da_agent.tools.models import (
     AggregationType,
+    AnomaliesIQRArgs,
+    AnomaliesIQRResult,
+    AnomalyPoint,
+    AnomalyStatus,
     ContributionUndefinedReason,
+    CorrelationArgs,
+    CorrelationResult,
+    CorrelationStatus,
+    CorrelationUndefinedReason,
     SegmentContributionArgs,
     SegmentContributionResult,
     SegmentShareRow,
@@ -21,6 +32,18 @@ from da_agent.tools.models import (
     TrendPoint,
     TrendResult,
 )
+
+CORRELATION_LIMITATIONS: list[str] = [
+    "Measures linear relationships only; does not capture nonlinear associations.",
+    "Highly sensitive to bivariate outliers and extreme values.",
+    "Correlation indicates statistical association and does not imply causation.",
+]
+
+IQR_LIMITATIONS: list[str] = [
+    "Outliers flagged by the 1.5 x IQR rule are statistical extremes, not confirmed data errors.",
+    "Assumes an approximately unimodal, symmetric distribution; sensitive to heavy-tailed distributions and skewness.",
+    "Evaluates univariate values in isolation without considering multivariate, temporal, or grouping context.",
+]
 
 
 def _check_columns_exist(df: pd.DataFrame, required: list[str]) -> None:
@@ -127,7 +150,6 @@ def trend(df: pd.DataFrame, args: TrendArgs) -> ToolResultEnvelope[TrendResult]:
     if len(y_values) >= 2:
         x = np.arange(len(y_values), dtype=float)
         y = np.array(y_values, dtype=float)
-        # Least squares linear regression slope
         x_mean = np.mean(x)
         y_mean = np.mean(y)
         denominator = np.sum((x - x_mean) ** 2)
@@ -136,7 +158,6 @@ def trend(df: pd.DataFrame, args: TrendArgs) -> ToolResultEnvelope[TrendResult]:
             numerator = np.sum((x - x_mean) * (y - y_mean))
             slope = float(numerator / denominator)
 
-            # Check for monotonicity or volatility
             diffs = np.diff(y)
             has_pos = np.any(diffs > 1e-9)
             has_neg = np.any(diffs < -1e-9)
@@ -178,15 +199,12 @@ def segment_contribution(
     _check_non_empty(df)
     _check_columns_exist(df, [args.segment_column, args.metric_column])
 
-    # Compute total value independently from the entire column
     clean_metric = df[args.metric_column].dropna()
     total_val = float(clean_metric.sum())
 
-    # Map missing segment keys to '<missing>'
     work_df = df[[args.segment_column, args.metric_column]].copy()
     work_df[args.segment_column] = work_df[args.segment_column].fillna("<missing>")
 
-    # Sum metric per segment
     grouped = work_df.groupby(args.segment_column, dropna=False)
 
     segment_sums: list[tuple[str, float]] = []
@@ -194,7 +212,6 @@ def segment_contribution(
         seg_sum = float(group[args.metric_column].dropna().sum())
         segment_sums.append((str(seg_key), seg_sum))
 
-    # Sort deterministically: highest value first, tie-break by segment name ascending
     segment_sums.sort(key=lambda x: (-x[1], x[0]))
 
     sum_of_segments = sum(val for _, val in segment_sums)
@@ -219,9 +236,6 @@ def segment_contribution(
             shares.append(SegmentShareRow(segment=seg_name, value=val, share=share_val))
         shares_sum = float(sum(s.share for s in shares if s.share is not None))
 
-        # Check reconciliation:
-        # 1. sum of shares equals 1.0 within absolute tolerance
-        # 2. sum of segments equals total within relative tolerance
         shares_reconcile = abs(shares_sum - 1.0) <= args.tolerance_applied
         total_scale = max(abs(total_val), 1.0)
         totals_reconcile = abs(sum_of_segments - total_val) / total_scale <= args.tolerance_applied
@@ -241,6 +255,202 @@ def segment_contribution(
     )
     return ToolResultEnvelope(
         tool_name="segment_contribution",
+        args=args,
+        input_row_count=len(df),
+        result=res,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 3. correlation
+# ---------------------------------------------------------------------------
+
+
+def correlation(df: pd.DataFrame, args: CorrelationArgs) -> ToolResultEnvelope[CorrelationResult]:
+    """Calculate bivariate Pearson correlation with documented statistical limitations.
+
+    Limitations:
+    - Measures linear relationships only.
+    - Sensitive to outliers and extreme observations.
+    - Does not imply causal connection.
+    """
+    _check_non_empty(df)
+    _check_columns_exist(df, [args.x_column, args.y_column])
+
+    valid_pairs = df[[args.x_column, args.y_column]].dropna()
+    valid_count = len(valid_pairs)
+
+    # Minimum 3 valid pairs required for meaningful bivariate correlation
+    if valid_count < 3:
+        res = CorrelationResult(
+            x_column=args.x_column,
+            y_column=args.y_column,
+            correlation=None,
+            status=CorrelationStatus.INSUFFICIENT_DATA,
+            valid_pairs_count=valid_count,
+            undefined_reason=CorrelationUndefinedReason.TOO_FEW_PAIRS,
+            limitations=CORRELATION_LIMITATIONS,
+        )
+        return ToolResultEnvelope(
+            tool_name="correlation",
+            args=args,
+            input_row_count=len(df),
+            result=res,
+        )
+
+    x = valid_pairs[args.x_column].to_numpy(dtype=float)
+    y = valid_pairs[args.y_column].to_numpy(dtype=float)
+
+    var_x = float(np.var(x, ddof=1))
+    var_y = float(np.var(y, ddof=1))
+
+    # Constant column check
+    if var_x == 0.0 or var_y == 0.0:
+        res = CorrelationResult(
+            x_column=args.x_column,
+            y_column=args.y_column,
+            correlation=None,
+            status=CorrelationStatus.UNDEFINED,
+            valid_pairs_count=valid_count,
+            undefined_reason=CorrelationUndefinedReason.CONSTANT_COLUMN,
+            limitations=CORRELATION_LIMITATIONS,
+        )
+        return ToolResultEnvelope(
+            tool_name="correlation",
+            args=args,
+            input_row_count=len(df),
+            result=res,
+        )
+
+    r_matrix = np.corrcoef(x, y)
+    r_val = float(r_matrix[0, 1])
+
+    res = CorrelationResult(
+        x_column=args.x_column,
+        y_column=args.y_column,
+        correlation=r_val,
+        status=CorrelationStatus.OK,
+        valid_pairs_count=valid_count,
+        undefined_reason=None,
+        limitations=CORRELATION_LIMITATIONS,
+    )
+    return ToolResultEnvelope(
+        tool_name="correlation",
+        args=args,
+        input_row_count=len(df),
+        result=res,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 4. detect_anomalies_iqr
+# ---------------------------------------------------------------------------
+
+
+def detect_anomalies_iqr(
+    df: pd.DataFrame, args: AnomaliesIQRArgs
+) -> ToolResultEnvelope[AnomaliesIQRResult]:
+    """Detect univariate anomalies using the deterministic 1.5 x IQR fence rule.
+
+    Quartile Method:
+    - Linear interpolation (method="linear", numpy default).
+    - Fences: [Q1 - k*IQR, Q3 + k*IQR] where default k=1.5.
+
+    Limitations:
+    - Statistical extremes flagged are not guaranteed ground-truth errors.
+    - Sensitive to skewness and heavy tails.
+    - Operates univariately without grouping or time-series context.
+    """
+    _check_non_empty(df)
+    _check_columns_exist(df, [args.metric_column])
+
+    clean_series = df[args.metric_column].dropna()
+    valid_count = len(clean_series)
+
+    # Minimum 4 values required for meaningful quartile calculation
+    if valid_count < 4:
+        res = AnomaliesIQRResult(
+            metric_column=args.metric_column,
+            status=AnomalyStatus.INSUFFICIENT_DATA,
+            q1=None,
+            median=None,
+            q3=None,
+            iqr=None,
+            lower_fence=None,
+            upper_fence=None,
+            k=args.k,
+            valid_count=valid_count,
+            flagged_count=0,
+            flagged_items_truncated=False,
+            flagged_items=[],
+            caveat=None,
+            limitations=IQR_LIMITATIONS,
+        )
+        return ToolResultEnvelope(
+            tool_name="detect_anomalies_iqr",
+            args=args,
+            input_row_count=len(df),
+            result=res,
+        )
+
+    values = clean_series.to_numpy(dtype=float)
+    q1 = float(np.percentile(values, 25, method="linear"))
+    med = float(np.percentile(values, 50, method="linear"))
+    q3 = float(np.percentile(values, 75, method="linear"))
+    iqr = float(q3 - q1)
+
+    lower_fence = float(q1 - args.k * iqr)
+    upper_fence = float(q3 + args.k * iqr)
+    caveat = "zero_iqr" if iqr == 0.0 else None
+
+    # Sort values to establish deterministic ascending position rank
+    sorted_df = clean_series.sort_values(ascending=True)
+    ascending_positions = {idx: pos for pos, idx in enumerate(sorted_df.index)}
+
+    flagged_list: list[AnomalyPoint] = []
+    for idx, val in clean_series.items():
+        val_float = float(val)
+        if val_float < lower_fence:
+            fence_type: Literal["lower", "upper"] = "lower"
+        elif val_float > upper_fence:
+            fence_type = "upper"
+        else:
+            continue
+
+        flagged_list.append(
+            AnomalyPoint(
+                original_index=int(idx),
+                ascending_position=ascending_positions[idx],
+                value=val_float,
+                fence_violated=fence_type,
+            )
+        )
+
+    # Sort flagged items by original index for deterministic output
+    flagged_list.sort(key=lambda p: p.original_index)
+    total_flagged = len(flagged_list)
+    truncated = total_flagged > args.max_flagged_items
+    capped_items = flagged_list[: args.max_flagged_items]
+
+    res = AnomaliesIQRResult(
+        metric_column=args.metric_column,
+        status=AnomalyStatus.OK,
+        q1=q1,
+        median=med,
+        q3=q3,
+        iqr=iqr,
+        lower_fence=lower_fence,
+        upper_fence=upper_fence,
+        k=args.k,
+        valid_count=valid_count,
+        flagged_count=total_flagged,
+        flagged_items_truncated=truncated,
+        flagged_items=capped_items,
+        caveat=caveat,
+        limitations=IQR_LIMITATIONS,
+    )
+    return ToolResultEnvelope(
+        tool_name="detect_anomalies_iqr",
         args=args,
         input_row_count=len(df),
         result=res,
