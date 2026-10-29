@@ -133,6 +133,7 @@ def ollama_chat(
         "stream": False,
         "format": SpikeOutput.model_json_schema(),
         "tools": tools,
+        "think": False,
         "options": {"temperature": TEMPERATURE, "seed": SEED},
     }
     request = urllib.request.Request(

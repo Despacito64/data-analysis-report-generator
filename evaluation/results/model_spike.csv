@@ -1,0 +1,91 @@
+model,question_id,run_number,valid_tool_call,pydantic_valid,answer_match,retries_used,latency_s,tokens_per_second,final_answer
+qwen3:4b,q1,1,False,True,False,0,64.06843840004876,7.2688325401403375,Total Sales by Region: [result]
+qwen3:4b,q1,2,False,True,False,0,21.84402499999851,6.759387714177857,Total Sales by Region: [result]
+qwen3:4b,q1,3,False,True,False,0,15.872868100181222,9.706376236202606,Total Sales by Region: [result]
+qwen3:4b,q2,1,False,True,False,0,27.433017200091854,9.528277382324859,The top 5 Sub-Categories with the highest Profit are: [list of sub-categories]
+qwen3:4b,q2,2,False,True,False,0,20.526591599918902,9.317536748419425,"We need to run the group_aggregate function to get the top 5 Sub-Categories by Profit. The exact answer will depend on the data, but the top 5 will be the ones with the highest Profit sums."
+qwen3:4b,q2,3,False,True,False,0,19.897899999981746,9.65737115513793,"We need to run the group_aggregate function to get the top 5 Sub-Categories by Profit. The exact answer will depend on the data, but the top 5 will be the ones with the highest Profit sums."
+qwen3:4b,q3,1,False,True,False,0,25.65846599987708,9.666057749572488,The total Sales changed by [growth rate] % between 2016 and 2017.
+qwen3:4b,q3,2,False,True,False,0,24.282981500029564,9.648810478336381,The total Sales increased by X% from 2016 to 2017.
+qwen3:4b,q3,3,False,True,False,0,25.224395100027323,9.23714616417748,The total Sales increased by X% from 2016 to 2017.
+qwen3:4b,q4,1,False,True,False,0,21.44783809990622,8.305140347973516,The monthly trend of Profit is calculated using the trend function with date column 'date' and metric column 'Profit' at monthly grain.
+qwen3:4b,q4,2,False,True,False,0,21.381756799994037,8.496075751219891,The monthly trend of Profit is calculated using the trend function with monthly grain.
+qwen3:4b,q4,3,False,True,False,0,20.76422829995863,8.78059843279785,The monthly trend of Profit is calculated using the trend function with monthly grain.
+qwen3:4b,q5,1,False,True,False,0,16.86367730004713,8.836557983934098,The share of total Sales each Category contributes will be calculated using segment_contribution with segment_column='Category' and metric_column='Sales'.
+qwen3:4b,q5,2,True,True,False,0,16.999397499952465,8.895823254795664,The segment_contribution function will calculate the contribution shares of each Category to total Sales.
+qwen3:4b,q5,3,True,True,False,0,17.1167711999733,8.772575402461987,The segment_contribution function will calculate the contribution shares of each Category to total Sales.
+qwen3:4b,q6,1,False,True,False,0,15.46018849988468,9.154563439388424,The Pearson correlation coefficient between Discount and Profit is 0.85.
+qwen3:4b,q6,2,False,True,False,0,14.141380399931222,9.047778301282975,The Pearson correlation coefficient between Discount and Profit is 0.85.
+qwen3:4b,q6,3,False,True,False,0,13.881405199877918,9.227202167914061,The Pearson correlation coefficient between Discount and Profit is 0.85.
+qwen3:4b,q7,1,False,True,False,0,25.047391099855304,9.023325612524772,Flagged unusual Sales values within each Sub-Category using IQR-based outlier detection.
+qwen3:4b,q7,2,False,True,False,1,651.4216708000749,8.858903273090133,Flagged unusual Sales values within each Sub-Category using IQR-based outlier detection.
+qwen3:4b,q7,3,False,True,False,0,507.0349621998612,5.613810315672398,Flag unusual Sales values within each Sub-Category.
+qwen3:4b,q8,1,False,True,False,0,16.738612700020894,8.980267941991267,The total Sales for the Consumer segment is [value].
+qwen3:4b,q8,2,False,True,False,0,17.43230089987628,9.007111278717893,The total Sales for the Consumer segment is $X.
+qwen3:4b,q8,3,False,True,False,0,17.43465459998697,8.987299306062413,The total Sales for the Consumer segment is $X.
+qwen3:4b,q9,1,False,True,False,0,55.53387950011529,8.593835421199843,The category that drove the drop in sales in the worst region from 2016 to 2017 is [category].
+qwen3:4b,q9,2,False,True,False,0,54.32827549986541,8.609691321665085,The category that drove the drop in sales in the worst region from 2016 to 2017 is the one with the highest negative contribution share.
+qwen3:4b,q9,3,False,True,False,0,54.45551590016112,8.588811089903485,The category that drove the drop in sales in the worst region from 2016 to 2017 is the one with the highest negative contribution share.
+qwen3:4b,q10,1,False,True,False,0,23.792863900074735,7.9800601098027775,"We cannot directly predict next year's Sales with the provided tools. The trend function can analyze historical trends but does not provide predictive capabilities. For accurate forecasting, additional tools like time series forecasting models would be needed."
+qwen3:4b,q10,2,False,True,False,0,22.103672199882567,8.939053383373952,"We cannot directly predict next year's Sales with the provided tools. The trend function can analyze historical trends but does not provide predictive capabilities. Prediction requires a model that forecasts future values based on historical patterns, which is beyond the scope of the deterministic analysis tools provided."
+qwen3:4b,q10,3,False,True,False,0,22.934452999848872,8.577338536661713,"We cannot directly predict next year's Sales with the provided tools. The trend function can analyze historical trends but does not provide predictive capabilities. Prediction requires a model that forecasts future values based on historical patterns, which is beyond the scope of the deterministic analysis tools provided."
+qwen3:8b,q1,1,False,True,False,0,94.3183907000348,5.131377604343923,The total Sales by Region can be obtained by grouping the data by the 'Region' column and summing the 'Sales' metric.
+qwen3:8b,q1,2,False,True,False,0,27.325892199994996,5.440774113340846,The total Sales by Region can be obtained by grouping the data by the 'Region' column and summing the 'Sales' metric.
+qwen3:8b,q1,3,False,True,False,0,27.923497499898076,5.3090503615736555,The total Sales by Region can be obtained by grouping the data by the 'Region' column and summing the 'Sales' metric.
+qwen3:8b,q2,1,True,True,False,0,34.61499519995414,4.555694877517685,"The top 5 Sub-Categories with the highest Profit are: [Sub-Category 1], [Sub-Category 2], [Sub-Category 3], [Sub-Category 4], and [Sub-Category 5]."
+qwen3:8b,q2,2,True,True,False,0,31.00513629987836,4.841051897190825,"The top 5 Sub-Categories with the highest Profit are: [Sub-Category 1], [Sub-Category 2], [Sub-Category 3], [Sub-Category 4], and [Sub-Category 5]."
+qwen3:8b,q2,3,True,True,False,0,30.344675700180233,4.954318863312445,"The top 5 Sub-Categories with the highest Profit are: [Sub-Category 1], [Sub-Category 2], [Sub-Category 3], [Sub-Category 4], and [Sub-Category 5]."
+qwen3:8b,q3,1,False,True,False,0,38.52773469989188,5.004697497389241,The total Sales in 2017 compared to 2016 can be determined by calculating the growth rate using the period_compare function.
+qwen3:8b,q3,2,False,True,False,0,36.34344920003787,4.996653564755205,The total Sales in 2017 compared to 2016 can be determined by calculating the growth rate using the period_compare function.
+qwen3:8b,q3,3,False,True,False,0,36.71216640016064,4.937643803429844,The total Sales in 2017 compared to 2016 can be determined by calculating the growth rate using the period_compare function.
+qwen3:8b,q4,1,False,True,False,0,25.876569099957123,5.120183159373222,The monthly trend of Profit has been calculated by aggregating the Profit metric across monthly periods.
+qwen3:8b,q4,2,False,True,False,0,25.02372709987685,4.9713187901288265,The monthly trend of Profit has been calculated by aggregating the Profit metric across monthly periods.
+qwen3:8b,q4,3,False,True,False,0,24.827299800002947,5.011397825647616,The monthly trend of Profit has been calculated by aggregating the Profit metric across monthly periods.
+qwen3:8b,q5,1,True,True,False,0,24.86756689986214,5.01485351851675,The contribution share of each Category to total Sales will be provided by the segment_contribution function.
+qwen3:8b,q5,2,True,True,False,0,24.276579699944705,4.776839262816328,The contribution share of each Category to total Sales will be provided by the segment_contribution function.
+qwen3:8b,q5,3,True,True,False,0,22.607239699922502,5.162746486726432,The contribution share of each Category to total Sales will be provided by the segment_contribution function.
+qwen3:8b,q6,1,True,True,False,0,23.922610099893063,5.228213749699069,The correlation between Discount and Profit will be determined by calculating the Pearson correlation coefficient.
+qwen3:8b,q6,2,True,True,False,0,22.567105500027537,5.229852769283516,The correlation between Discount and Profit will be determined by calculating the Pearson correlation coefficient.
+qwen3:8b,q6,3,True,True,False,0,23.763100299984217,4.9308699017421835,The correlation between Discount and Profit will be determined by calculating the Pearson correlation coefficient.
+qwen3:8b,q7,1,True,True,False,0,28.560869500041008,5.133279602247002,Unusual Sales values within each Sub-Category have been flagged using the IQR method.
+qwen3:8b,q7,2,True,True,False,0,25.791860699886456,5.277030257597806,Unusual Sales values within each Sub-Category have been flagged using the IQR method.
+qwen3:8b,q7,3,True,True,False,0,26.579281500075012,5.113476286336198,Unusual Sales values within each Sub-Category have been flagged using the IQR method.
+qwen3:8b,q8,1,False,True,False,0,28.319325200049207,5.208590302416905,The total Sales for the Consumer segment can be obtained by decomposing the Sales metric across the segment and calculating the contribution share for the Consumer segment.
+qwen3:8b,q8,2,False,True,False,0,26.805155400186777,5.179615610529449,The total Sales for the Consumer segment can be obtained by decomposing the Sales metric across the segment and calculating the contribution share for the Consumer segment.
+qwen3:8b,q8,3,False,True,False,0,26.747737400000915,5.189439890268272,The total Sales for the Consumer segment can be obtained by decomposing the Sales metric across the segment and calculating the contribution share for the Consumer segment.
+qwen3:8b,q9,1,False,True,False,0,70.77386220009066,4.859447881451111,The Category in the worst region that drove the drop in sales is the one with the lowest total sales in the filtered data.
+qwen3:8b,q9,2,False,True,False,0,38.24156479979865,5.227583980858589,The Category that drove the drop in the worst region is the one with the highest contribution share to the overall sales decline.
+qwen3:8b,q9,3,False,True,False,0,39.27934779995121,5.085980117064112,The Category that drove the drop in the worst region is the one with the highest contribution share to the overall sales decline.
+qwen3:8b,q10,1,False,True,False,0,10.739349900046363,5.205583255355103,Insufficient information to predict next year's Sales. Please provide historical Sales data and any relevant contextual factors for analysis.
+qwen3:8b,q10,2,False,True,False,0,8.909871800104156,5.559207437318058,Insufficient information to predict next year's Sales. Please provide historical Sales data and any relevant contextual factors for analysis.
+qwen3:8b,q10,3,False,True,False,0,8.919444900006056,5.574846533515224,Insufficient information to predict next year's Sales. Please provide historical Sales data and any relevant contextual factors for analysis.
+llama3.1:8b,q1,1,False,True,False,0,81.14794780011289,5.518045849275748,null
+llama3.1:8b,q1,2,False,True,False,0,14.238553199917078,5.519126994526782,null
+llama3.1:8b,q1,3,False,True,False,0,13.780800899956375,5.709174149793679,null
+llama3.1:8b,q2,1,False,True,False,0,18.16070930007845,5.739361805924628,null
+llama3.1:8b,q2,2,False,True,False,0,16.92150910012424,5.798075407313092,null
+llama3.1:8b,q2,3,False,True,False,0,16.900797399925068,5.80826678995681,null
+llama3.1:8b,q3,1,False,True,False,0,20.489407900022343,5.617378916806144,null
+llama3.1:8b,q3,2,False,True,False,0,18.538885599933565,5.768492005729217,null
+llama3.1:8b,q3,3,False,True,False,0,19.790825000032783,5.366283378924859,null
+llama3.1:8b,q4,1,False,True,False,0,14.821370600024238,5.812042809114138,null
+llama3.1:8b,q4,2,False,True,False,0,15.090146200032905,5.755445818388618,null
+llama3.1:8b,q4,3,False,True,False,0,16.39034800021909,5.231370435956255,null
+llama3.1:8b,q5,1,False,True,False,0,22.688766400096938,4.631192151076356,null
+llama3.1:8b,q5,2,False,True,False,0,14.818938399897888,5.479322387288353,null
+llama3.1:8b,q5,3,False,True,False,0,14.62670459994115,5.577001416073403,null
+llama3.1:8b,q6,1,False,True,False,0,26.807459499919787,5.687183905791925,null
+llama3.1:8b,q6,2,True,True,False,0,13.555535800056532,5.6464207779815,null
+llama3.1:8b,q6,3,True,True,False,0,13.386953599983826,5.726622495318486,null
+llama3.1:8b,q7,1,False,True,True,0,17.602584399981424,5.776990416254704,null
+llama3.1:8b,q7,2,False,True,True,0,16.364856200059876,5.797550252211112,null
+llama3.1:8b,q7,3,False,True,True,0,16.335222699912265,5.813169551298456,null
+llama3.1:8b,q8,1,False,True,False,0,16.038551300065592,5.82174066112159,null
+llama3.1:8b,q8,2,False,True,False,0,18.036507699871436,4.759701095848196,null
+llama3.1:8b,q8,3,False,True,False,0,16.2274296998512,5.371355848385962,null
+llama3.1:8b,q9,1,False,True,True,0,350.18905549985357,4.896275299843287,null
+llama3.1:8b,q9,2,False,True,True,0,35.13810219988227,5.633201541963567,null
+llama3.1:8b,q9,3,False,True,True,0,34.34137629996985,5.761602575118684,null
+llama3.1:8b,q10,1,False,True,True,0,20.04461420001462,5.387289519983865,null
+llama3.1:8b,q10,2,False,True,True,0,17.91250790003687,5.733084407055108,null
+llama3.1:8b,q10,3,False,True,True,0,17.801559900166467,5.784955093000545,null
