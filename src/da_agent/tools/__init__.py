@@ -53,6 +53,12 @@ from da_agent.tools.pandas_tools import (
     period_compare,
     rank,
 )
+from da_agent.tools.registry import (
+    DEFAULT_REGISTRY,
+    ToolEntry,
+    ToolRegistry,
+    export_tool_specs,
+)
 from da_agent.tools.statistics import (
     correlation,
     detect_anomalies_iqr,
@@ -61,6 +67,7 @@ from da_agent.tools.statistics import (
 )
 
 __all__ = [
+    "DEFAULT_REGISTRY",
     "AggregationType",
     "AnomaliesIQRArgs",
     "AnomaliesIQRResult",
@@ -90,7 +97,9 @@ __all__ = [
     "SegmentShareRow",
     "TieGroup",
     "TimeGrain",
+    "ToolEntry",
     "ToolError",
+    "ToolRegistry",
     "ToolResultEnvelope",
     "TrendArgs",
     "TrendDirection",
@@ -106,6 +115,7 @@ __all__ = [
     "correlation",
     "detect_anomalies_iqr",
     "execute_task",
+    "export_tool_specs",
     "filter_data",
     "group_aggregate",
     "normalize_canonical_value",

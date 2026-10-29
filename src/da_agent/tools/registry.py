@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from da_agent.contracts.models import ToolSpec
 from da_agent.tools.models import (
     AnomaliesIQRArgs,
     AnomaliesIQRResult,
@@ -78,6 +79,23 @@ class ToolRegistry:
 
     def __len__(self) -> int:
         return len(self._entries)
+
+    def export_tool_specs(self) -> list[ToolSpec]:
+        """Export ToolSpec metadata for all registered tools, generated from registry only."""
+        specs: list[ToolSpec] = []
+        for name in self.list_tools():
+            entry = self._entries[name]
+            specs.append(
+                ToolSpec(
+                    name=entry.name,
+                    description=entry.description,
+                    args_model=entry.args_model.__name__,
+                    args_schema=entry.args_model.model_json_schema(),
+                    result_schema=entry.result_model.model_json_schema(),
+                    invariants=list(entry.invariants),
+                )
+            )
+        return specs
 
 
 # Allowlisted tool entries matching Table 2 invariants
@@ -166,3 +184,8 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
 ]
 
 DEFAULT_REGISTRY = ToolRegistry(_REGISTERED_TOOLS)
+
+
+def export_tool_specs(registry: ToolRegistry = DEFAULT_REGISTRY) -> list[ToolSpec]:
+    """Export allowlisted tool specifications for planner prompt consumption."""
+    return registry.export_tool_specs()
