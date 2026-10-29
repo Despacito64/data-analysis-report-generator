@@ -150,3 +150,16 @@ Decision: Module M2 tools implemented in `src/da_agent/tools/` (`pandas_tools.py
 - Plotly charts: Chart builders consume typed tool result models only, reject raw DataFrames with `TypeError`, put units in titles and axes, and handle missing/undefined metrics cleanly.
 Reason: Enforces FR05 tool-side requirements, strict deterministic reproducibility, Layer 5 architectural boundaries, and mathematical stability across edge cases.
 Consequences: Closes Module M2. Module M3 can wrap these tools in the allowlisted registry and executor without modifying tool logic.
+
+## D-019: Tool registry allowlist, argument validation, per-tool numerical invariants, and executor failure mapping
+Status: Accepted
+Date: 2026-10-29   Made by: Antigravity
+Decision: Module M3 implemented in `src/da_agent/validation/` (`args.py`, `results.py`) and `src/da_agent/tools/` (`registry.py`, `executor.py`):
+- Registry is allowlisted and immutable (`DEFAULT_REGISTRY`), registering only the 8 analytical tools (`filter`, `group_aggregate`, `rank`, `period_compare`, `trend`, `segment_contribution`, `correlation`, `detect_anomalies_iqr`). Chart builders are not registered as planner tools.
+- Argument validation (`validate_task_args`, Layer 4) treats planner inputs as untrusted data: parses against args model (`extra="forbid"`), verifies column existence in `DatasetProfile`, enforces semantic type restrictions (e.g. numeric measures for aggregation, dates for windows, disallowing grouping by free text), and rejects period windows strictly outside `DateCoverage` min/max.
+- Numerical invariant validation (`validate_tool_result`, Layer 4) checks mathematical invariants without re-calling tools: filter row bounds, group counts summing to input row count, competition rank monotonicity and tie consistency, period compare change and growth consistency, trend ordering, segment contribution tolerance reconciliation, correlation bounds, and IQR fence order and flagged bounds. Violations map to `FailureClass.INVARIANT_VIOLATION` (`recoverable=False`).
+- Executor (`execute_task`, Layer 5) never raises bare exceptions. Enforces `Budgets.per_call_timeout_s` mapping timeouts to `FailureClass.TRANSIENT` (`recoverable=True`). Maps `ToolError` to tool failure classes (`INVALID_ARGS`, `EMPTY_RESULT`). Maps unexpected exceptions inside tools to `FailureClass.SCHEMA_VIOLATION` with `recoverable=False` (Option 1).
+- Canonical results are stored alongside evidence in runtime `evidence_store` and on disk under `runs/<run_id>/evidence/<evidence_id>.json` (Option A), preserving M0 `EvidenceRecord` without contract modification. LLM-facing `result_summary` is bounded and free of raw rows.
+- `export_tool_specs()` generates `ToolSpec` metadata for all allowlisted tools directly from registry definitions with JSON schemas and no data values.
+Reason: Satisfies FR05 and FR07 recording-side requirements, Layer 4/Layer 5 boundary rules, deterministic auditability, and fail-visibly design.
+Consequences: Closes Module M3. Module M5 (Question resolution and plan generation) can use `ToolSpec` exports and expect strict validation and invariant enforcement on execution.
