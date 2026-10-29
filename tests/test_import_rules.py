@@ -93,6 +93,26 @@ def test_validation_never_imports_tools() -> None:
                 pytest.fail(f"Validation layer rule violation in {py_file}: imports '{mod}'")
 
 
+def test_tools_imports_only_allowed_layers() -> None:
+    """Layer 5: tools may only import da_agent.contracts, core, and data."""
+    tools_dir = Path("src/da_agent/tools")
+    if not tools_dir.exists():
+        return
+
+    disallowed_prefixes = (
+        "da_agent.validation",
+        "da_agent.agent",
+        "da_agent.reports",
+        "da_agent.pipeline",
+    )
+    for py_file in tools_dir.glob("*.py"):
+        imported = get_imported_modules(py_file)
+        for mod in imported:
+            for dis in disallowed_prefixes:
+                if mod.startswith(dis):
+                    pytest.fail(f"Layer 5 violation in {py_file}: imports '{mod}'")
+
+
 def test_oracle_independence() -> None:
     """Oracle must import no tool, agent, validation or report code."""
     oracle_file = Path("evaluation/oracle.py")
