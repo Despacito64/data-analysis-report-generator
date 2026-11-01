@@ -1,0 +1,256 @@
+{
+  "q01": {
+    "question_id": "q01",
+    "expected_answer": 351428.4229,
+    "tolerance": 0.01,
+    "type": "numeric",
+    "description": "Total sales for First Class shipping"
+  },
+  "q02": {
+    "question_id": "q02",
+    "expected_answer": 599,
+    "tolerance": 0.0,
+    "type": "integer",
+    "description": "Row count for Technology in West region"
+  },
+  "q03": {
+    "question_id": "q03",
+    "expected_answer": {
+      "Central": 501239.8908,
+      "East": 678781.24,
+      "South": 391721.905,
+      "West": 725457.8245
+    },
+    "tolerance": 0.01,
+    "type": "dict_numeric",
+    "description": "Total sales by Region"
+  },
+  "q04": {
+    "question_id": "q04",
+    "expected_answer": {
+      "Consumer": 134119.2092,
+      "Corporate": 91979.134,
+      "Home Office": 60298.6785
+    },
+    "tolerance": 0.01,
+    "type": "dict_numeric",
+    "description": "Total profit by Segment"
+  },
+  "q05": {
+    "question_id": "q05",
+    "expected_answer": {
+      "Furniture": 0.1739226779820839,
+      "Office Supplies": 0.15728509790906076,
+      "Technology": 0.1323226854358419
+    },
+    "tolerance": 0.0001,
+    "type": "dict_numeric",
+    "description": "Average discount by Category"
+  },
+  "q06": {
+    "question_id": "q06",
+    "expected_answer": [
+      "Phones",
+      "Chairs",
+      "Storage",
+      "Tables",
+      "Binders"
+    ],
+    "tolerance": 0.0,
+    "type": "list_string",
+    "description": "Top 5 Sub-Categories by Sales"
+  },
+  "q07": {
+    "question_id": "q07",
+    "expected_answer": [
+      "California",
+      "New York",
+      "Washington"
+    ],
+    "tolerance": 0.0,
+    "type": "list_string",
+    "description": "Top 3 States by Profit"
+  },
+  "q08": {
+    "question_id": "q08",
+    "expected_answer": [
+      "Tables",
+      "Bookcases",
+      "Supplies",
+      "Fasteners",
+      "Machines"
+    ],
+    "tolerance": 0.0,
+    "type": "list_string",
+    "description": "Bottom 5 Sub-Categories by Profit"
+  },
+  "q09": {
+    "question_id": "q09",
+    "expected_answer": {
+      "base_value": 609205.598,
+      "compare_value": 733215.2552,
+      "absolute_change": 124009.65720000002,
+      "relative_growth": 0.20355961535337044
+    },
+    "tolerance": 0.0001,
+    "type": "period_compare",
+    "description": "Period comparison Sales 2016 to 2017"
+  },
+  "q10": {
+    "question_id": "q10",
+    "expected_answer": {
+      "base_value": 61618.6037,
+      "compare_value": 81795.17430000001,
+      "absolute_change": 20176.570600000014,
+      "relative_growth": 0.32744284012394803
+    },
+    "tolerance": 0.0001,
+    "type": "period_compare",
+    "description": "Period comparison Profit 2015 to 2016"
+  },
+  "q11": {
+    "question_id": "q11",
+    "expected_answer": {
+      "points": {
+        "2017-01": 43971.374,
+        "2017-02": 20301.1334,
+        "2017-03": 58872.3528,
+        "2017-04": 36521.5361,
+        "2017-05": 44261.1102,
+        "2017-06": 52981.7257,
+        "2017-07": 45264.416,
+        "2017-08": 63120.888,
+        "2017-09": 87866.652,
+        "2017-10": 77776.9232,
+        "2017-11": 118447.825,
+        "2017-12": 83829.3188
+      },
+      "slope": 6152.717528671327,
+      "direction": "increasing"
+    },
+    "tolerance": 0.01,
+    "type": "trend",
+    "description": "Monthly trend of Sales in 2017"
+  },
+  "q12": {
+    "question_id": "q12",
+    "expected_answer": {
+      "points": {
+        "2014-Q1": 3811.229,
+        "2014-Q2": 11204.0692,
+        "2014-Q3": 12804.7218,
+        "2014-Q4": 21723.9541,
+        "2015-Q1": 9264.9416,
+        "2015-Q2": 12190.9224,
+        "2015-Q3": 16853.6194,
+        "2015-Q4": 23309.1203,
+        "2016-Q1": 11441.3708,
+        "2016-Q2": 16390.3394,
+        "2016-Q3": 15823.6048,
+        "2016-Q4": 38139.859300000004,
+        "2017-Q1": 23506.2026,
+        "2017-Q2": 15499.208499999999,
+        "2017-Q3": 26985.1325,
+        "2017-Q4": 27448.726
+      },
+      "slope": 1194.7442860294113,
+      "direction": "increasing"
+    },
+    "tolerance": 0.01,
+    "type": "trend",
+    "description": "Quarterly trend of Profit over dataset"
+  },
+  "q13": {
+    "question_id": "q13",
+    "expected_answer": {
+      "total_value": 2297200.8603,
+      "shares": {
+        "Furniture": 0.32300170530281774,
+        "Office Supplies": 0.3130100830216897,
+        "Technology": 0.3639882116754926
+      }
+    },
+    "tolerance": 0.0001,
+    "type": "contribution",
+    "description": "Sales contribution shares by Category"
+  },
+  "q14": {
+    "question_id": "q14",
+    "expected_answer": {
+      "total_value": 2297200.8603,
+      "shares": {
+        "Central": 0.2181959355241323,
+        "East": 0.2954818848149637,
+        "South": 0.17052139922533532,
+        "West": 0.3158007804355688
+      }
+    },
+    "tolerance": 0.0001,
+    "type": "contribution",
+    "description": "Sales contribution shares by Region"
+  },
+  "q15": {
+    "question_id": "q15",
+    "expected_answer": -0.21948745637176834,
+    "tolerance": 0.0001,
+    "type": "numeric",
+    "description": "Pearson correlation between Discount and Profit"
+  },
+  "q16": {
+    "question_id": "q16",
+    "expected_answer": 0.4790643497377061,
+    "tolerance": 0.0001,
+    "type": "numeric",
+    "description": "Pearson correlation between Sales and Profit"
+  },
+  "q17": {
+    "question_id": "q17",
+    "expected_answer": {
+      "q1": 17.28,
+      "q3": 209.94,
+      "iqr": 192.66,
+      "lower_fence": -271.71000000000004,
+      "upper_fence": 498.93,
+      "flagged_count": 1167
+    },
+    "tolerance": 0.01,
+    "type": "anomalies",
+    "description": "IQR anomalies in Sales"
+  },
+  "q18": {
+    "question_id": "q18",
+    "expected_answer": {
+      "q1": 1.72875,
+      "q3": 29.364,
+      "iqr": 27.63525,
+      "lower_fence": -39.724125,
+      "upper_fence": 70.816875,
+      "flagged_count": 1881
+    },
+    "tolerance": 0.01,
+    "type": "anomalies",
+    "description": "IQR anomalies in Profit"
+  },
+  "q19": {
+    "question_id": "q19",
+    "expected_answer": {
+      "Furniture": 3046.1658,
+      "Office Supplies": 41014.5791,
+      "Technology": 47462.0351
+    },
+    "tolerance": 0.01,
+    "type": "dict_numeric",
+    "description": "Profit by Category in East region"
+  },
+  "q20": {
+    "question_id": "q20",
+    "expected_answer": [
+      "New York City",
+      "Los Angeles",
+      "Philadelphia"
+    ],
+    "tolerance": 0.0,
+    "type": "list_string",
+    "description": "Top 3 Cities by Sales in Consumer segment"
+  }
+}

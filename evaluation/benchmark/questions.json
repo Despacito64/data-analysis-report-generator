@@ -1,0 +1,142 @@
+[
+  {
+    "id": "q01",
+    "question": "What is the total sales for orders shipped via 'First Class'?",
+    "category": "filter",
+    "expected_tool": "filter",
+    "expected_tools": ["filter"]
+  },
+  {
+    "id": "q02",
+    "question": "How many rows in the dataset are in the 'Technology' category in the 'West' region?",
+    "category": "filter",
+    "expected_tool": "filter",
+    "expected_tools": ["filter"]
+  },
+  {
+    "id": "q03",
+    "question": "What is the total sales for each Region?",
+    "category": "group_aggregate",
+    "expected_tool": "group_aggregate",
+    "expected_tools": ["group_aggregate"]
+  },
+  {
+    "id": "q04",
+    "question": "What is the total profit for each Segment?",
+    "category": "group_aggregate",
+    "expected_tool": "group_aggregate",
+    "expected_tools": ["group_aggregate"]
+  },
+  {
+    "id": "q05",
+    "question": "What is the average discount across each Category?",
+    "category": "group_aggregate",
+    "expected_tool": "group_aggregate",
+    "expected_tools": ["group_aggregate"]
+  },
+  {
+    "id": "q06",
+    "question": "What are the top 5 Sub-Categories ranked by total Sales?",
+    "category": "rank",
+    "expected_tool": "rank",
+    "expected_tools": ["rank"]
+  },
+  {
+    "id": "q07",
+    "question": "What are the top 3 States ranked by total Profit?",
+    "category": "rank",
+    "expected_tool": "rank",
+    "expected_tools": ["rank"]
+  },
+  {
+    "id": "q08",
+    "question": "What are the bottom 5 Sub-Categories ranked by total Profit?",
+    "category": "rank",
+    "expected_tool": "rank",
+    "expected_tools": ["rank"]
+  },
+  {
+    "id": "q09",
+    "question": "Compare total sales between the base period 2016-01-01 to 2016-12-31 and comparison period 2017-01-01 to 2017-12-31.",
+    "category": "period_compare",
+    "expected_tool": "period_compare",
+    "expected_tools": ["period_compare"]
+  },
+  {
+    "id": "q10",
+    "question": "Compare total profit between the base period 2015-01-01 to 2015-12-31 and comparison period 2016-01-01 to 2016-12-31.",
+    "category": "period_compare",
+    "expected_tool": "period_compare",
+    "expected_tools": ["period_compare"]
+  },
+  {
+    "id": "q11",
+    "question": "What is the monthly trend and direction of sales in 2017 (2017-01-01 to 2017-12-31)?",
+    "category": "trend",
+    "expected_tool": "trend",
+    "expected_tools": ["trend"]
+  },
+  {
+    "id": "q12",
+    "question": "What is the quarterly trend of profit over the entire dataset?",
+    "category": "trend",
+    "expected_tool": "trend",
+    "expected_tools": ["trend"]
+  },
+  {
+    "id": "q13",
+    "question": "What is the share of total sales contributed by each Category?",
+    "category": "segment_contribution",
+    "expected_tool": "segment_contribution",
+    "expected_tools": ["segment_contribution"]
+  },
+  {
+    "id": "q14",
+    "question": "What is the share of total sales contributed by each Region?",
+    "category": "segment_contribution",
+    "expected_tool": "segment_contribution",
+    "expected_tools": ["segment_contribution"]
+  },
+  {
+    "id": "q15",
+    "question": "What is the Pearson correlation between Discount and Profit across all orders?",
+    "category": "correlation",
+    "expected_tool": "correlation",
+    "expected_tools": ["correlation"]
+  },
+  {
+    "id": "q16",
+    "question": "What is the Pearson correlation between Sales and Profit across all orders?",
+    "category": "correlation",
+    "expected_tool": "correlation",
+    "expected_tools": ["correlation"]
+  },
+  {
+    "id": "q17",
+    "question": "Detect anomalies in Sales using the 1.5 x IQR rule.",
+    "category": "anomalies",
+    "expected_tool": "detect_anomalies_iqr",
+    "expected_tools": ["detect_anomalies_iqr"]
+  },
+  {
+    "id": "q18",
+    "question": "Detect anomalies in Profit using the 1.5 x IQR rule.",
+    "category": "anomalies",
+    "expected_tool": "detect_anomalies_iqr",
+    "expected_tools": ["detect_anomalies_iqr"]
+  },
+  {
+    "id": "q19",
+    "question": "In the 'East' region, what is the total profit for each Category?",
+    "category": "multistep",
+    "expected_tool": "group_aggregate",
+    "expected_tools": ["filter", "group_aggregate"]
+  },
+  {
+    "id": "q20",
+    "question": "In the 'Consumer' segment, what are the top 3 Cities by total sales?",
+    "category": "multistep",
+    "expected_tool": "rank",
+    "expected_tools": ["filter", "rank"]
+  }
+]
