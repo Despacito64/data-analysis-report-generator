@@ -15,6 +15,7 @@ Implement and run the deferred M0 local-model spike once the frozen Superstore b
 - Added focused unit coverage in [tests/unit/evaluation/test_model_spike.py](tests/unit/evaluation/test_model_spike.py).
 - Verification in this session: `uv run pytest -q` passed 134 tests; `uv run ruff check .` and `uv run ruff format --check .` passed.
 - Executed the temporary smoke set on all three models and saved [evaluation/results/model_spike.csv](evaluation/results/model_spike.csv). Schema-valid rate was 1.000 for all models; smoke accuracy was 0.000, 0.000, and 0.300 respectively for qwen3:4b, qwen3:8b, and llama3.1:8b. These are not frozen-benchmark measurements.
+- Resolved two spike-runner review issues: native Ollama JSON-string tool arguments are normalized, and `--questions` is explicitly required until the frozen benchmark file is available instead of silently pointing at a missing default.
 
 ## Exact next steps
 1. Add the development/evaluation Superstore question JSON and independent oracle answer source for M4.

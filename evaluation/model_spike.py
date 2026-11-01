@@ -156,13 +156,26 @@ def ollama_chat(
                 {
                     "id": f"t{index}",
                     "tool": function.get("name", ""),
-                    "args": function.get("arguments", {}),
+                    "args": normalize_tool_arguments(function.get("arguments", {})),
                     "depends_on": [],
                     "rationale": "Use the registered tool to answer the question.",
                 }
             )
         return json.dumps({"tasks": tasks, "final_answer": None}), payload
     return content if isinstance(content, str) else json.dumps(content), payload
+
+
+def normalize_tool_arguments(arguments: Any) -> dict[str, Any]:
+    """Normalize Ollama's dict or JSON-string tool arguments."""
+    if isinstance(arguments, dict):
+        return arguments
+    if isinstance(arguments, str):
+        try:
+            parsed = json.loads(arguments)
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
 
 
 def _tool_definitions() -> list[dict[str, Any]]:
@@ -387,7 +400,11 @@ def print_summary(rows: list[dict[str, Any]]) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--questions", type=Path, default=Path("evaluation/questions_dev.json"))
+    parser.add_argument(
+        "--questions",
+        type=Path,
+        help="required JSON question file containing text and expected_answer",
+    )
     parser.add_argument("--dataset", type=Path, default=Path("Sample-Superstore.csv"))
     parser.add_argument("--output", type=Path, default=Path("evaluation/results/model_spike.csv"))
     parser.add_argument("--limit", "-n", type=int, default=10, help="number of benchmark questions")
@@ -399,6 +416,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.questions is None:
+        raise SystemExit("--questions is required until the frozen benchmark file is available")
     if args.limit < 1:
         raise SystemExit("--limit must be positive")
     if args.max_retries < 0:

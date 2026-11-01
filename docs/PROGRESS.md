@@ -48,3 +48,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-10-29 | antigravity | M3 | tool registry allowlist, argument validation, numerical invariants, task executor with timeout & trace, ToolSpec export (M3 gate passed) | uv run pytest: 128 passed | 8d0becf
 2026-10-29 | copilot | M0 | added Ollama model-spike runner and focused tests; real model run blocked until benchmark questions exist (D-006 still open) | uv run pytest -q: 134 passed; ruff check/format passed | pending
 2026-10-29 | copilot | M0 | executed temporary 10-question Ollama smoke spike; recorded 90 runs in evaluation/results/model_spike.csv (schema-valid 1.000 across models) | focused tests 6 passed; smoke run completed | pending
+2026-11-01 | copilot | M0 | fixed Ollama JSON-string tool argument parsing and removed the broken implicit missing-question default | focused tests 8 passed; full pytest 139 passed | pending

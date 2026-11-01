@@ -16,6 +16,7 @@ SpikeOutput = model_spike.SpikeOutput
 answer_matches_oracle = model_spike.answer_matches_oracle
 consistency_rate = model_spike.consistency_rate
 normalize_answer = model_spike.normalize_answer
+normalize_tool_arguments = model_spike.normalize_tool_arguments
 tokens_per_second = model_spike.tokens_per_second
 
 
@@ -45,6 +46,12 @@ def test_spike_output_rejects_extra_fields():
     raise AssertionError("extra fields must be rejected")
 
 
+def test_questions_path_is_explicit_until_frozen_benchmark_exists():
+    parser = model_spike.build_parser()
+    args = parser.parse_args([])
+    assert args.questions is None
+
+
 def test_answer_matching_supports_numbers_and_labels():
     assert answer_matches_oracle(12.345, 12.346, tolerance=0.01)
     assert answer_matches_oracle("  technology ", "Technology")
@@ -66,6 +73,13 @@ def test_consistency_rate_uses_modal_run_answer():
         {"question_id": "q2", "final_answer": "X"},
     ]
     assert consistency_rate(rows) == 0.8333333333333333
+
+
+def test_normalize_tool_arguments_accepts_dict_and_json_string():
+    assert normalize_tool_arguments({"by": ["Region"]}) == {"by": ["Region"]}
+    assert normalize_tool_arguments('{"by": ["Region"]}') == {"by": ["Region"]}
+    assert normalize_tool_arguments("not-json") == {}
+    assert normalize_tool_arguments(["Region"]) == {}
 
 
 def test_tokens_per_second_uses_ollama_counts():
