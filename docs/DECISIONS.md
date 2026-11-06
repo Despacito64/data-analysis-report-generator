@@ -52,10 +52,10 @@ Reason: Shared bugs between tools and oracle would hide errors.
 Consequences: An import-check test enforces it. The oracle session prompt is in `SESSION_PROMPTS.md`.
 
 ## D-006: Local LLM for the agent
-Status: Open
-Decision: To be chosen in M0 from the model spike (valid-JSON rate, tool-name accuracy, latency on 10 sample prompts).
-Consequences: Record the choice, measured numbers and sampling settings here and in `config.yaml`.
-Update (2026-10-14): Model spike deferred because Ollama could not be downloaded (network issues). Not needed for M1 to M4. MUST be resolved before M5 starts. Options to evaluate then: another local runtime (LM Studio, llama.cpp) or a hosted free-tier API. If a hosted API is used, add a new decision entry and re-check the scope rule about local models.
+Status: Resolved
+Date: 2026-11-06   Made by: Antigravity
+Decision: Resolved by D-023 following empirical evaluation of candidate models on the 20-question benchmark. Primary model chosen: `qwen3:4b`, fallback: `qwen3:8b`.
+Consequences: `config.yaml` updated with `qwen3:4b`. Closes the deferred M0 spike gate, unblocking Module M5.
 
 ## D-007: Benchmark dataset registration
 Status: Accepted
@@ -181,4 +181,26 @@ Decision: Implemented M4 fixed-workflow baseline in `src/da_agent/agent/baseline
 - Evaluation harness: `evaluation/run_eval.py` executes all 20 benchmark questions and reports 20/20 (100% accuracy, status "complete").
 Reason: Delivers the required frozen fixed-workflow comparison baseline specified in FR11, D-004, and the plan's M4 exit gate.
 Consequences: Module M4 exit gate passes. The repository is ready for M5 (Resolver and planner).
+
+## D-023: Local LLM selection via empirical benchmark model spike (M5 readiness)
+Status: Accepted
+Date: 2026-11-06   Made by: Antigravity
+Decision: Selected `qwen3:4b` as the primary local LLM for the dynamic planning agent, with `qwen3:8b` as the designated fallback model.
+- Evaluation Protocol: Evaluated all 20 frozen benchmark questions (`evaluation/benchmark/questions.json`) across three candidate local models (`qwen3:4b`, `qwen3:8b`, `llama3.1:8b`) with 3 runs each (60 runs per model, 180 total runs) at `temperature: 0.0` and `seed: 42`. The prompt injected column names and semantic types from `DatasetProfile`.
+- Minimum Bar: Required ≥85.0% `valid_tool_call_rate` (acyclic DAG, allowlisted tools, args pass `validate_task_args`) and ≥70.0% `correct_tool_selection_rate` (exact match to expected tool set).
+- Empirical Results:
+  | Model | Valid Tool Calls | Correct Tool Sel. | Correct Arg. Rate | Task Arg. Accuracy | Schema Failure | Mean Latency (s) | Median Latency (s) | Mean TPS |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | `qwen3:4b` (Chosen) | 86.67% (52/60) | 93.33% (56/60) | 86.67% (52/60) | 80.56% (58/72) | 0.00% (0/60) | 45.11s | 23.79s | 9.29 |
+  | `qwen3:8b` (Fallback) | 75.00% (45/60) | 91.67% (55/60) | 75.00% (45/60) | 77.61% (52/67) | 0.00% (0/60) | 29.85s | 24.64s | 6.19 |
+  | `llama3.1:8b` | 55.00% (33/60) | 81.67% (49/60) | 55.00% (33/60) | 57.32% (47/82) | 0.00% (0/60) | 24.11s | 16.85s | 6.28 |
+- Analysis and Mitigations:
+  - `qwen3:4b` is the only candidate model that cleared both the planning validity bar (86.7% ≥ 85%) and tool selection bar (93.3% ≥ 70%). It also achieved 0.0% schema failures and the highest throughput (9.29 tokens/second).
+  - The remaining 13.3% invalid runs in `qwen3:4b` arose from specific edge cases: cyclic self-dependencies (e.g. `q02` runs 2-3 where task depended on itself) and argument format mismatch for specific tools (e.g. `q03` group-by without required `by` columns).
+  - In Module M5, the plan validator (`validation/plan.py`) will detect these errors deterministically before execution and feed classified validation failures back to the planner for single-turn repair.
+- Consequences:
+  - Resolves D-006 and passes the deferred M0 spike gate.
+  - `config.yaml` updated with `model.name: "qwen3:4b"`.
+  - Artifacts recorded in `evaluation/results/model_spike_m5.json` and `evaluation/results/model_spike_m5.csv`.
+  - Unblocks Module M5 (Question resolution and plan generation).
 

@@ -9,7 +9,7 @@ budgets:
   max_total_tokens: 30000
 
 model:
-  name: "candidate-local-model"
+  name: "qwen3:4b"  # Chosen via D-023; fallback is "qwen3:8b"
   provider: "ollama"  # or llama.cpp / local server
   base_url: "http://localhost:11434/v1"
   temperature: 0.0

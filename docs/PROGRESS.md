@@ -5,9 +5,9 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 
 ## Module checklist
 
-- [ ] M0 Foundations and contracts
-  - [x] project and dependencies  - [x] contracts  - [x] config.yaml  - [x] run-trace writer  - [x] dataset registered (D-007)  - [ ] model spike and choice (D-006) (deferred item: model spike, blocks M5) - [x] import-rule test
-  - [ ] GATE passed
+- [x] M0 Foundations and contracts
+  - [x] project and dependencies  - [x] contracts  - [x] config.yaml  - [x] run-trace writer  - [x] dataset registered (D-007)  - [x] model spike and choice (D-006, D-023) - [x] import-rule test
+  - [x] GATE passed
 - [x] M1 Data layer: loader, checks, profiler, hash. Steps 1-4 done. GATE passed: [x]
 - [x] M2 Analytical tools: filter, group, rank, period compare, trend, contribution, correlation, anomaly, charts. GATE passed: [x]
 - [x] M3 Registry and executor. GATE passed: [x]
@@ -51,3 +51,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-10-29 | copilot | M0 | executed temporary 10-question Ollama smoke spike; recorded 90 runs in evaluation/results/model_spike.csv (schema-valid 1.000 across models) | focused tests 6 passed; smoke run completed | pending
 2026-11-01 | copilot | M0 | fixed Ollama JSON-string tool argument parsing and removed the broken implicit missing-question default | focused tests 8 passed; full pytest 139 passed | pending
 2026-11-06 | antigravity | M4 | 20 frozen benchmark questions, standalone oracle, model spike prompt fix, fixed baseline templates, scorer, and eval harness (M4 gate passed) | uv run pytest: 143 passed; ruff clean; run_eval: 20/20 (1.000) | 353b04c
+2026-11-06 | antigravity | M0/M5 | full 20-question benchmark model spike across qwen3:4b, qwen3:8b, llama3.1:8b (180 runs); resolved D-006 with D-023 selecting qwen3:4b (M0 gate passed) | uv run pytest -q: 143 passed; ruff clean; spike: qwen3:4b cleared bar (86.7% valid, 93.3% tool sel) | pending

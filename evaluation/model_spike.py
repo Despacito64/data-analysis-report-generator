@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Run fixed-sampling Ollama planning spikes against the Superstore benchmark.
 
-Root-cause diagnosis (Step 2):
-  valid_tool_call was ~0% because the model invented column names (e.g. "date"
-  instead of "Order Date") that failed validate_task_args column-existence checks.
-  Fix: inject the actual column names and their semantic types from DatasetProfile
-  into the system prompt so the model can use the exact registered column names.
+M4 / M5 Model Spike:
+  Evaluates candidate local models (qwen3:4b, qwen3:8b, llama3.1:8b) against
+  the 20 frozen benchmark questions in evaluation/benchmark/questions.json.
+  Injects registered column names and semantic types from DatasetProfile.
+  Measures planning validity (valid_tool_call rate, correct tool selection rate,
+  correct argument rate via validate_task_args, latency, schema failure rate).
+  Does not score final answers with the oracle.
 """
 
 from __future__ import annotations
@@ -18,8 +20,7 @@ import statistics
 import time
 import urllib.error
 import urllib.request
-from collections import Counter, defaultdict
-from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,16 +37,25 @@ MODELS = ("qwen3:4b", "qwen3:8b", "llama3.1:8b")
 TEMPERATURE = 0.0
 SEED = 42
 OLLAMA_HOST = "http://localhost:11434"
+DEFAULT_JSON_OUTPUT = Path("evaluation/results/model_spike_m5.json")
+DEFAULT_CSV_OUTPUT = Path("evaluation/results/model_spike_m5.csv")
+
 RESULT_FIELDS = (
     "model",
     "question_id",
     "run_number",
+    "schema_valid",
+    "json_or_schema_failure",
     "valid_tool_call",
-    "pydantic_valid",
-    "answer_match",
-    "retries_used",
+    "correct_tool_selection",
+    "correct_argument",
+    "tasks_count",
+    "valid_tasks_count",
     "latency_s",
     "tokens_per_second",
+    "selected_tools",
+    "expected_tools",
+    "retries_used",
 )
 
 
@@ -80,6 +90,8 @@ def answer_matches_oracle(actual: Any, expected: Any, tolerance: float = 1e-6) -
     if isinstance(expected, list) and isinstance(actual, list):
         actual_by_key = [normalize_answer(item).casefold() for item in actual]
         expected_by_key = [normalize_answer(item).casefold() for item in expected]
+        from collections import Counter
+
         return Counter(actual_by_key) == Counter(expected_by_key)
     return normalize_answer(actual).casefold() == normalize_answer(expected).casefold()
 
@@ -94,10 +106,12 @@ def tokens_per_second(response: dict[str, Any]) -> float | None:
     return float(count) / (float(duration_ns) / 1_000_000_000)
 
 
-def consistency_rate(rows: Iterable[dict[str, Any]]) -> float:
+def consistency_rate(rows: list[dict[str, Any]]) -> float:
+    from collections import Counter, defaultdict
+
     by_question: dict[str, list[str]] = defaultdict(list)
     for row in rows:
-        by_question[str(row["question_id"])].append(normalize_answer(row["final_answer"]))
+        by_question[str(row["question_id"])].append(normalize_answer(row.get("final_answer", "")))
     if not by_question:
         return 0.0
     agreements = []
@@ -124,52 +138,6 @@ def parse_output(content: str) -> SpikeOutput | None:
         return SpikeOutput.model_validate_json(_strip_json_fence(content))
     except (ValidationError, json.JSONDecodeError):
         return None
-
-
-def ollama_chat(
-    model: str,
-    messages: list[dict[str, Any]],
-    tools: list[dict[str, Any]],
-    *,
-    host: str = OLLAMA_HOST,
-    timeout_s: float = 600.0,
-) -> tuple[str, dict[str, Any]]:
-    body = {
-        "model": model,
-        "messages": messages,
-        "stream": False,
-        "format": SpikeOutput.model_json_schema(),
-        "tools": tools,
-        "think": False,
-        "options": {"temperature": TEMPERATURE, "seed": SEED},
-    }
-    request = urllib.request.Request(
-        f"{host.rstrip('/')}/api/chat",
-        data=json.dumps(body).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(request, timeout=timeout_s) as response:
-        payload = json.load(response)
-    message = payload.get("message", {})
-    content = message.get("content", "")
-    if isinstance(content, str) and content.strip():
-        return content, payload
-    tool_calls = message.get("tool_calls", [])
-    if isinstance(tool_calls, list) and tool_calls:
-        tasks = []
-        for index, call in enumerate(tool_calls, start=1):
-            function = call.get("function", {})
-            tasks.append(
-                {
-                    "id": f"t{index}",
-                    "tool": function.get("name", ""),
-                    "args": normalize_tool_arguments(function.get("arguments", {})),
-                    "depends_on": [],
-                    "rationale": "Use the registered tool to answer the question.",
-                }
-            )
-        return json.dumps({"tasks": tasks, "final_answer": None}), payload
-    return content if isinstance(content, str) else json.dumps(content), payload
 
 
 def normalize_tool_arguments(arguments: Any) -> dict[str, Any]:
@@ -233,24 +201,116 @@ def _acyclic(task_list: list[Task]) -> bool:
     return all(visit(task_id) for task_id in by_id)
 
 
-def valid_tool_call(output: SpikeOutput, profile: DatasetProfile) -> bool:
-    if not output.tasks or not _acyclic(output.tasks):
-        return False
-    for task in output.tasks:
+def evaluate_tasks(
+    tasks: list[Task],
+    profile: DatasetProfile,
+) -> tuple[bool, bool, int, list[str]]:
+    """Evaluate task list: (all_valid, all_args_valid, valid_count, failure_reasons)."""
+    if not tasks:
+        return False, False, 0, ["Empty task list"]
+    if not _acyclic(tasks):
+        return False, False, 0, ["Cyclic task dependency graph"]
+
+    valid_count = 0
+    failure_reasons = []
+    all_registered = True
+    all_args_valid = True
+
+    for task in tasks:
         entry = DEFAULT_REGISTRY.get(task.tool)
+        if entry is None:
+            all_registered = False
+            all_args_valid = False
+            failure_reasons.append(f"Tool '{task.tool}' not in DEFAULT_REGISTRY")
+            continue
+
         _, failure = validate_task_args(
             task.tool,
             task.args,
             profile,
-            entry.args_model if entry else None,
+            entry.args_model,
             DEFAULT_REGISTRY.list_tools(),
         )
         if failure:
-            return False
-    return True
+            all_args_valid = False
+            failure_reasons.append(f"Task '{task.id}' ({task.tool}) invalid: {failure.message}")
+        else:
+            valid_count += 1
+
+    all_valid = all_registered and all_args_valid and (valid_count == len(tasks))
+    return all_valid, all_args_valid, valid_count, failure_reasons
 
 
-def load_questions(path: Path, limit: int | None) -> list[dict[str, Any]]:
+def valid_tool_call(output: SpikeOutput, profile: DatasetProfile) -> bool:
+    if not output.tasks:
+        return False
+    all_valid, _, _, _ = evaluate_tasks(output.tasks, profile)
+    return all_valid
+
+
+def ollama_chat(
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    *,
+    host: str = OLLAMA_HOST,
+    timeout_s: float = 600.0,
+) -> tuple[str, dict[str, Any]]:
+    body = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "format": SpikeOutput.model_json_schema(),
+        "tools": tools,
+        "think": False,
+        "keep_alive": "10m",
+        "options": {"temperature": TEMPERATURE, "seed": SEED},
+    }
+    request = urllib.request.Request(
+        f"{host.rstrip('/')}/api/chat",
+        data=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=timeout_s) as response:
+        payload = json.load(response)
+    message = payload.get("message", {})
+    content = message.get("content", "")
+    if isinstance(content, str) and content.strip():
+        return content, payload
+
+    tool_calls = message.get("tool_calls", [])
+    if isinstance(tool_calls, list) and tool_calls:
+        # Check if model packed the SpikeOutput dictionary inside the first tool call's arguments
+        first_call = tool_calls[0].get("function", {})
+        first_args = normalize_tool_arguments(first_call.get("arguments", {}))
+        if isinstance(first_args, dict) and "tasks" in first_args:
+            return (
+                json.dumps(
+                    {
+                        "tasks": first_args.get("tasks", []),
+                        "final_answer": first_args.get("final_answer"),
+                    }
+                ),
+                payload,
+            )
+
+        tasks = []
+        for index, call in enumerate(tool_calls, start=1):
+            function = call.get("function", {})
+            tasks.append(
+                {
+                    "id": f"t{index}",
+                    "tool": function.get("name", ""),
+                    "args": normalize_tool_arguments(function.get("arguments", {})),
+                    "depends_on": [],
+                    "rationale": "Use the registered tool to answer the question.",
+                }
+            )
+        return json.dumps({"tasks": tasks, "final_answer": None}), payload
+    return content if isinstance(content, str) else json.dumps(content), payload
+
+
+def load_questions(path: Path, limit: int | None = None) -> list[dict[str, Any]]:
     with path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
     if isinstance(data, dict):
@@ -267,16 +327,6 @@ def question_id(question: dict[str, Any], index: int) -> str:
     return str(value)
 
 
-def oracle_answer(question: dict[str, Any]) -> Any:
-    for key in ("expected_answer", "oracle_answer", "answer"):
-        if key in question:
-            return question[key]
-    fields = question.get("expected_answer_fields")
-    if isinstance(fields, dict):
-        return fields
-    raise ValueError(f"Question {question_id(question, 0)!r} has no expected answer")
-
-
 def _profile(dataset: Path) -> tuple[pd.DataFrame, DatasetProfile]:
     frame = load_data(dataset)
     if not isinstance(frame, pd.DataFrame):
@@ -287,31 +337,120 @@ def _profile(dataset: Path) -> tuple[pd.DataFrame, DatasetProfile]:
 def run_spike(
     questions_path: Path,
     dataset_path: Path,
-    output_path: Path,
+    output_path: Path = DEFAULT_CSV_OUTPUT,
     *,
-    limit: int | None,
-    max_retries: int,
-    host: str,
+    limit: int | None = None,
+    max_retries: int = 0,
+    host: str = OLLAMA_HOST,
     models: tuple[str, ...] = MODELS,
-) -> list[dict[str, Any]]:
+    json_output_path: Path = DEFAULT_JSON_OUTPUT,
+    resume: bool = True,
+) -> dict[str, Any]:
+    """Execute model spike across questions and models, measuring planning validity."""
     questions = load_questions(questions_path, limit)
-    oracle_path = questions_path.with_name("oracle.json")
-    with oracle_path.open("r", encoding="utf-8") as handle:
-        oracle = json.load(handle)
-    for index, question in enumerate(questions):
-        qid = question_id(question, index)
-        if qid in oracle and "expected_answer" not in question:
-            question["expected_answer"] = oracle[qid]["expected_answer"]
     _, profile = _profile(dataset_path)
     tool_specs = _tool_definitions()
-    rows: list[dict[str, Any]] = []
+
+    detailed_runs: list[dict[str, Any]] = []
+    if resume and json_output_path.exists():
+        try:
+            with json_output_path.open("r", encoding="utf-8") as handle:
+                prev_data = json.load(handle)
+                if isinstance(prev_data, dict) and "detailed_runs" in prev_data:
+                    detailed_runs = prev_data["detailed_runs"]
+                    print(
+                        f"Resuming from {json_output_path} with {len(detailed_runs)} existing runs."
+                    )
+        except (OSError, json.JSONDecodeError, KeyError) as exc:
+            print(f"Could not load previous runs from {json_output_path}: {exc}")
+            detailed_runs = []
+
+    completed_keys = {(r["model"], r["question_id"], r["run_number"]) for r in detailed_runs}
+
+    def _save_checkpoint() -> None:
+        summary: dict[str, Any] = {}
+        for m in models:
+            m_runs = [r for r in detailed_runs if r["model"] == m]
+            if not m_runs:
+                continue
+            total = len(m_runs)
+            latencies = [float(r["latency_s"]) for r in m_runs]
+            tps_list = [
+                r["tokens_per_second"] for r in m_runs if r["tokens_per_second"] is not None
+            ]
+            total_tasks = sum(r["tasks_count"] for r in m_runs)
+            total_valid_tasks = sum(r["valid_tasks_count"] for r in m_runs)
+
+            valid_tool_call_rate = sum(1 for r in m_runs if r["valid_tool_call"]) / total
+            correct_tool_sel_rate = sum(1 for r in m_runs if r["correct_tool_selection"]) / total
+            correct_argument_rate = sum(1 for r in m_runs if r["correct_argument"]) / total
+            task_arg_accuracy = (total_valid_tasks / total_tasks) if total_tasks > 0 else 0.0
+            json_schema_failure_rate = sum(1 for r in m_runs if r["json_or_schema_failure"]) / total
+
+            summary[m] = {
+                "total_runs": total,
+                "valid_tool_call_rate": round(valid_tool_call_rate, 4),
+                "correct_tool_selection_rate": round(correct_tool_sel_rate, 4),
+                "correct_argument_rate": round(correct_argument_rate, 4),
+                "task_argument_accuracy": round(task_arg_accuracy, 4),
+                "total_tasks_proposed": total_tasks,
+                "total_valid_tasks": total_valid_tasks,
+                "mean_latency_s": round(statistics.fmean(latencies), 2),
+                "median_latency_s": round(statistics.median(latencies), 2),
+                "json_or_schema_failure_rate": round(json_schema_failure_rate, 4),
+                "mean_tokens_per_second": round(statistics.fmean(tps_list), 2)
+                if tps_list
+                else None,
+            }
+
+        result_data = {
+            "metadata": {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "temperature": TEMPERATURE,
+                "seed": SEED,
+                "questions_file": str(questions_path),
+                "dataset_file": str(dataset_path),
+                "questions_count": len(questions),
+                "runs_per_question": 3,
+                "total_runs_per_model": len(questions) * 3,
+                "minimum_bar": {
+                    "valid_tool_call_rate": 0.85,
+                    "correct_tool_selection_rate": 0.70,
+                },
+            },
+            "summary": summary,
+            "detailed_runs": detailed_runs,
+        }
+
+        json_output_path.parent.mkdir(parents=True, exist_ok=True)
+        with json_output_path.open("w", encoding="utf-8") as handle:
+            json.dump(result_data, handle, indent=2)
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=[*RESULT_FIELDS, "final_answer"],
+                extrasaction="ignore",
+            )
+            writer.writeheader()
+            for r in detailed_runs:
+                writer.writerow(r)
 
     for model in models:
+        print(f"\n>>> Starting evaluation for model: {model} ({len(questions)} questions x 3 runs)")
         for index, question in enumerate(questions):
             qid = question_id(question, index)
-            expected = oracle_answer(question)
             prompt = str(question.get("text", question.get("question", "")))
+            expected_tools = question.get("expected_tools", [])
+            if not expected_tools and "expected_tool" in question:
+                expected_tools = [question["expected_tool"]]
+
             for run_number in range(1, 4):
+                if (model, qid, run_number) in completed_keys:
+                    print(f"[{model}] {qid} run {run_number}/3: already completed (skipping)")
+                    continue
+
                 messages = [
                     {
                         "role": "system",
@@ -321,21 +460,25 @@ def run_spike(
                         "role": "user",
                         "content": (
                             f"Question category: {question.get('category', '')}. "
-                            f"Expected registered tools: {', '.join(question.get('expected_tools', []))}. "
+                            f"Expected registered tools: {', '.join(expected_tools)}. "
                             f"Use native tool calls when supported. For filter arguments, use the exact "
                             f"conditions schema and exact column names.\n{prompt}"
                         ),
                     },
                 ]
+
                 retries = 0
                 total_latency = 0.0
                 total_tokens = 0
                 total_eval_duration = 0
                 output: SpikeOutput | None = None
+                raw_content = ""
+
                 while retries <= max_retries:
                     start = time.perf_counter()
                     try:
                         content, payload = ollama_chat(model, messages, tool_specs, host=host)
+                        raw_content = content
                     except (
                         urllib.error.URLError,
                         TimeoutError,
@@ -347,6 +490,7 @@ def run_spike(
                             break
                         retries += 1
                         continue
+
                     elapsed = time.perf_counter() - start
                     total_latency += elapsed
                     count = payload.get("eval_count")
@@ -362,69 +506,109 @@ def run_spike(
                         break
                     retries += 1
 
-                retries_used = min(retries, max_retries)
                 pydantic_valid = output is not None
-                call_valid = valid_tool_call(output, profile) if output is not None else False
+                json_or_schema_failure = not pydantic_valid
+
+                if output is not None and output.tasks:
+                    tasks_count = len(output.tasks)
+                    selected_tools = [t.tool for t in output.tasks]
+                    correct_tool_selection = set(selected_tools) == set(expected_tools)
+                    call_valid, args_valid, valid_count, failures = evaluate_tasks(
+                        output.tasks, profile
+                    )
+                    tasks_dump = [t.model_dump() for t in output.tasks]
+                else:
+                    tasks_count = 0
+                    selected_tools = []
+                    correct_tool_selection = False
+                    call_valid = False
+                    args_valid = False
+                    valid_count = 0
+                    failures = ["No parsed tasks"] if pydantic_valid else ["Schema parse failure"]
+                    tasks_dump = []
+
                 if total_eval_duration > 0 and total_tokens > 0:
                     effective_tps = total_tokens / (total_eval_duration / 1_000_000_000)
                 else:
                     effective_tps = None
+
                 row = {
                     "model": model,
                     "question_id": qid,
                     "run_number": run_number,
+                    "schema_valid": pydantic_valid,
+                    "json_or_schema_failure": json_or_schema_failure,
                     "valid_tool_call": call_valid,
-                    "pydantic_valid": pydantic_valid,
-                    "answer_match": (
-                        answer_matches_oracle(output.final_answer, expected)
-                        if output is not None
-                        else False
-                    ),
-                    "retries_used": retries_used,
-                    "latency_s": total_latency,
-                    "tokens_per_second": effective_tps,
+                    "correct_tool_selection": correct_tool_selection,
+                    "correct_argument": args_valid,
+                    "tasks_count": tasks_count,
+                    "valid_tasks_count": valid_count,
+                    "latency_s": round(total_latency, 3),
+                    "tokens_per_second": round(effective_tps, 2) if effective_tps else None,
+                    "selected_tools": selected_tools,
+                    "expected_tools": expected_tools,
+                    "retries_used": min(retries, max_retries),
+                    "failure_reasons": failures,
+                    "tasks": tasks_dump,
                     "final_answer": normalize_answer(output.final_answer) if output else "",
+                    "raw_content": raw_content[:200] if raw_content else "",
                 }
-                rows.append(row)
+                detailed_runs.append(row)
+                completed_keys.add((model, qid, run_number))
+                status_str = "OK" if call_valid else f"FAIL ({', '.join(failures[:1])})"
                 print(
-                    f"{model} {qid} run={run_number} "
-                    f"schema={pydantic_valid} tool={call_valid} "
-                    f"answer={row['answer_match']} latency={total_latency:.2f}s"
+                    f"[{model}] {qid} run {run_number}/3: "
+                    f"valid_tool={call_valid} tool_sel={correct_tool_selection} "
+                    f"args_ok={args_valid} latency={total_latency:.1f}s -> {status_str}"
                 )
+                _save_checkpoint()
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=[*RESULT_FIELDS, "final_answer"])
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({key: row.get(key, "") for key in writer.fieldnames})
-    print_summary(rows)
-    print(f"Saved results to {output_path}")
-    return rows
+    # Final summary display
+    _save_checkpoint()
+    with json_output_path.open("r", encoding="utf-8") as handle:
+        final_data = json.load(handle)
+    summary = final_data.get("summary", {})
+    print_markdown_summary(summary)
+    print(f"\nSaved JSON results to {json_output_path}")
+    print(f"Saved CSV results to {output_path}")
+    return final_data
 
 
-def print_summary(rows: list[dict[str, Any]]) -> None:
-    print("\nModel spike summary")
-    print("model\taccuracy\tschema_valid\tconsistency\tmedian_latency_s\tmean_tokens_per_second")
-    for model in MODELS:
-        model_rows = [row for row in rows if row["model"] == model]
-        if not model_rows:
-            continue
-        count = len(model_rows)
-        latencies = [float(row["latency_s"]) for row in model_rows]
-        token_rates = [
-            float(row["tokens_per_second"])
-            for row in model_rows
-            if row["tokens_per_second"] is not None
-        ]
-        print(
-            f"{model}\t"
-            f"{sum(bool(row['answer_match']) for row in model_rows) / count:.3f}\t"
-            f"{sum(bool(row['pydantic_valid']) for row in model_rows) / count:.3f}\t"
-            f"{consistency_rate(model_rows):.3f}\t"
-            f"{statistics.median(latencies):.2f}\t"
-            f"{statistics.fmean(token_rates) if token_rates else 0:.2f}"
+def print_markdown_summary(summary: dict[str, Any]) -> str:
+    """Print and return markdown summary table."""
+    headers = [
+        "Model",
+        "Valid Tool Calls",
+        "Correct Tool Sel.",
+        "Correct Arg. Rate",
+        "Task Arg. Accuracy",
+        "Schema Failure",
+        "Mean Latency (s)",
+        "Mean TPS",
+    ]
+    rows_text = []
+    rows_text.append("| " + " | ".join(headers) + " |")
+    rows_text.append("| " + " | ".join(["---"] * len(headers)) + " |")
+
+    for model, stats in summary.items():
+        vtc = f"{stats['valid_tool_call_rate'] * 100:.1f}%"
+        cts = f"{stats['correct_tool_selection_rate'] * 100:.1f}%"
+        car = f"{stats['correct_argument_rate'] * 100:.1f}%"
+        taa = f"{stats['task_argument_accuracy'] * 100:.1f}%"
+        sfr = f"{stats['json_or_schema_failure_rate'] * 100:.1f}%"
+        lat = f"{stats['mean_latency_s']:.1f}s"
+        tps = (
+            f"{stats['mean_tokens_per_second']:.1f}"
+            if stats.get("mean_tokens_per_second")
+            else "N/A"
         )
+        row_str = f"| `{model}` | {vtc} | {cts} | {car} | {taa} | {sfr} | {lat} | {tps} |"
+        rows_text.append(row_str)
+
+    md_table = "\n".join(rows_text)
+    print("\n### Model Spike Evaluation Summary\n")
+    print(md_table)
+    return md_table
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -432,14 +616,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--questions",
         type=Path,
-        help="required JSON question file containing text and expected_answer",
+        default=None,
+        help="JSON question file containing text and expected_tools",
     )
     parser.add_argument("--dataset", type=Path, default=Path("Sample-Superstore.csv"))
-    parser.add_argument("--output", type=Path, default=Path("evaluation/results/model_spike.csv"))
-    parser.add_argument("--limit", "-n", type=int, default=10, help="number of benchmark questions")
-    parser.add_argument("--max-retries", type=int, default=2)
+    parser.add_argument("--output", type=Path, default=DEFAULT_CSV_OUTPUT)
+    parser.add_argument("--json-output", type=Path, default=DEFAULT_JSON_OUTPUT)
+    parser.add_argument(
+        "--limit", "-n", type=int, default=None, help="number of benchmark questions"
+    )
+    parser.add_argument("--max-retries", type=int, default=0)
     parser.add_argument("--host", default=OLLAMA_HOST)
     parser.add_argument("--models", nargs="+", default=list(MODELS))
+    parser.add_argument(
+        "--no-resume", action="store_true", help="overwrite existing runs instead of resuming"
+    )
     return parser
 
 
@@ -447,7 +638,7 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.questions is None:
         raise SystemExit("--questions is required until the frozen benchmark file is available")
-    if args.limit < 1:
+    if args.limit is not None and args.limit < 1:
         raise SystemExit("--limit must be positive")
     if args.max_retries < 0:
         raise SystemExit("--max-retries must be non-negative")
@@ -459,6 +650,8 @@ def main() -> None:
         max_retries=args.max_retries,
         host=args.host,
         models=tuple(args.models),
+        json_output_path=args.json_output,
+        resume=not args.no_resume,
     )
 
 
