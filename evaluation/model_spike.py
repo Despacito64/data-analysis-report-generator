@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Run fixed-sampling Ollama planning spikes against the Superstore benchmark."""
+"""Run fixed-sampling Ollama planning spikes against the Superstore benchmark.
+
+Root-cause diagnosis (Step 2):
+  valid_tool_call was ~0% because the model invented column names (e.g. "date"
+  instead of "Order Date") that failed validate_task_args column-existence checks.
+  Fix: inject the actual column names and their semantic types from DatasetProfile
+  into the system prompt so the model can use the exact registered column names.
+"""
 
 from __future__ import annotations
 
@@ -178,6 +185,18 @@ def normalize_tool_arguments(arguments: Any) -> dict[str, Any]:
     return {}
 
 
+def _build_system_prompt(profile: DatasetProfile) -> str:
+    """Build system prompt with actual column names injected from profile."""
+    col_lines = "; ".join(f"{c.name} ({c.semantic_type.value})" for c in profile.columns)
+    return (
+        "You are a deterministic analysis planner. Use only the supplied tools. "
+        "Return a JSON object with tasks and final_answer. Each task must use "
+        "the existing Task contract; arguments must match its tool schema. "
+        "Do not invent dataset values. "
+        f"Dataset columns (use these exact names): {col_lines}."
+    )
+
+
 def _tool_definitions() -> list[dict[str, Any]]:
     return [
         {
@@ -276,6 +295,13 @@ def run_spike(
     models: tuple[str, ...] = MODELS,
 ) -> list[dict[str, Any]]:
     questions = load_questions(questions_path, limit)
+    oracle_path = questions_path.with_name("oracle.json")
+    with oracle_path.open("r", encoding="utf-8") as handle:
+        oracle = json.load(handle)
+    for index, question in enumerate(questions):
+        qid = question_id(question, index)
+        if qid in oracle and "expected_answer" not in question:
+            question["expected_answer"] = oracle[qid]["expected_answer"]
     _, profile = _profile(dataset_path)
     tool_specs = _tool_definitions()
     rows: list[dict[str, Any]] = []
@@ -289,14 +315,17 @@ def run_spike(
                 messages = [
                     {
                         "role": "system",
+                        "content": _build_system_prompt(profile),
+                    },
+                    {
+                        "role": "user",
                         "content": (
-                            "You are a deterministic analysis planner. Use only the supplied tools. "
-                            "Return a JSON object with tasks and final_answer. Each task must use "
-                            "the existing Task contract; arguments must match its tool schema. "
-                            "Do not invent dataset values."
+                            f"Question category: {question.get('category', '')}. "
+                            f"Expected registered tools: {', '.join(question.get('expected_tools', []))}. "
+                            f"Use native tool calls when supported. For filter arguments, use the exact "
+                            f"conditions schema and exact column names.\n{prompt}"
                         ),
                     },
-                    {"role": "user", "content": prompt},
                 ]
                 retries = 0
                 total_latency = 0.0
