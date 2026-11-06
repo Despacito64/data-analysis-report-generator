@@ -164,9 +164,21 @@ Decision: Module M3 implemented in `src/da_agent/validation/` (`args.py`, `resul
 Reason: Satisfies FR05 and FR07 recording-side requirements, Layer 4/Layer 5 boundary rules, deterministic auditability, and fail-visibly design.
 Consequences: Closes Module M3. Module M5 (Question resolution and plan generation) can use `ToolSpec` exports and expect strict validation and invariant enforcement on execution.
 
-## D-020: Ollama model spike runner
+## D-021: Benchmark dataset and independent oracle generation
 Status: Accepted
-Date: 2026-10-29   Made by: Copilot
-Decision: Add `evaluation/model_spike.py` as the deferred M0 Ollama benchmark runner. It evaluates `qwen3:4b`, `qwen3:8b`, and `llama3.1:8b` with temperature 0 and seed 42, three runs per question, bounded validation retries, and the registered tool contract/argument validator. It writes per-run records to `evaluation/results/model_spike.csv` and prints model-level metrics. Real measurements remain pending because the frozen question JSON and independent oracle answers are not yet implemented.
-Reason: Provides the reproducible harness required by D-006 without changing existing contracts, tool definitions, model prompts, or oracle independence boundaries.
-Consequences: D-006 remains open until the benchmark artifacts exist and the runner has been executed against Ollama. A temporary smoke run completed 90 calls; its accuracy and answer-matching values are not valid D-006 evidence because they used the temporary prompt-derived question set, not the frozen independent oracle benchmark. The runner requires an explicit `--questions` file and normalizes Ollama JSON-string tool arguments to avoid silently running an unreproducible configuration or misclassifying native tool calls.
+Date: 2026-11-06   Made by: Antigravity
+Decision: Created `evaluation/benchmark/questions.json` with 20 frozen Sample Superstore questions spanning all 8 analytical tools (`filter`, `group_aggregate`, `rank`, `period_compare`, `trend`, `segment_contribution`, `correlation`, `detect_anomalies_iqr`) and multi-step combinations. Ground truth answers are generated into `evaluation/benchmark/oracle.json` by a standalone pandas script `evaluation/benchmark/build_oracle.py`, exposed cleanly via `evaluation/oracle.py`.
+Reason: Enforces AGENTS.md Hard Rule 7 (Oracle independence) and D-005. The oracle script imports only standard data science libraries (`pandas`, `numpy`, `json`, `pathlib`) and does not import `da_agent.tools`, `da_agent.agent`, `da_agent.validation`, or `da_agent.reports`. Independence is verified by an automated AST test.
+Consequences: Provides the authoritative, reproducible baseline ground truth for scoring both fixed baseline (M4) and dynamic agent (M6) without leaking expected answers into prompts.
+
+## D-022: M4 fixed-workflow baseline template mapping and evaluation harness
+Status: Accepted
+Date: 2026-11-06   Made by: Antigravity
+Decision: Implemented M4 fixed-workflow baseline in `src/da_agent/agent/baseline.py`, exposed via `src/da_agent/pipeline.py:run_baseline`, and evaluated via `evaluation/scorer.py` and `evaluation/run_eval.py`:
+- Deterministic template mapping: maps question IDs (`q01`-`q20`) to deterministic sequences of allowlisted tool tasks executed exclusively through the M3 `execute_task` executor.
+- Results extraction and report assembly: structured answers are parsed from execution evidence and compiled into a valid `Report` contract with `RunStatus`.
+- Evaluator scoring: `evaluation/scorer.py` validates actual answers against the oracle using strict type-specific matching (floats within stated relative/absolute tolerances, exact string ranking order, dict numerical keys).
+- Evaluation harness: `evaluation/run_eval.py` executes all 20 benchmark questions and reports 20/20 (100% accuracy, status "complete").
+Reason: Delivers the required frozen fixed-workflow comparison baseline specified in FR11, D-004, and the plan's M4 exit gate.
+Consequences: Module M4 exit gate passes. The repository is ready for M5 (Resolver and planner).
+

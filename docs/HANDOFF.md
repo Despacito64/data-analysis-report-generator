@@ -1,40 +1,39 @@
 # HANDOFF.md: current task and continuation
 
-Updated: 2026-10-29 by Copilot
+Updated: 2026-11-06 by Antigravity
 
 ## Current task
-Implement and run the deferred M0 local-model spike once the frozen Superstore benchmark questions and oracle answers exist. The M5 planner remains blocked by D-006.
+Module M4 (Fixed baseline and evaluation foundation) is completed and verified. The next task is M5 (Question resolution and plan generation), pending selection of candidate local model for D-006.
 
 ## State of the repository
-- M0 foundation/contracts, dataset registry, tools, registry/executor, argument/result validation, and tests are present.
-- M1, M2, and M3 gates have passed.
-- A temporary 10-question smoke benchmark from `scripts/model_spike.py` was executed; frozen benchmark question files and an independent oracle are still pending.
+- Modules M0, M1, M2, M3, and M4 gates have passed.
+- Benchmark: 20 frozen Sample Superstore questions (`evaluation/benchmark/questions.json`) covering all 8 analytical tools and multi-step tasks.
+- Oracle: Independent ground truth generator (`evaluation/benchmark/build_oracle.py`) and cached answers (`evaluation/benchmark/oracle.json`), exposed via `evaluation/oracle.py` without importing `da_agent` analytical packages (enforced via AST test).
+- M4 Baseline: Deterministic fixed-workflow baseline implemented in `src/da_agent/agent/baseline.py` and exposed via `src/da_agent/pipeline.py:run_baseline`.
+- Evaluation Harness: `evaluation/scorer.py` and `evaluation/run_eval.py` execute the baseline and score answers against the oracle (20/20 passed, 1.000 accuracy, status "complete").
+- Model Spike (Step 2): Root cause of low `valid_tool_call` diagnosed and fixed in `evaluation/model_spike.py` by injecting registered column names and semantic types from `DatasetProfile` into the system prompt. Smoke-tested on q01 where `qwen3:4b` achieved 3/3 (100%) valid tool calls.
 
 ## What was just finished
-- Added [evaluation/model_spike.py](evaluation/model_spike.py): fixed Ollama models, temperature 0, seed 42, three runs per question, bounded JSON retries, registered-tool argument validation, Ollama token metrics, CSV output, and per-model summary.
-- Added focused unit coverage in [tests/unit/evaluation/test_model_spike.py](tests/unit/evaluation/test_model_spike.py).
-- Verification in this session: `uv run pytest -q` passed 134 tests; `uv run ruff check .` and `uv run ruff format --check .` passed.
-- Executed the temporary smoke set on all three models and saved [evaluation/results/model_spike.csv](evaluation/results/model_spike.csv). Schema-valid rate was 1.000 for all models; smoke accuracy was 0.000, 0.000, and 0.300 respectively for qwen3:4b, qwen3:8b, and llama3.1:8b. These are not frozen-benchmark measurements.
-- Resolved two spike-runner review issues: native Ollama JSON-string tool arguments are normalized, and `--questions` is explicitly required until the frozen benchmark file is available instead of silently pointing at a missing default.
+- Step 1: Created `evaluation/benchmark/questions.json`, `evaluation/benchmark/build_oracle.py`, `evaluation/benchmark/oracle.json`, and schema/independence tests in `tests/unit/evaluation/test_benchmark_schema.py`.
+- Step 2: Diagnosed low `valid_tool_call` in `evaluation/model_spike.py`, added column name & semantic type prompt injection, and smoke tested.
+- Step 3: Implemented `src/da_agent/agent/baseline.py`, `src/da_agent/pipeline.py`, `evaluation/oracle.py`, `evaluation/scorer.py`, `evaluation/run_eval.py`, `tests/unit/agent/test_baseline.py`, and `tests/unit/evaluation/test_scorer.py`.
+- Full test suite verified: 143 tests passed in 18.84s (`uv run pytest -q`). `ruff check` and `ruff format` clean.
 
 ## Exact next steps
-1. Add the development/evaluation Superstore question JSON and independent oracle answer source for M4.
-2. Run the spike with Ollama available:
-   `uv run python evaluation/model_spike.py --limit 10`
-3. Record measured accuracy, schema-valid rate, tool validity, consistency, latency, and token speed in D-006, then choose the candidate local model.
-4. Resolve D-006 before starting M5 planner implementation.
+1. Complete model selection for D-006 based on model spike evaluation.
+2. Begin Module M5: Question resolution and plan generation (`src/da_agent/agent/resolver.py`, `planner.py`, `validation/plan.py`).
 
 ## Open questions for the owner
-- Which model should be selected from the completed Ollama measurements? (D-006.)
-- Does the Sample Superstore license allow keeping the CSV in the repository? (D-007.)
+- Model selection for D-006: With column injection in place, `qwen3:4b` produces valid tool calls with fast latency; should `qwen3:4b` or `qwen3:8b` be selected for M5 planner?
+- Dataset redistribution: Does the Sample Superstore license allow keeping the CSV in the repository? (D-007.)
 
 ## Gotchas and warnings
-- Do not run M5 until the spike identifies a model route or another approved route is recorded.
-- Expected oracle answers must stay out of the LLM prompt.
-- `evaluation/oracle.py` must remain independent of all `da_agent.tools`, agent, validation, and report code.
+- `evaluation/oracle.py` must never import `da_agent.tools`, `da_agent.agent`, `da_agent.validation`, or `da_agent.reports` (automated test enforces this).
+- Expected oracle answers must never appear in any agent or planner prompt.
+- Do not modify M0 contracts without an approved decision in `DECISIONS.md`.
 
 ## How to run things
 - Tests: `uv run pytest -q`
 - Lint: `uv run ruff check .`
 - Format check: `uv run ruff format --check .`
-- Spike: `uv run python evaluation/model_spike.py --limit 10`
+- Run baseline evaluation against oracle: `uv run python evaluation/run_eval.py`

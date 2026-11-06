@@ -12,7 +12,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M2 Analytical tools: filter, group, rank, period compare, trend, contribution, correlation, anomaly, charts. GATE passed: [x]
 - [x] M3 Registry and executor. GATE passed: [x]
 - [ ] M5 Resolver and planner. GATE passed: [ ]
-- [ ] M4 Baseline, oracle, scorer, question files. GATE passed: [ ]
+- [x] M4 Baseline, oracle, scorer, question files. GATE passed: [x]
 - [ ] M6 Dynamic agent. GATE passed: [ ]
 - [ ] M7 Feedback and evidence validation. GATE passed: [ ]
 - [ ] M8 Reports and rendering. GATE passed: [ ]
@@ -28,6 +28,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 | FR03 | passed | `src/da_agent/data/profiler.py`, `src/da_agent/data/registry.py`, `tests/unit/test_profiler.py` |
 | FR05 | passed | `src/da_agent/tools/`, `src/da_agent/validation/`, `tests/unit/tools/`, `tests/unit/validation/` |
 | FR07 (recording side) | passed | `src/da_agent/tools/executor.py`, `tests/unit/tools/test_executor.py` |
+| FR11 (baseline setup) | passed | `src/da_agent/agent/baseline.py`, `evaluation/run_eval.py`, `tests/unit/agent/test_baseline.py` |
 | FR15 | in progress | `src/da_agent/core/trace.py`, `tests/unit/test_trace.py`, `tests/unit/tools/test_executor.py` |
 | FR04, FR06, FR08 to FR14 | not started | |
 | NFR1 to NFR3 | not started | |
@@ -49,3 +50,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-10-29 | copilot | M0 | added Ollama model-spike runner and focused tests; real model run blocked until benchmark questions exist (D-006 still open) | uv run pytest -q: 134 passed; ruff check/format passed | pending
 2026-10-29 | copilot | M0 | executed temporary 10-question Ollama smoke spike; recorded 90 runs in evaluation/results/model_spike.csv (schema-valid 1.000 across models) | focused tests 6 passed; smoke run completed | pending
 2026-11-01 | copilot | M0 | fixed Ollama JSON-string tool argument parsing and removed the broken implicit missing-question default | focused tests 8 passed; full pytest 139 passed | pending
+2026-11-06 | antigravity | M4 | 20 frozen benchmark questions, standalone oracle, model spike prompt fix, fixed baseline templates, scorer, and eval harness (M4 gate passed) | uv run pytest: 143 passed; ruff clean; run_eval: 20/20 (1.000) | 353b04c
