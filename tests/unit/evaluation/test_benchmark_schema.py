@@ -56,24 +56,28 @@ def test_benchmark_oracle_schema_and_coverage() -> None:
 
 
 def test_build_oracle_independence() -> None:
-    """Verify build_oracle.py imports nothing from da_agent."""
-    script_path = Path("evaluation/benchmark/build_oracle.py")
-    assert script_path.exists()
+    """Verify build_oracle.py and oracle.py import nothing from da_agent."""
+    for script_name in ("build_oracle.py", "oracle.py"):
+        if script_name == "build_oracle.py":
+            script_path = Path("evaluation/benchmark/build_oracle.py")
+        else:
+            script_path = Path("evaluation/oracle.py")
+        assert script_path.exists()
 
-    with script_path.open("r", encoding="utf-8") as f:
-        tree = ast.parse(f.read(), filename=str(script_path))
+        with script_path.open("r", encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=str(script_path))
 
-    forbidden_prefixes = (
-        "da_agent.tools",
-        "da_agent.agent",
-        "da_agent.validation",
-        "da_agent.reports",
-    )
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
+        forbidden_prefixes = (
+            "da_agent.tools",
+            "da_agent.agent",
+            "da_agent.validation",
+            "da_agent.reports",
+        )
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    for prefix in forbidden_prefixes:
+                        assert not alias.name.startswith(prefix)
+            elif isinstance(node, ast.ImportFrom) and node.module:
                 for prefix in forbidden_prefixes:
-                    assert not alias.name.startswith(prefix)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            for prefix in forbidden_prefixes:
-                assert not node.module.startswith(prefix)
+                    assert not node.module.startswith(prefix)

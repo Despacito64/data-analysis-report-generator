@@ -31,7 +31,7 @@ def compute_oracle(csv_path: Path) -> dict[str, dict]:
     }
 
     # q02: count of rows for Category == 'Technology' and Region == 'West'
-    q02_val = int(len(df[(df["Category"] == "Technology") & (df["Region"] == "West")]))
+    q02_val = len(df[(df["Category"] == "Technology") & (df["Region"] == "West")])
     oracle["q02"] = {
         "question_id": "q02",
         "expected_answer": q02_val,
@@ -88,11 +88,7 @@ def compute_oracle(csv_path: Path) -> dict[str, dict]:
 
     # q07: top 3 States ranked by total Profit
     q07_top = (
-        df.groupby("State")["Profit"]
-        .sum()
-        .sort_values(ascending=False)
-        .head(3)
-        .index.tolist()
+        df.groupby("State")["Profit"].sum().sort_values(ascending=False).head(3).index.tolist()
     )
     oracle["q07"] = {
         "question_id": "q07",
@@ -203,8 +199,7 @@ def compute_oracle(csv_path: Path) -> dict[str, dict]:
     # q13: contribution of Sales by Category
     total_sales = float(df["Sales"].sum())
     cat_contrib = {
-        k: float(v / total_sales)
-        for k, v in df.groupby("Category")["Sales"].sum().items()
+        k: float(v / total_sales) for k, v in df.groupby("Category")["Sales"].sum().items()
     }
     oracle["q13"] = {
         "question_id": "q13",
@@ -219,8 +214,7 @@ def compute_oracle(csv_path: Path) -> dict[str, dict]:
 
     # q14: contribution of Sales by Region
     reg_contrib = {
-        k: float(v / total_sales)
-        for k, v in df.groupby("Region")["Sales"].sum().items()
+        k: float(v / total_sales) for k, v in df.groupby("Region")["Sales"].sum().items()
     }
     oracle["q14"] = {
         "question_id": "q14",
@@ -300,9 +294,7 @@ def compute_oracle(csv_path: Path) -> dict[str, dict]:
     }
 
     # q19: In 'East' region, total profit for each Category
-    east_profit = (
-        df[df["Region"] == "East"].groupby("Category")["Profit"].sum().to_dict()
-    )
+    east_profit = df[df["Region"] == "East"].groupby("Category")["Profit"].sum().to_dict()
     oracle["q19"] = {
         "question_id": "q19",
         "expected_answer": {k: float(v) for k, v in east_profit.items()},
