@@ -1,0 +1,10 @@
+model,question_id,run_number,valid_tool_call,pydantic_valid,answer_match,retries_used,latency_s,tokens_per_second,final_answer
+qwen3:4b,q01,1,True,True,False,0,52.27673719986342,9.367812448822864,Filtered data where Order Date is after 2023-01-01 and Ship Date is before 2023-01-01.
+qwen3:4b,q01,2,True,True,False,0,22.756174999987707,9.397819384526583,Filtered data where Order Date is after 2023-01-01 and Ship Date is before 2023-01-01.
+qwen3:4b,q01,3,True,True,False,0,22.816568000009283,9.369556979188806,Filtered data where Order Date is after 2023-01-01 and Ship Date is before 2023-01-01.
+qwen3:8b,q01,1,False,True,False,0,70.71071370015852,5.080545033863585,Please provide the filtering conditions and column names to proceed with the filter operation.
+qwen3:8b,q01,2,False,True,False,0,7.764205100014806,5.29296275050087,Please provide the filtering conditions and column names to proceed with the filter operation.
+qwen3:8b,q01,3,False,True,False,0,7.736566400155425,5.283084038564327,Please provide the filtering conditions and column names to proceed with the filter operation.
+llama3.1:8b,q01,1,False,True,False,0,106.83941479981877,4.983751885429178,null
+llama3.1:8b,q01,2,False,True,False,0,18.627260000212118,5.09885794796769,null
+llama3.1:8b,q01,3,False,True,False,0,19.03417170001194,4.94399761163219,null

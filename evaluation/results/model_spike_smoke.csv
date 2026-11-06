@@ -1,0 +1,10 @@
+model,question_id,run_number,valid_tool_call,pydantic_valid,answer_match,retries_used,latency_s,tokens_per_second,final_answer
+qwen3:4b,q01,1,False,True,False,0,58.138717900030315,8.3226515135457,Total sales for orders shipped via 'First Class': $0
+qwen3:4b,q01,2,False,True,False,0,25.854761000024155,8.246207569138953,The total sales for orders shipped via 'First Class' is $X.
+qwen3:4b,q01,3,False,True,False,0,25.336312000174075,8.42827278368518,The total sales for orders shipped via 'First Class' is $X.
+qwen3:8b,q01,1,False,True,False,0,117.0474644000642,4.725291019608343,The total sales for orders shipped via 'First Class' is calculated by first filtering the orders to include only those shipped via 'First Class' and then summing the sales values of these orders.
+qwen3:8b,q01,2,False,True,False,0,50.45348359993659,4.88480101025168,"The total sales for orders shipped via 'First Class' is calculated by first filtering the orders to include only those with 'First Class' as the ship method, then summing the sales values for these orders."
+qwen3:8b,q01,3,False,True,False,0,49.382026199949905,4.986711474921775,"The total sales for orders shipped via 'First Class' is calculated by first filtering the orders to include only those with 'First Class' as the ship method, then summing the sales values for these orders."
+llama3.1:8b,q01,1,False,True,False,0,106.82804100005887,5.194898927873296,null
+llama3.1:8b,q01,2,False,True,False,0,30.39697919995524,5.303359646302217,null
+llama3.1:8b,q01,3,False,True,False,0,30.574803800089285,5.261693133041981,null
