@@ -4,10 +4,11 @@ import tempfile
 from pathlib import Path
 
 from da_agent.agent.planner import MockLLMClient
+from da_agent.core.config import load_config
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
-from da_agent.pipeline import run_agent
+from da_agent.pipeline import AgentResult, run_agent
 
 
 def test_pipeline_run_agent_wires_graph_and_trace() -> None:
@@ -36,15 +37,17 @@ def test_pipeline_run_agent_wires_graph_and_trace() -> None:
         writer = RunTraceWriter(run_id="pipeline_agent_test", base_dir=temp_dir)
         result = run_agent(
             "What is total sales by category?",
-            df=df,
+            df,
+            load_config(),
+            client,
             profile=profile,
-            client=client,
             run_id="pipeline_agent_test",
             trace_writer=writer,
         )
         event_types = [event.event_type for event in writer.read_events()]
 
-    assert result["status"] == "complete"
-    assert result["evidence_ids"]
-    assert "final_answer" in result
+    assert result.status == "complete"
+    assert isinstance(result, AgentResult)
+    assert result.evidence_ids
+    assert result.final_answer
     assert "status" in event_types

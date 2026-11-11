@@ -35,7 +35,8 @@ from da_agent.contracts.models import (
 )
 from da_agent.core.config import load_config
 from da_agent.core.trace import RunTraceWriter
-from da_agent.tools.registry import export_tool_specs
+from da_agent.tools.registry import DEFAULT_REGISTRY, export_tool_specs
+from da_agent.validation.plan_check import validate_plan
 
 # ---------------------------------------------------------------------------
 # Routing Logic (pure functions of state)
@@ -50,6 +51,10 @@ def route_after_resolve(state: AgentState) -> str:
 
 
 def route_after_plan(state: AgentState) -> str:
+    return "validate_repair"
+
+
+def route_after_validate_repair(state: AgentState) -> str:
     if state.get("plan") is None or state.get("status") == "failed":
         return "finalize"
     return "execute"
@@ -66,10 +71,10 @@ def route_after_inspect(state: AgentState) -> str:
     failed_records = [r for r in result.records if r.status == TaskStatus.FAILED]
     if failed_records:
         if result.failure and result.failure.recoverable:
-            return "replan_failure"
+            return "replan"
         return "finalize"
     if result.status == "complete" and result.evidence_ids and replan_count < max_replans:
-        return "replan_result"
+        return "replan"
     return "finalize"
 
 
@@ -379,6 +384,48 @@ def build_nodes(
             "failed_task_id": None,
         }
 
+    def node_replan(state: AgentState) -> dict[str, Any]:
+        """Route replanning through one graph node for failures and observed results."""
+        result = state.get("last_exec_result")
+        if result and any(record.status == TaskStatus.FAILED for record in result.records):
+            return node_replan_failure(state)
+        return node_replan_result(state)
+
+    def node_validate_repair(state: AgentState) -> dict[str, Any]:
+        """Revalidate the repaired plan before it can enter execution."""
+        plan = state.get("plan")
+        if plan is None:
+            return {"status": "failed"}
+
+        profile = state["profile"]
+        failures = validate_plan(
+            plan,
+            profile,
+            tool_specs=export_tool_specs(),
+            tool_args_models={
+                name: entry.args_model
+                for name in DEFAULT_REGISTRY.list_tools()
+                if (entry := DEFAULT_REGISTRY.get(name)) is not None
+            },
+            max_steps=state.get("budgets", load_config().budgets).max_tool_calls,
+        )
+        if failures:
+            if trace_writer:
+                for failure in failures:
+                    trace_writer.log_event(
+                        "planner_validation_failure",
+                        {
+                            "stage": "validate_repair",
+                            "failure": failure.model_dump(mode="json"),
+                        },
+                    )
+                    trace_writer.log_failure(failure)
+            return {
+                "status": "failed",
+                "failures": list(state.get("failures") or []) + failures,
+            }
+        return {"status": "pending"}
+
     def node_finalize(state: AgentState) -> dict[str, Any]:
         """Build structured final answer from evidence and set terminal status."""
         evidence_ids = state.get("evidence_ids") or []
@@ -423,14 +470,25 @@ def build_nodes(
 
         return {"status": status, "final_answer": final_answer}
 
+    def traced_node(name: str, node: Any) -> Any:
+        def run(state: AgentState) -> dict[str, Any]:
+            if trace_writer:
+                trace_writer.log_event("graph_node", {"node": name, "phase": "start"})
+            updates = node(state)
+            if trace_writer:
+                trace_writer.log_event("graph_node", {"node": name, "phase": "end"})
+            return updates
+
+        return run
+
     return {
-        "resolve": node_resolve,
-        "plan": node_plan,
-        "execute": node_execute,
-        "inspect": node_inspect,
-        "replan_failure": node_replan_failure,
-        "replan_result": node_replan_result,
-        "finalize": node_finalize,
+        "resolve": traced_node("resolve", node_resolve),
+        "plan": traced_node("plan", node_plan),
+        "validate_repair": traced_node("validate_repair", node_validate_repair),
+        "execute": traced_node("execute", node_execute),
+        "inspect": traced_node("inspect", node_inspect),
+        "replan": traced_node("replan", node_replan),
+        "finalize": traced_node("finalize", node_finalize),
     }
 
 
@@ -454,26 +512,20 @@ def build_agent_graph(
     graph.add_conditional_edges(
         "resolve", route_after_resolve, {"plan": "plan", "finalize": "finalize"}
     )
+    graph.add_conditional_edges("plan", route_after_plan, {"validate_repair": "validate_repair"})
     graph.add_conditional_edges(
-        "plan", route_after_plan, {"execute": "execute", "finalize": "finalize"}
+        "validate_repair",
+        route_after_validate_repair,
+        {"execute": "execute", "finalize": "finalize"},
     )
     graph.add_edge("execute", "inspect")
     graph.add_conditional_edges(
         "inspect",
         route_after_inspect,
-        {
-            "replan_failure": "replan_failure",
-            "replan_result": "replan_result",
-            "finalize": "finalize",
-        },
+        {"replan": "replan", "finalize": "finalize"},
     )
     graph.add_conditional_edges(
-        "replan_failure",
-        route_after_replan,
-        {"execute": "execute", "finalize": "finalize"},
-    )
-    graph.add_conditional_edges(
-        "replan_result",
+        "replan",
         route_after_replan,
         {"execute": "execute", "finalize": "finalize"},
     )
@@ -527,6 +579,7 @@ def run_agent(
         "run_id": run_id,
         "last_exec_result": None,
         "failed_task_id": None,
+        "trace_writer": trace_writer,
     }
 
     agent = build_agent_graph(llm_client=llm_client, trace_writer=trace_writer)

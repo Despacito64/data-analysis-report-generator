@@ -191,3 +191,18 @@ def test_dynamic_agent_independence() -> None:
                         f"Dynamic agent function '{node.name}' in {py_file} "
                         "must not accept 'question_id'"
                     )
+
+    pipeline_file = Path("src/da_agent/pipeline.py")
+    with pipeline_file.open("r", encoding="utf-8") as source:
+        pipeline_tree = ast.parse(source.read(), filename=str(pipeline_file))
+    run_agent = next(
+        node
+        for node in pipeline_tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "run_agent"
+    )
+    run_agent_args = [
+        argument.arg
+        for argument in run_agent.args.posonlyargs + run_agent.args.args + run_agent.args.kwonlyargs
+    ]
+    if "question_id" in run_agent_args:
+        pytest.fail("pipeline.run_agent must accept free-text questions, not question_id")

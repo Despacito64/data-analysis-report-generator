@@ -255,3 +255,13 @@ Decision:
 - Keep injected LLM and trace dependencies in graph-node closures, and declare all routing fields in `AgentState` so LangGraph state filtering cannot silently remove them.
 Reason: Phase 4 requires an evidence-triggered dynamic revision loop and auditable output. The initial M6 graph's undeclared internal state caused routing failures, and revision reuse could return stale downstream results or collide evidence IDs.
 Consequences: Revised-plan evidence IDs include the plan version (the contract field remains a string), while version-1 IDs remain compatible; revised plans keep prior evidence but cannot overwrite it. Result inspection is an M6 bounded control behavior, not the broader M7 claim/recovery validation layer.
+
+## D-028: Explicit orchestration stages and typed pipeline result
+Status: Accepted
+Date: 2026-11-11   Made by: Copilot
+Decision:
+- Represent `validate_repair` and `replan` as explicit named LangGraph nodes. Initial planning performs bounded parse/validation repair before `validate_repair`; execution-triggered and result-driven revisions share the bounded `replan` node.
+- Write graph node start/end events to the existing `RunTraceWriter` so tests and run traces can verify the exact control path.
+- Expose `run_agent(question, dataset, config, client)` from `pipeline.py` and return a typed `AgentResult`, while retaining keyword-compatible `df`, `profile`, budget, and trace injection options.
+Reason: Step 4 explicitly requires these graph stages, a trace-visible node sequence, and a typed public entry point.
+Consequences: No shared contract changed (`CONTRACT_VERSION` remains `0.1.0`); `AgentResult` is a pipeline result type and graph internal state includes the trace handle.

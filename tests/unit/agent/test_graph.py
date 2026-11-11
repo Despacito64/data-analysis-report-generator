@@ -193,16 +193,55 @@ def test_graph_no_ready_task_plan_rejected():
     # First: invalid plan (ghost dep). Repair: also invalid. Graph should return failed.
     client = MockLLMClient(responses=[INVALID_NO_READY_PLAN, INVALID_NO_READY_PLAN])
 
-    result = run_agent(
-        question="What rows are in the East region?",
-        df=df,
-        profile=profile,
-        llm_client=client,
-    )
+    with tempfile.TemporaryDirectory() as tmp:
+        writer = RunTraceWriter(run_id="test_no_ready", base_dir=tmp)
+        result = run_agent(
+            question="What rows are in the East region?",
+            df=df,
+            profile=profile,
+            llm_client=client,
+            trace_writer=writer,
+        )
+        events = writer.read_events()
 
     assert result["status"] == "failed"
     assert result["plan"] is None
     assert len(result["failures"]) >= 1
+    node_sequence = [
+        event.payload["node"]
+        for event in events
+        if event.event_type == "graph_node" and event.payload["phase"] == "start"
+    ]
+    assert node_sequence == ["resolve", "plan", "validate_repair", "finalize"]
+    assert len(client.call_history) == 2
+
+
+def test_graph_declined_question_finalizes_without_llm_call():
+    """Out-of-scope questions take the decline branch without contacting the model."""
+    df, profile = _get_dataset()
+    client = MockLLMClient(default_response=VALID_FILTER_PLAN)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        writer = RunTraceWriter(run_id="test_declined", base_dir=tmp)
+        result = run_agent(
+            question="Forecast next year's sales",
+            df=df,
+            profile=profile,
+            llm_client=client,
+            trace_writer=writer,
+        )
+        events = writer.read_events()
+
+    assert result["status"] == "failed"
+    assert result["resolved"] is not None
+    assert not result["resolved"].answerable
+    assert client.call_history == []
+    node_sequence = [
+        event.payload["node"]
+        for event in events
+        if event.event_type == "graph_node" and event.payload["phase"] == "start"
+    ]
+    assert node_sequence == ["resolve", "finalize"]
 
 
 def test_graph_replan_on_execution_failure():
@@ -230,6 +269,22 @@ def test_graph_replan_on_execution_failure():
     assert "replan_attempt" in [event.event_type for event in events]
     assert "plan_revision" in [event.event_type for event in events]
     assert len(client.call_history) == 2
+    node_sequence = [
+        event.payload["node"]
+        for event in events
+        if event.event_type == "graph_node" and event.payload["phase"] == "start"
+    ]
+    assert node_sequence == [
+        "resolve",
+        "plan",
+        "validate_repair",
+        "execute",
+        "inspect",
+        "replan",
+        "execute",
+        "inspect",
+        "finalize",
+    ]
 
 
 def test_graph_replan_budget_exhaustion():

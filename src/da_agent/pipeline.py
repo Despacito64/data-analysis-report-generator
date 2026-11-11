@@ -7,16 +7,41 @@ from typing import Any
 from uuid import uuid4
 
 import pandas as pd
+from pydantic import BaseModel, ConfigDict, Field
 
 from da_agent.agent.baseline import BaselineRun
 from da_agent.agent.baseline import run_baseline as _run_baseline
+from da_agent.agent.executor import TaskExecutionRecord
 from da_agent.agent.graph import run_agent as _run_agent
-from da_agent.agent.planner import LLMClient, Plan, generate_plan
-from da_agent.contracts.models import Budgets, DatasetProfile, Failure
-from da_agent.core.config import load_config
+from da_agent.agent.planner import LLMClient, OllamaClient, Plan, generate_plan
+from da_agent.contracts.models import (
+    Budgets,
+    DatasetProfile,
+    ExecutionStatus,
+    Failure,
+    PlanRevision,
+    ResolvedQuestion,
+)
+from da_agent.core.config import AppConfig, load_config
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
+
+
+class AgentResult(BaseModel):
+    """Typed output from a complete dynamic-agent pipeline run."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    status: ExecutionStatus
+    resolved_question: ResolvedQuestion | None = None
+    plan: Plan | None = None
+    task_results: list[TaskExecutionRecord] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+    failures: list[Failure] = Field(default_factory=list)
+    revisions: list[PlanRevision] = Field(default_factory=list)
+    final_answer: dict[str, Any] = Field(default_factory=dict)
 
 
 def run_baseline(
@@ -79,18 +104,27 @@ def plan_question(
 
 def run_agent(
     question: str,
+    dataset: pd.DataFrame | Path | str | None = None,
+    config: AppConfig | None = None,
+    client: LLMClient | None = None,
     *,
     df: pd.DataFrame | None = None,
     dataset_path: Path | str | None = None,
     profile: DatasetProfile | None = None,
-    client: LLMClient | None = None,
     run_id: str | None = None,
     budgets: Budgets | None = None,
     trace_writer: RunTraceWriter | None = None,
     max_replans: int | None = None,
-) -> dict[str, Any]:
-    """Run the dynamic agent through the public pipeline wiring point."""
-    config = load_config()
+) -> AgentResult:
+    """Run a free-text question through the dynamic graph and return typed results."""
+    config = config or load_config()
+    if dataset is not None and (df is not None or dataset_path is not None):
+        raise ValueError("Provide `dataset` or `df`/`dataset_path`, not both")
+    if isinstance(dataset, pd.DataFrame):
+        df = dataset
+    elif dataset is not None:
+        dataset_path = Path(dataset)
+
     if df is None:
         if dataset_path is None:
             dataset_path = Path("Sample-Superstore.csv")
@@ -107,7 +141,16 @@ def run_agent(
             base_dir=config.run_trace.base_dir,
         )
 
-    return _run_agent(
+    if client is None:
+        client = OllamaClient(
+            base_url=config.model.base_url,
+            model=config.model.name,
+            temperature=config.model.temperature,
+            seed=config.model.seed,
+            timeout_s=config.budgets.per_call_timeout_s,
+        )
+
+    state = _run_agent(
         question=question,
         df=df,
         profile=profile,
@@ -116,4 +159,15 @@ def run_agent(
         budgets=budgets,
         trace_writer=trace_writer,
         max_replans=max_replans,
+    )
+    return AgentResult(
+        run_id=run_id,
+        status=ExecutionStatus(state["status"]),
+        resolved_question=state.get("resolved"),
+        plan=state.get("plan"),
+        task_results=state.get("executed_records", []),
+        evidence_ids=state.get("evidence_ids", []),
+        failures=state.get("failures", []),
+        revisions=state.get("revisions", []),
+        final_answer=state.get("final_answer") or {},
     )

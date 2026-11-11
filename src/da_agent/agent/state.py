@@ -19,6 +19,7 @@ from da_agent.contracts.models import (
     PlanRevision,
     ResolvedQuestion,
 )
+from da_agent.core.trace import RunTraceWriter
 
 
 class AgentState(TypedDict, total=False):
@@ -43,3 +44,4 @@ class AgentState(TypedDict, total=False):
     run_id: str
     last_exec_result: PlanExecutionResult | None
     failed_task_id: str | None
+    trace_writer: RunTraceWriter | None
