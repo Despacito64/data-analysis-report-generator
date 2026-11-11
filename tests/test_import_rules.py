@@ -129,3 +129,32 @@ def test_oracle_independence() -> None:
         for f in forbidden:
             if mod.startswith(f):
                 pytest.fail(f"Oracle independence violation in {oracle_file}: imports '{mod}'")
+
+
+def test_planner_independence() -> None:
+    """Planner must never import evaluation, oracle, or baseline templates."""
+    planner_file = Path("src/da_agent/agent/planner.py")
+    if not planner_file.exists():
+        return
+
+    imported = get_imported_modules(planner_file)
+    forbidden = (
+        "evaluation",
+        "da_agent.agent.baseline",
+    )
+    for mod in imported:
+        for f in forbidden:
+            if mod.startswith(f):
+                pytest.fail(f"Planner independence violation in {planner_file}: imports '{mod}'")
+
+    # AST check: planner functions must never have 'question_id' parameter
+    with planner_file.open("r", encoding="utf-8") as f:
+        tree = ast.parse(f.read(), filename=str(planner_file))
+
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            arg_names = [arg.arg for arg in node.args.args + node.args.kwonlyargs]
+            if "question_id" in arg_names:
+                pytest.fail(
+                    f"Planner function '{node.name}' violates rule: must never see 'question_id'"
+                )

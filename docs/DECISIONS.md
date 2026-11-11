@@ -204,3 +204,15 @@ Decision: Selected `qwen3:4b` as the primary local LLM for the dynamic planning 
   - Artifacts recorded in `evaluation/results/model_spike_m5.json` and `evaluation/results/model_spike_m5.csv`.
   - Unblocks Module M5 (Question resolution and plan generation).
 
+## D-024: Question resolution, plan generation with bounded repair, and DAG validation architecture
+Status: Accepted
+Date: 2026-11-11   Made by: Antigravity
+Decision:
+- `src/da_agent/agent/resolver.py` maps natural language questions and `DatasetProfile` to `ResolvedQuestion` using deterministic fuzzy and alias matching strictly against profile columns. Rejects unanswerable/out-of-scope queries (forecasting, causal claims, machine learning, nonexistent columns) without calling LLMs, and records explicit `AmbiguityDecision` assumptions.
+- `src/da_agent/validation/plan_check.py` implements Layer 4 plan validation (never importing tools): verifies max steps (default 5), unique task IDs, dependency existence, topological acyclicity (cycle detection), and initial execution readiness (at least one ready task), delegating per-task argument validation to `validate_task_args`.
+- `src/da_agent/agent/planner.py` coordinates local LLM planning (`qwen3:4b` per D-023) through a mockable `LLMClient` protocol (`OllamaClient` and `MockLLMClient`). System prompts inject registered `ToolSpec` definitions, dataset column names/semantic types, and non-benchmark few-shot examples. Implements a single-turn bounded repair loop feeding validation errors back to the LLM.
+- `src/da_agent/pipeline.py` exposes `plan_question()` alongside `run_baseline()`, writing all raw LLM responses, validation errors, repair attempts, and final plan to `RunTraceWriter`.
+- Enforces planner independence: AST test in `tests/test_import_rules.py` guarantees planner never imports `evaluation.oracle`, `da_agent.agent.baseline`, or references `question_id`.
+Reason: Satisfies FR04, FR13, FR14, and M5 exit gates without modifying contracts (`CONTRACT_VERSION` = 0.1.0).
+Consequences: Module M5 gate passes. Module M6 (Dynamic planning agent with LangGraph and replanning) is unblocked.
+

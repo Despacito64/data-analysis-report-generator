@@ -102,6 +102,10 @@ class RunTraceWriter:
             payload=failure.model_dump(mode="json"),
         )
 
+    def log_event(self, event_type: str, payload: dict[str, Any]) -> TraceEvent:
+        """Record an arbitrary typed event in the trace stream."""
+        return self._write_event(event_type=event_type, payload=payload)
+
     def log_status(self, status: RunStatus) -> TraceEvent:
         """Record terminal run status."""
         return self._write_event(

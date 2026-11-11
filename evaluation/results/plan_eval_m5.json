@@ -1,0 +1,297 @@
+{
+  "total_questions": 20,
+  "valid_plans": 18,
+  "plan_validity_rate": 0.9,
+  "repaired_plans": 2,
+  "repair_rate": 0.1,
+  "tool_sequence_matches": 18,
+  "tool_sequence_match_rate": 0.9,
+  "failure_count": 2,
+  "failure_reasons": [
+    "q03: Argument schema validation failed for tool 'group_aggregate'",
+    "q08: Argument schema validation failed for tool 'rank'"
+  ],
+  "mode": "mock",
+  "detailed_results": [
+    {
+      "question_id": "q01",
+      "question": "What is the total sales for orders shipped via 'First Class'?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "filter"
+      ],
+      "expected_tools": [
+        "filter"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q02",
+      "question": "How many rows in the dataset are in the 'Technology' category in the 'West' region?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "filter"
+      ],
+      "expected_tools": [
+        "filter"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q03",
+      "question": "What is the total sales for each Region?",
+      "valid": false,
+      "repaired": true,
+      "selected_tools": [],
+      "expected_tools": [
+        "group_aggregate"
+      ],
+      "matches_baseline": false,
+      "failure_reason": "Argument schema validation failed for tool 'group_aggregate'"
+    },
+    {
+      "question_id": "q04",
+      "question": "What is the total profit for each Segment?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "group_aggregate"
+      ],
+      "expected_tools": [
+        "group_aggregate"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q05",
+      "question": "What is the average discount across each Category?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "group_aggregate"
+      ],
+      "expected_tools": [
+        "group_aggregate"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q06",
+      "question": "What are the top 5 Sub-Categories ranked by total Sales?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "rank"
+      ],
+      "expected_tools": [
+        "rank"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q07",
+      "question": "What are the top 3 States ranked by total Profit?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "rank"
+      ],
+      "expected_tools": [
+        "rank"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q08",
+      "question": "What are the bottom 5 Sub-Categories ranked by total Profit?",
+      "valid": false,
+      "repaired": true,
+      "selected_tools": [],
+      "expected_tools": [
+        "rank"
+      ],
+      "matches_baseline": false,
+      "failure_reason": "Argument schema validation failed for tool 'rank'"
+    },
+    {
+      "question_id": "q09",
+      "question": "Compare total sales between the base period 2016-01-01 to 2016-12-31 and comparison period 2017-01-01 to 2017-12-31.",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "period_compare"
+      ],
+      "expected_tools": [
+        "period_compare"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q10",
+      "question": "Compare total profit between the base period 2015-01-01 to 2015-12-31 and comparison period 2016-01-01 to 2016-12-31.",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "period_compare"
+      ],
+      "expected_tools": [
+        "period_compare"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q11",
+      "question": "What is the monthly trend and direction of sales in 2017 (2017-01-01 to 2017-12-31)?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "trend"
+      ],
+      "expected_tools": [
+        "trend"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q12",
+      "question": "What is the quarterly trend of profit over the entire dataset?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "trend"
+      ],
+      "expected_tools": [
+        "trend"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q13",
+      "question": "What is the share of total sales contributed by each Category?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "segment_contribution"
+      ],
+      "expected_tools": [
+        "segment_contribution"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q14",
+      "question": "What is the share of total sales contributed by each Region?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "segment_contribution"
+      ],
+      "expected_tools": [
+        "segment_contribution"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q15",
+      "question": "What is the Pearson correlation between Discount and Profit across all orders?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "correlation"
+      ],
+      "expected_tools": [
+        "correlation"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q16",
+      "question": "What is the Pearson correlation between Sales and Profit across all orders?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "correlation"
+      ],
+      "expected_tools": [
+        "correlation"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q17",
+      "question": "Detect anomalies in Sales using the 1.5 x IQR rule.",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "detect_anomalies_iqr"
+      ],
+      "expected_tools": [
+        "detect_anomalies_iqr"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q18",
+      "question": "Detect anomalies in Profit using the 1.5 x IQR rule.",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "detect_anomalies_iqr"
+      ],
+      "expected_tools": [
+        "detect_anomalies_iqr"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q19",
+      "question": "In the 'East' region, what is the total profit for each Category?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "filter",
+        "group_aggregate"
+      ],
+      "expected_tools": [
+        "filter",
+        "group_aggregate"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    },
+    {
+      "question_id": "q20",
+      "question": "In the 'Consumer' segment, what are the top 3 Cities by total sales?",
+      "valid": true,
+      "repaired": false,
+      "selected_tools": [
+        "filter",
+        "rank"
+      ],
+      "expected_tools": [
+        "filter",
+        "rank"
+      ],
+      "matches_baseline": true,
+      "failure_reason": null
+    }
+  ]
+}
