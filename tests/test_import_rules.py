@@ -158,3 +158,36 @@ def test_planner_independence() -> None:
                 pytest.fail(
                     f"Planner function '{node.name}' violates rule: must never see 'question_id'"
                 )
+
+
+def test_dynamic_agent_independence() -> None:
+    """M6 orchestration must not depend on evaluation or the fixed baseline."""
+    agent_files = (
+        Path("src/da_agent/agent/executor.py"),
+        Path("src/da_agent/agent/graph.py"),
+        Path("src/da_agent/agent/planner.py"),
+        Path("src/da_agent/agent/resolver.py"),
+        Path("src/da_agent/agent/state.py"),
+    )
+    forbidden = ("evaluation.oracle", "da_agent.agent.baseline")
+    for py_file in agent_files:
+        imported = get_imported_modules(py_file)
+        for module in imported:
+            for prefix in forbidden:
+                if module == prefix or module.startswith(f"{prefix}."):
+                    pytest.fail(
+                        f"Dynamic agent independence violation in {py_file}: imports '{module}'"
+                    )
+        with py_file.open("r", encoding="utf-8") as source:
+            tree = ast.parse(source.read(), filename=str(py_file))
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                argument_names = [
+                    argument.arg
+                    for argument in node.args.posonlyargs + node.args.args + node.args.kwonlyargs
+                ]
+                if "question_id" in argument_names:
+                    pytest.fail(
+                        f"Dynamic agent function '{node.name}' in {py_file} "
+                        "must not accept 'question_id'"
+                    )

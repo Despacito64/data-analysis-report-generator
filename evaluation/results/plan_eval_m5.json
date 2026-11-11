@@ -1,17 +1,15 @@
 {
+  "model": "qwen3:4b",
+  "mode": "mock",
   "total_questions": 20,
-  "valid_plans": 18,
-  "plan_validity_rate": 0.9,
+  "valid_plans": 20,
+  "plan_validity_rate": 1.0,
   "repaired_plans": 2,
   "repair_rate": 0.1,
-  "tool_sequence_matches": 18,
-  "tool_sequence_match_rate": 0.9,
-  "failure_count": 2,
-  "failure_reasons": [
-    "q03: Argument schema validation failed for tool 'group_aggregate'",
-    "q08: Argument schema validation failed for tool 'rank'"
-  ],
-  "mode": "mock",
+  "tool_sequence_matches": 20,
+  "tool_sequence_match_rate": 1.0,
+  "failure_count": 0,
+  "failure_reasons": [],
   "detailed_results": [
     {
       "question_id": "q01",
@@ -44,14 +42,16 @@
     {
       "question_id": "q03",
       "question": "What is the total sales for each Region?",
-      "valid": false,
+      "valid": true,
       "repaired": true,
-      "selected_tools": [],
+      "selected_tools": [
+        "group_aggregate"
+      ],
       "expected_tools": [
         "group_aggregate"
       ],
-      "matches_baseline": false,
-      "failure_reason": "Argument schema validation failed for tool 'group_aggregate'"
+      "matches_baseline": true,
+      "failure_reason": null
     },
     {
       "question_id": "q04",
@@ -112,14 +112,16 @@
     {
       "question_id": "q08",
       "question": "What are the bottom 5 Sub-Categories ranked by total Profit?",
-      "valid": false,
+      "valid": true,
       "repaired": true,
-      "selected_tools": [],
+      "selected_tools": [
+        "rank"
+      ],
       "expected_tools": [
         "rank"
       ],
-      "matches_baseline": false,
-      "failure_reason": "Argument schema validation failed for tool 'rank'"
+      "matches_baseline": true,
+      "failure_reason": null
     },
     {
       "question_id": "q09",

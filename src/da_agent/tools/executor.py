@@ -254,7 +254,8 @@ def execute_task(
     bounded_summary = _build_bounded_summary(task.tool, raw_result_dict)
 
     # 8. Create EvidenceRecord
-    evidence_id = f"ev_{task.id}_{args_hash[:8]}"
+    revision_suffix = f"_v{task.plan_version}" if task.plan_version > 1 else ""
+    evidence_id = f"ev_{task.id}{revision_suffix}_{args_hash[:8]}"
     evidence = EvidenceRecord(
         evidence_id=evidence_id,
         task_id=task.id,

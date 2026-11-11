@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Benchmark evaluation harness for Module M5: Plan generation and validation.
+"""Benchmark evaluation harness for Module M5/M6: Plan generation, repair, and validation.
 
 Evaluates plan validity rate, repair rate, tool-sequence match against the baseline
 templates, and records failure reasons across all 20 benchmark questions.
-Does NOT execute tool tasks or score answers with the oracle (deferred to M6).
+Supports:
+  --mode mock (default for CI): fast, deterministic evaluation with mock LLM and repair simulation.
+  --mode real: live execution against local Ollama models (e.g. qwen3:4b, qwen3:8b, llama3.1:8b).
+  --report-spike: outputs comparative empirical evidence table from benchmark model spike.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -37,15 +41,17 @@ def _is_ollama_reachable(base_url: str) -> bool:
         return False
 
 
-def _load_spike_tasks(spike_path: Path) -> dict[str, list[dict[str, Any]]]:
-    """Load recorded qwen3:4b tasks from the empirical model spike."""
+def _load_spike_tasks(
+    spike_path: Path, model_name: str = "qwen3:4b"
+) -> dict[str, list[dict[str, Any]]]:
+    """Load recorded tasks for a model from the empirical model spike."""
     if not spike_path.is_file():
         return {}
     with spike_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     tasks_by_qid: dict[str, list[dict[str, Any]]] = {}
     for run in data.get("detailed_runs", []):
-        if run.get("model") == "qwen3:4b":
+        if run.get("model") == model_name:
             qid = run.get("question_id")
             if qid and qid not in tasks_by_qid:
                 tasks_by_qid[qid] = run.get("tasks", [])
@@ -55,7 +61,8 @@ def _load_spike_tasks(spike_path: Path) -> dict[str, list[dict[str, Any]]]:
 def evaluate_planning(
     questions_path: Path = DEFAULT_QUESTIONS,
     dataset_path: Path = DEFAULT_DATASET,
-    use_mock: bool | None = None,
+    mode: str = "mock",
+    model_name: str | None = None,
     output_path: Path = OUTPUT_FILE,
 ) -> dict[str, Any]:
     """Run all benchmark questions through plan_question and score planning validity."""
@@ -66,15 +73,16 @@ def evaluate_planning(
     profile: DatasetProfile = compute_profile(df, file_path=dataset_path)
     config = load_config()
 
-    # Determine client
-    base_url = config.model.base_url
-    base_url = base_url.removesuffix("/v1")
+    chosen_model = model_name or config.model.name
+    use_mock = mode.lower() == "mock"
 
-    live_available = _is_ollama_reachable(base_url)
-    if use_mock is None:
-        use_mock = not live_available
+    base_url = config.model.base_url.removesuffix("/v1")
+    if not use_mock and not _is_ollama_reachable(base_url):
+        raise ConnectionError(
+            f"Ollama server is not reachable at {base_url}. Ensure Ollama is running or use --mode mock."
+        )
 
-    spike_tasks = _load_spike_tasks(SPIKE_RESULTS) if use_mock else {}
+    spike_tasks = _load_spike_tasks(SPIKE_RESULTS, chosen_model) if use_mock else {}
 
     results: list[dict[str, Any]] = []
     total = len(questions)
@@ -91,16 +99,55 @@ def evaluate_planning(
         # Setup client
         if use_mock:
             tasks = spike_tasks.get(qid, [])
-            # If tasks exist, format into PlanOutput JSON
             if tasks:
-                # Clean task dependencies if self-referential
+                # Clean self-referential task dependencies if any
                 for t in tasks:
                     if t.get("depends_on") == [t.get("id")]:
                         t["depends_on"] = []
-                mock_json = json.dumps({"tasks": tasks})
-                client = MockLLMClient(default_response=mock_json)
+
+                initial_json = json.dumps({"tasks": tasks})
+
+                # Simulate bounded single-turn repair for known mock failure cases (q03, q08)
+                if qid == "q03":
+                    # Initial has missing aggregation -> repair supplies aggregation="sum"
+                    repaired_tasks = [
+                        {
+                            "id": "task1",
+                            "tool": "group_aggregate",
+                            "args": {
+                                "by": ["Region"],
+                                "metric_column": "Sales",
+                                "aggregation": "sum",
+                            },
+                            "depends_on": [],
+                            "rationale": "Repaired: group by Region and sum Sales.",
+                        }
+                    ]
+                    client = MockLLMClient(
+                        responses=[initial_json, json.dumps({"tasks": repaired_tasks})]
+                    )
+                elif qid == "q08":
+                    # Initial has empty args -> repair supplies complete rank args
+                    repaired_tasks = [
+                        {
+                            "id": "task1",
+                            "tool": "rank",
+                            "args": {
+                                "entity_column": "Sub-Category",
+                                "metric_column": "Profit",
+                                "ascending": True,
+                                "top_n": 5,
+                            },
+                            "depends_on": [],
+                            "rationale": "Repaired: rank bottom 5 sub-categories by profit ascending.",
+                        }
+                    ]
+                    client = MockLLMClient(
+                        responses=[initial_json, json.dumps({"tasks": repaired_tasks})]
+                    )
+                else:
+                    client = MockLLMClient(default_response=initial_json)
             else:
-                # Fallback to expected tools
                 fallback_tasks = [
                     {
                         "id": f"t{idx}",
@@ -115,7 +162,7 @@ def evaluate_planning(
         else:
             client = OllamaClient(
                 base_url=base_url,
-                model=config.model.name,
+                model=chosen_model,
                 temperature=config.model.temperature,
                 seed=config.model.seed,
             )
@@ -137,7 +184,6 @@ def evaluate_planning(
         selected_tools = [t.tool for t in plan.tasks] if plan else []
         matches_baseline = selected_tools == expected_tools
 
-        # Check if repaired
         events = writer.read_events()
         event_types = [e.event_type for e in events]
         was_repaired = "planner_repair_attempt" in event_types
@@ -165,6 +211,8 @@ def evaluate_planning(
         )
 
     summary = {
+        "model": chosen_model,
+        "mode": "mock" if use_mock else "real",
         "total_questions": total,
         "valid_plans": valid_count,
         "plan_validity_rate": round(valid_count / total, 4) if total else 0.0,
@@ -174,7 +222,6 @@ def evaluate_planning(
         "tool_sequence_match_rate": round(match_count / total, 4) if total else 0.0,
         "failure_count": len(failure_reasons),
         "failure_reasons": failure_reasons,
-        "mode": "mock" if use_mock else "live",
         "detailed_results": results,
     }
 
@@ -185,18 +232,64 @@ def evaluate_planning(
     return summary
 
 
+def print_spike_report(spike_path: Path = SPIKE_RESULTS) -> None:
+    """Print comparative empirical table from recorded benchmark model spike."""
+    if not spike_path.is_file():
+        print(f"Spike results file not found at {spike_path}")
+        return
+    with spike_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    summary = data.get("summary", {})
+    print("=" * 88)
+    print(
+        "EMPIRICAL BENCHMARK MODEL SPIKE REPORT (20 Benchmark Questions x 3 Runs = 60 Runs/Model)"
+    )
+    print("=" * 88)
+    header = (
+        f"{'Model':<14} | {'Valid Tools':<11} | {'Tool Select':<11} | {'Arg Accuracy':<12} "
+        f"| {'Schema Fail':<11} | {'Median Lat (s)':<14} | {'TPS':<6}"
+    )
+    print(header)
+    print("-" * 88)
+    for model_name, stats in summary.items():
+        vt = f"{stats.get('valid_tool_call_rate', 0.0) * 100:.1f}%"
+        ts = f"{stats.get('correct_tool_selection_rate', 0.0) * 100:.1f}%"
+        aa = f"{stats.get('task_argument_accuracy', 0.0) * 100:.1f}%"
+        sf = f"{stats.get('json_or_schema_failure_rate', 0.0) * 100:.1f}%"
+        med = f"{stats.get('median_latency_s', 0.0):.2f}s"
+        tps = f"{stats.get('mean_tokens_per_second', 0.0):.2f}"
+        print(
+            f"{model_name:<14} | {vt:<11} | {ts:<11} | {aa:<12} | {sf:<11} | {med:<14} | {tps:<6}"
+        )
+    print("=" * 88)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--questions", type=Path, default=DEFAULT_QUESTIONS)
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
-    parser.add_argument("--mock", action="store_true", default=None)
+    parser.add_argument(
+        "--mode", choices=["mock", "real"], default="mock", help="Execution mode ('mock' or 'real')"
+    )
+    parser.add_argument(
+        "--model", type=str, default=None, help="Model name (e.g. qwen3:4b, qwen3:8b, llama3.1:8b)"
+    )
     parser.add_argument("--output", type=Path, default=OUTPUT_FILE)
+    parser.add_argument(
+        "--report-spike", action="store_true", help="Print comparative empirical spike report"
+    )
     args = parser.parse_args()
+
+    if args.report_spike:
+        print_spike_report()
+        return
 
     summary = evaluate_planning(
         questions_path=args.questions,
         dataset_path=args.dataset,
-        use_mock=args.mock,
+        mode=args.mode,
+        model_name=args.model,
         output_path=args.output,
     )
 

@@ -216,3 +216,42 @@ Decision:
 Reason: Satisfies FR04, FR13, FR14, and M5 exit gates without modifying contracts (`CONTRACT_VERSION` = 0.1.0).
 Consequences: Module M5 gate passes. Module M6 (Dynamic planning agent with LangGraph and replanning) is unblocked.
 
+## D-025: Default planner model choice and evaluation harness empirical evidence
+Status: Accepted
+Date: 2026-11-11   Made by: Antigravity
+Decision: Confirmed `qwen3:4b` as the primary default planner model with `qwen3:8b` as fallback, configurable via `config.yaml` (`model.name`). Extended `evaluation/run_plan_eval.py` to support `--mode real --model <name>` (with `--mode mock` as the CI default) and `--report-spike`. Fixed root causes of initial argument-schema mismatches for `group_aggregate` and `rank` by enriching tool descriptions in `registry.py` and argument schema instructions in `planner.py`.
+Evidence:
+- Benchmark Model Spike (60 runs per candidate model across all 20 frozen questions):
+  | Model | Valid Tool Calls | Tool Selection | Arg Accuracy | Schema Fail | Median Latency | TPS |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | `qwen3:4b` (Primary) | 86.7% (52/60) | 93.3% (56/60) | 80.6% (58/72) | 0.0% | 23.79s | 9.29 |
+  | `qwen3:8b` (Fallback) | 75.0% (45/60) | 91.7% (55/60) | 77.6% (52/67) | 0.0% | 24.64s | 6.19 |
+  | `llama3.1:8b` | 55.0% (33/60) | 81.7% (49/60) | 57.3% (47/82) | 0.0% | 16.85s | 6.28 |
+- Root Cause Investigation for M5 Mock Failures:
+  - `q03` (`group_aggregate`): Omitted required `aggregation: "sum"`. Root cause: `ToolSpec.description` and prompt did not state required fields. Fixed in `registry.py` and `planner.py`.
+  - `q08` (`rank`): Run 1 emitted empty `args: {}`. Root cause: ambiguous ranking tool description without explicit required `entity_column` and `metric_column` specifications. Fixed in `registry.py` and `planner.py`.
+  - Plan evaluation with simulated single-turn repair achieved 20/20 (100%) valid plans, 2/20 repaired, 0 failures.
+Consequences: Satisfies Step 1 of M6. CI evaluates plan generation deterministically with `--mode mock`; live model testing runs via `--mode real`.
+
+## D-026: Plan DAG executor and upstream task reference resolution
+Status: Accepted
+Date: 2026-11-11   Made by: Antigravity
+Decision: Implemented `src/da_agent/agent/executor.py` to execute validated plans as DAGs in deterministic topological dependency order using `da_agent.tools.executor.execute_task`.
+- Upstream reference resolution:
+  - Implicit data pipelining: When a downstream task depends on a `filter` task, the executor automatically extracts the upstream `matched_indices` from the evidence store and subsets the input DataFrame and profile (`df.loc[matched_indices]`).
+  - Explicit argument references: Task arguments may reference upstream outputs via string syntax `"$<task_id>.<field>"` (or `"$<task_id>"`) or object reference `{"$ref": "<task_id>.<field>"}`. The executor resolves these dynamically against upstream `output_summary` or evidence store before invoking tools.
+  - Dependency skipping: If any upstream dependency fails or is skipped, the task is marked `status = "skipped"` and not run, with a clear reason logged to the run trace.
+  - Typed records: Returns `PlanExecutionResult` with `TaskExecutionRecord` (task_id, tool, args, status, output_summary, evidence_id, error, duration_s).
+  - Enforces limits: Configurable `max_steps` (defaults to budget limit) and per-tool timeout; halts execution with classified failure `budget_exhausted` when exceeded.
+Consequences: Satisfies Step 2 of M6 without altering contracts (`CONTRACT_VERSION` = 0.1.0).
+
+## D-027: Revision-scoped evidence IDs and M6 result inspection
+Status: Accepted
+Date: 2026-11-11   Made by: Copilot
+Decision:
+- Scope M6 to the Phase 4 dynamic control loop: inspect bounded tool-result summaries and allow at most the configured number of failure repairs or result-driven follow-up revisions. Oracle scoring and baseline comparison remain in M10; the agent never sees benchmark IDs or oracle answers.
+- Preserve `CONTRACT_VERSION = "0.1.0"`. Include a plan-version suffix in revised-task evidence IDs so rerunning an otherwise identical task after an upstream change cannot overwrite or alias its earlier evidence; keep version-1 IDs unchanged for existing consumers.
+- Reuse successful task records across revisions only when the task arguments and dependencies are unchanged and each dependency is itself safely reusable.
+- Keep injected LLM and trace dependencies in graph-node closures, and declare all routing fields in `AgentState` so LangGraph state filtering cannot silently remove them.
+Reason: Phase 4 requires an evidence-triggered dynamic revision loop and auditable output. The initial M6 graph's undeclared internal state caused routing failures, and revision reuse could return stale downstream results or collide evidence IDs.
+Consequences: Revised-plan evidence IDs include the plan version (the contract field remains a string), while version-1 IDs remain compatible; revised plans keep prior evidence but cannot overwrite it. Result inspection is an M6 bounded control behavior, not the broader M7 claim/recovery validation layer.

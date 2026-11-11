@@ -105,7 +105,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=filter_data,
         args_model=FilterArgs,
         result_model=FilterResult,
-        description="Filter DataFrame rows deterministically by column conditions.",
+        description="Filter DataFrame rows deterministically by column conditions. Required args: 'conditions' (list of {column, operator, value}).",
         invariants=("filter_row_bounds",),
     ),
     ToolEntry(
@@ -113,7 +113,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=group_aggregate,
         args_model=GroupAggregateArgs,
         result_model=GroupAggregateResult,
-        description="Group by dimension columns and compute aggregate metric values.",
+        description="Group by dimension columns and compute aggregate metric values. Required args: 'by' (list[str] of dimension column names), 'metric_column' (str), and 'aggregation' ('sum' | 'mean' | 'count' | 'min' | 'max').",
         invariants=("group_aggregate_reconciliation", "group_aggregate_group_count"),
     ),
     ToolEntry(
@@ -121,7 +121,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=rank,
         args_model=RankArgs,
         result_model=RankResult,
-        description="Compute standard competition rankings (1, 2, 2, 4) with tie groups.",
+        description="Compute standard competition rankings (1, 2, 2, 4) with tie groups. Required args: 'entity_column' (dimension column to rank) and 'metric_column' (numeric column to rank by). Optional: 'ascending' (bool, default false for top/highest; true for bottom/lowest), 'top_n' (int).",
         invariants=(
             "rank_monotonicity",
             "rank_tie_consistency",
@@ -134,7 +134,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=period_compare,
         args_model=PeriodCompareArgs,
         result_model=PeriodCompareResult,
-        description="Compare metrics across two discrete date windows with growth rates.",
+        description="Compare metrics across two discrete date windows with growth rates. Required args: 'date_column', 'metric_column', 'aggregation' ('sum' | 'mean'), 'base_period' ([start, end]), 'compare_period' ([start, end]).",
         invariants=(
             "period_compare_abs_change",
             "period_compare_growth",
@@ -146,7 +146,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=trend,
         args_model=TrendArgs,
         result_model=TrendResult,
-        description="Aggregate metrics chronologically across grain periods to evaluate trend direction.",
+        description="Aggregate metrics chronologically across grain periods to evaluate trend direction. Required args: 'date_column', 'metric_column', 'grain' ('monthly' | 'quarterly' | 'yearly'), 'aggregation' ('sum' | 'mean').",
         invariants=("trend_chronological_order", "trend_points_integrity"),
     ),
     ToolEntry(
@@ -154,7 +154,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=segment_contribution,
         args_model=SegmentContributionArgs,
         result_model=SegmentContributionResult,
-        description="Decompose metric values across dimension segments and calculate contribution shares.",
+        description="Decompose metric values across dimension segments and calculate contribution shares. Required args: 'segment_column' and 'metric_column'.",
         invariants=(
             "contribution_shares_sum",
             "contribution_total_reconciliation",
@@ -166,7 +166,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=correlation,
         args_model=CorrelationArgs,
         result_model=CorrelationResult,
-        description="Calculate bivariate Pearson correlation with documented limitations.",
+        description="Calculate bivariate Pearson correlation between two numeric columns. Required args: 'x_column', 'y_column'. Optional: 'method' ('pearson').",
         invariants=("correlation_bounds", "correlation_status_consistency"),
     ),
     ToolEntry(
@@ -174,7 +174,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=detect_anomalies_iqr,
         args_model=AnomaliesIQRArgs,
         result_model=AnomaliesIQRResult,
-        description="Detect univariate outliers using the 1.5 x IQR fence rule with documented limitations.",
+        description="Detect univariate outliers using the 1.5 x IQR fence rule. Required args: 'metric_column'. Optional: 'k' (float, default 1.5).",
         invariants=(
             "anomalies_fence_order",
             "anomalies_flagged_bounds",
