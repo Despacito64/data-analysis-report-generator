@@ -286,3 +286,16 @@ Owner approval: On 2026-11-12 the owner approved a 180-second per-call timeout f
 Implementation: Added `--per-call-timeout-s` to `evaluation/run_agent_eval.py` as an evaluation-only override. The application `config.yaml` and normal runtime budget remain unchanged; `Budgets` validation still applies.
 Reason: Do not silently relax the application timeout or claim the real-model exit gate passed after all original attempts timed out.
 Consequences: The approved 180-second rerun did not complete. Traces were produced for q01-q09: q03 and q04 reached `answered` with tool evidence, q01, q02, and q05-q08 failed on planner timeouts, and q09 has no terminal event. The remaining questions were not run. No score summary was written, so the real-agent gate remains open. Do not treat partial trace results as a complete benchmark.
+
+## D-031: Bounded, diagnosable, resumable M6 evaluation
+Status: Accepted
+Date: 2026-11-12   Made by: Copilot (owner-directed)
+Decision:
+- Keep the evaluation controls internal to `AppConfig` under `evaluation`; do not change shared Pydantic contracts or `CONTRACT_VERSION`. Defaults are a 300-second per-question budget, 7200-second overall benchmark timeout, 2 repair attempts, 8 LLM calls per question, thinking disabled, and Ollama `keep_alive: "10m"`. CLI overrides are available for these controls and for the per-call timeout.
+- Check question/overall budgets between graph stages and around each LLM call. Clamp an Ollama call timeout to remaining budget, record the active stage elapsed time on exhaustion, and persist timeout/cap outcomes as structured question results rather than aborting the whole run.
+- Add timing as additive trace fields/events for graph stages, repair attempts, each LLM call, and each tool execution. Keep benchmark/model diagnostics in the run trace and JSON summary. Perform one real-mode warm-up before question timing; report its time and LLM call separately.
+- Store attempt JSON under `evaluation/results/<run_id>/attempts/<question_id>/` and merged question JSON under `evaluation/results/<run_id>/questions/`. Resume discovers orphaned attempt files, merges all attempts, and skips terminal results. Retrying a terminal result requires a new run ID; subset runs use `--questions`.
+- Report `passed`, `failed`, `timeout`, and `not_run` per question. Overall accuracy counts timeout/not-run as incorrect; completed-only accuracy excludes them. A score is complete only after every benchmark question has a terminal status.
+- Do not close M6 or claim its real-model gate passed based on mock-mode verification or partial earlier real runs.
+Reason: The earlier real benchmark stopped before producing a complete score and gave little stage-level diagnostic data. Bounded attempts and per-question persistence make slow/failed runs inspectable and safely resumable without changing agent-facing contracts or benchmark assets.
+Consequences: Mock-mode tests validate timing, budgets/caps, persistence, resume/merge, report completeness, and Ollama option serialization. No real-model benchmark was run as part of this decision; the M6 real-evaluation gate remains open.

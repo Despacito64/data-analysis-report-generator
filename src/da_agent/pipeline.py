@@ -94,6 +94,7 @@ def run_agent(
     budgets: Budgets | None = None,
     trace_writer: RunTraceWriter | None = None,
     max_replans: int | None = None,
+    max_repairs: int = 1,
 ) -> AgentResult:
     """Run a free-text question through the dynamic graph and return typed results."""
     config = config or load_config()
@@ -127,6 +128,8 @@ def run_agent(
             temperature=config.model.temperature,
             seed=config.model.seed,
             timeout_s=config.budgets.per_call_timeout_s,
+            thinking_enabled=config.evaluation.thinking_enabled,
+            keep_alive=config.evaluation.keep_alive,
         )
 
     state = _run_agent(
@@ -138,6 +141,7 @@ def run_agent(
         budgets=budgets,
         trace_writer=trace_writer,
         max_replans=max_replans,
+        max_repairs=max_repairs,
     )
     return build_agent_result(
         run_id=run_id,

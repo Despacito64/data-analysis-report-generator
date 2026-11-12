@@ -78,6 +78,8 @@ class OllamaClient:
         temperature: float = 0.0,
         seed: int = 42,
         timeout_s: float = 120.0,
+        thinking_enabled: bool | None = None,
+        keep_alive: str | int | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.base_url = self.base_url.removesuffix("/v1")
@@ -85,6 +87,8 @@ class OllamaClient:
         self.temperature = temperature
         self.seed = seed
         self.timeout_s = timeout_s
+        self.thinking_enabled = thinking_enabled
+        self.keep_alive = keep_alive
 
     def chat(
         self,
@@ -105,6 +109,10 @@ class OllamaClient:
                 "seed": self.seed if seed is None else seed,
             },
         }
+        if self.thinking_enabled is not None:
+            body["think"] = self.thinking_enabled
+        if self.keep_alive is not None:
+            body["keep_alive"] = self.keep_alive
         if schema:
             body["format"] = schema
 

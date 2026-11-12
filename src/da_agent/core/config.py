@@ -48,6 +48,19 @@ class RunTraceConfig(BaseModel):
     base_dir: str = "runs"
 
 
+class EvaluationConfig(BaseModel):
+    """Local benchmark limits and Ollama diagnostics settings."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    per_question_budget_s: float = Field(default=300.0, gt=0)
+    overall_timeout_s: float = Field(default=7200.0, gt=0)
+    max_repair_attempts: int = Field(default=2, ge=0)
+    max_llm_calls_per_question: int = Field(default=8, gt=0)
+    thinking_enabled: bool = False
+    keep_alive: str = "10m"
+
+
 class AppConfig(BaseModel):
     """Root configuration model."""
 
@@ -58,6 +71,7 @@ class AppConfig(BaseModel):
     sampling: SamplingConfig
     input_limits: InputLimitsConfig
     run_trace: RunTraceConfig = Field(default_factory=RunTraceConfig)
+    evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
 
 
 def load_config(path: str | Path = "config.yaml") -> AppConfig:

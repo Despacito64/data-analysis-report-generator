@@ -140,7 +140,7 @@ def build_nodes(
             client=llm_client,
             trace_writer=trace_writer,
             max_steps=state.get("budgets", load_config().budgets).max_tool_calls,
-            max_repairs=1,
+            max_repairs=state.get("max_repairs", 1),
         )
 
         if failure:
@@ -264,7 +264,7 @@ def build_nodes(
             client=llm_client,
             trace_writer=trace_writer,
             max_steps=state.get("budgets", load_config().budgets).max_tool_calls,
-            max_repairs=1,
+            max_repairs=state.get("max_repairs", 1),
         )
 
         if replan_failure or new_plan is None:
@@ -334,7 +334,7 @@ def build_nodes(
             client=llm_client,
             trace_writer=trace_writer,
             max_steps=state.get("budgets", load_config().budgets).max_tool_calls,
-            max_repairs=1,
+            max_repairs=state.get("max_repairs", 1),
         )
         if failure:
             failures = list(state.get("failures") or []) + [failure]
@@ -549,6 +549,7 @@ def run_agent(
     budgets: Budgets | None = None,
     trace_writer: RunTraceWriter | None = None,
     max_replans: int | None = None,
+    max_repairs: int = 1,
 ) -> dict[str, Any]:
     """Run the full dynamic planning agent and return the final state."""
     if budgets is None:
@@ -574,6 +575,7 @@ def run_agent(
         "budgets": budgets,
         "replan_count": 0,
         "max_replans": max_replans,
+        "max_repairs": max_repairs,
         "status": "pending",
         "final_answer": None,
         "run_id": run_id,

@@ -39,6 +39,7 @@ class AgentState(TypedDict, total=False):
     budgets: Budgets
     replan_count: int
     max_replans: int
+    max_repairs: int
     status: str  # "complete" | "partial" | "failed"
     final_answer: Any | None
     run_id: str

@@ -345,6 +345,17 @@ def execute_plan(
             dfs_by_task[task.id] = task_df
             profiles_by_task[task.id] = task_profile
 
+        if trace_writer is not None:
+            trace_writer.log_event(
+                "tool_execution_timing",
+                {
+                    "task_id": rec.task_id,
+                    "tool": rec.tool,
+                    "status": rec.status.value,
+                    "duration_s": duration,
+                },
+            )
+
     # Determine overall status
     ok_count = sum(1 for r in records if r.status == TaskStatus.OK)
 

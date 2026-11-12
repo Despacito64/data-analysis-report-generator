@@ -29,3 +29,11 @@ input_limits:
 
 run_trace:
   base_dir: "runs"
+
+evaluation:
+  per_question_budget_s: 300.0
+  overall_timeout_s: 7200.0
+  max_repair_attempts: 2
+  max_llm_calls_per_question: 8
+  thinking_enabled: false
+  keep_alive: "10m"

@@ -82,6 +82,9 @@ def test_execute_linear_plan():
         event_types = [e.event_type for e in events]
         assert "tool_call" in event_types
         assert "evidence" in event_types
+        timing_events = [e for e in events if e.event_type == "tool_execution_timing"]
+        assert len(timing_events) == 2
+        assert all(e.payload["duration_s"] >= 0 for e in timing_events)
 
 
 def test_execute_branching_plan():

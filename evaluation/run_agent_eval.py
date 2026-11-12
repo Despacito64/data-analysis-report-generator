@@ -7,12 +7,13 @@ import json
 import math
 import time
 from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
-from statistics import mean
 from typing import Any
 from uuid import uuid4
 
 from da_agent.agent.answer import AgentAnswerStatus, AgentResult
+from da_agent.agent.planner import LLMClient, MockLLMClient, OllamaClient
 from da_agent.contracts.models import Budgets
 from da_agent.core.config import AppConfig, load_config
 from da_agent.core.trace import RunTraceWriter
@@ -26,6 +27,279 @@ try:
 except ModuleNotFoundError:
     from oracle import load_oracle
     from scorer import answers_match, score_baseline
+
+
+class EvaluationLimitExceeded(RuntimeError):
+    """A per-question time or call/repair limit ended a run."""
+
+    def __init__(self, reason: str, stage: str, elapsed_s: float) -> None:
+        super().__init__(f"{reason} during {stage} after {elapsed_s:.3f}s")
+        self.reason = reason
+        self.stage = stage
+        self.elapsed_s = elapsed_s
+
+
+_GRAPH_STAGE_NAMES = {
+    "resolve": "question_resolution",
+    "plan": "plan_generation",
+    "validate_repair": "plan_validation",
+    "execute": "tool_execution",
+    "inspect": "result_inspection",
+    "replan": "replanning",
+    "finalize": "graph_finalization",
+}
+
+
+class EvaluationTraceWriter(RunTraceWriter):
+    """Add evaluation timing and limit checks to existing trace events."""
+
+    def __init__(
+        self,
+        *,
+        run_id: str,
+        base_dir: Path | str,
+        question_budget_s: float | None = None,
+        max_repair_attempts: int | None = None,
+        overall_deadline: float | None = None,
+    ) -> None:
+        super().__init__(run_id=run_id, base_dir=base_dir)
+        self.started_at = time.perf_counter()
+        self.question_budget_s = question_budget_s
+        self.max_repair_attempts = max_repair_attempts
+        self.overall_deadline = overall_deadline
+        self.stage_started_at: dict[str, float] = {}
+        self.stage_timings: dict[str, float] = {}
+        self.current_stage = "initialization"
+        self.repair_attempts: list[dict[str, Any]] = []
+        self.tool_executions: list[dict[str, Any]] = []
+        self._pending_repair: int | None = None
+        self._answer_synthesis_started_at: float | None = None
+
+    @property
+    def elapsed_s(self) -> float:
+        return time.perf_counter() - self.started_at
+
+    @property
+    def remaining_s(self) -> float | None:
+        remaining_values: list[float] = []
+        if self.question_budget_s is not None:
+            remaining_values.append(self.question_budget_s - self.elapsed_s)
+        if self.overall_deadline is not None:
+            remaining_values.append(self.overall_deadline - time.perf_counter())
+        return max(0.0, min(remaining_values)) if remaining_values else None
+
+    def check_budget(self, stage: str) -> None:
+        if self.overall_deadline is not None and time.perf_counter() >= self.overall_deadline:
+            self._record_active_stage(stage)
+            self.stage_timings.setdefault(stage, 0.0)
+            super().log_event(
+                "evaluation_overall_timeout",
+                {
+                    "reason": "overall_timeout",
+                    "stage": stage,
+                    "question_elapsed_s": self.elapsed_s,
+                    "stage_timings": dict(self.stage_timings),
+                },
+            )
+            raise EvaluationLimitExceeded("overall_timeout", stage, self.elapsed_s)
+        if self.question_budget_s is None or self.elapsed_s < self.question_budget_s:
+            return
+        self._record_active_stage(stage)
+        self.stage_timings.setdefault(stage, 0.0)
+        payload = {
+            "reason": "question_timeout",
+            "stage": stage,
+            "elapsed_s": self.elapsed_s,
+            "stage_timings": dict(self.stage_timings),
+        }
+        super().log_event("question_budget_exceeded", payload)
+        raise EvaluationLimitExceeded("question_timeout", stage, self.elapsed_s)
+
+    def _record_active_stage(self, stage: str) -> None:
+        now = time.perf_counter()
+        for node, started in list(self.stage_started_at.items()):
+            if _GRAPH_STAGE_NAMES.get(node, node) == stage:
+                duration = max(0.0, now - started)
+                self.stage_timings[stage] = self.stage_timings.get(stage, 0.0) + duration
+                del self.stage_started_at[node]
+
+    def complete_repair_attempt(self, duration_s: float, call_number: int) -> None:
+        if self._pending_repair is None:
+            return
+        attempt = self._pending_repair
+        self._pending_repair = None
+        if attempt <= len(self.repair_attempts):
+            self.repair_attempts[attempt - 1]["duration_s"] = duration_s
+        else:
+            self.repair_attempts.append(
+                {"attempt": attempt, "duration_s": duration_s, "llm_call": call_number}
+            )
+        self.stage_timings[f"repair_attempt_{attempt}"] = duration_s
+        super().log_event(
+            "repair_attempt_timing",
+            {
+                "attempt": attempt,
+                "duration_s": duration_s,
+                "llm_call": call_number,
+            },
+        )
+
+    def record_tool_execution(self, record: Any) -> None:
+        entry = {
+            "task_id": record.task_id,
+            "tool": record.tool,
+            "status": record.status.value,
+            "duration_s": record.duration_s,
+        }
+        if entry not in self.tool_executions:
+            self.tool_executions.append(entry)
+
+    def log_event(self, event_type: str, payload: dict[str, Any]) -> Any:
+        event_payload = dict(payload)
+        now = time.perf_counter()
+
+        if event_type == "graph_node":
+            node = str(event_payload.get("node", "unknown"))
+            phase = event_payload.get("phase")
+            stage = _GRAPH_STAGE_NAMES.get(node, node)
+            if phase == "start":
+                self.check_budget(stage)
+                self.current_stage = stage
+                self.stage_started_at[node] = now
+                event_payload["elapsed_s"] = self.elapsed_s
+            elif phase == "end":
+                started = self.stage_started_at.pop(node, now)
+                duration = max(0.0, now - started)
+                self.stage_timings[stage] = self.stage_timings.get(stage, 0.0) + duration
+                event_payload["duration_s"] = duration
+                event_payload["elapsed_s"] = self.elapsed_s
+                if node == "finalize":
+                    self._answer_synthesis_started_at = now
+            event = super().log_event(event_type, event_payload)
+            if phase == "end":
+                self.check_budget(stage)
+            return event
+
+        if event_type == "planner_repair_attempt":
+            attempt = len(self.repair_attempts) + 1
+            event_payload["attempt"] = attempt
+            event_payload["started_elapsed_s"] = self.elapsed_s
+            self.repair_attempts.append({"attempt": attempt, "duration_s": None})
+            event = super().log_event(event_type, event_payload)
+            if self.max_repair_attempts is not None and attempt > self.max_repair_attempts:
+                super().log_event(
+                    "evaluation_cap_exceeded",
+                    {
+                        "reason": "repair_cap",
+                        "stage": self.current_stage,
+                        "limit": self.max_repair_attempts,
+                        "elapsed_s": self.elapsed_s,
+                    },
+                )
+                raise EvaluationLimitExceeded("repair_cap", self.current_stage, self.elapsed_s)
+            self._pending_repair = attempt
+            return event
+
+        if event_type == "tool_execution_timing":
+            self.tool_executions.append(event_payload)
+            return super().log_event(event_type, event_payload)
+
+        if event_type == "final_answer" and self._answer_synthesis_started_at is not None:
+            duration = max(0.0, now - self._answer_synthesis_started_at)
+            event_payload["duration_s"] = duration
+            self.stage_timings["answer_synthesis"] = duration
+            event_payload["stage_timings"] = dict(self.stage_timings)
+            self.check_budget("answer_synthesis")
+            return super().log_event(event_type, event_payload)
+
+        return super().log_event(event_type, event_payload)
+
+
+class TimedLLMClient:
+    """Measure and cap calls while preserving the planner's LLM client protocol."""
+
+    def __init__(
+        self,
+        client: LLMClient,
+        *,
+        trace_writer: EvaluationTraceWriter,
+        max_llm_calls: int | None,
+        model_name: str,
+    ) -> None:
+        self.client = client
+        self.trace_writer = trace_writer
+        self.max_llm_calls = max_llm_calls
+        self.model_name = model_name
+        self.calls: list[dict[str, Any]] = []
+
+    def chat(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        schema: dict[str, Any] | None = None,
+        model: str | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
+    ) -> tuple[str, dict[str, Any]]:
+        stage = self.trace_writer.current_stage
+        self.trace_writer.check_budget(stage)
+        if self.max_llm_calls is not None and len(self.calls) >= self.max_llm_calls:
+            payload = {
+                "reason": "llm_call_cap",
+                "stage": stage,
+                "limit": self.max_llm_calls,
+                "elapsed_s": self.trace_writer.elapsed_s,
+            }
+            self.trace_writer.log_event("evaluation_cap_exceeded", payload)
+            raise EvaluationLimitExceeded("llm_call_cap", stage, self.trace_writer.elapsed_s)
+
+        call_number = len(self.calls) + 1
+        call_started = time.perf_counter()
+        old_timeout = getattr(self.client, "timeout_s", None)
+        remaining = self.trace_writer.remaining_s
+        if remaining is not None and old_timeout is not None:
+            self.client.timeout_s = min(float(old_timeout), remaining)
+
+        try:
+            response = self.client.chat(
+                messages,
+                schema=schema,
+                model=model,
+                temperature=temperature,
+                seed=seed,
+            )
+        except Exception as exc:
+            duration = max(0.0, time.perf_counter() - call_started)
+            call = {
+                "call_number": call_number,
+                "stage": stage,
+                "duration_s": duration,
+                "completed": False,
+                "error": f"{type(exc).__name__}: {exc}",
+                "model": model or self.model_name,
+            }
+            self.calls.append(call)
+            self.trace_writer.log_event("llm_call_timing", call)
+            self.trace_writer.complete_repair_attempt(duration, call_number)
+            self.trace_writer.check_budget(stage)
+            raise
+        finally:
+            if old_timeout is not None:
+                self.client.timeout_s = old_timeout
+
+        duration = max(0.0, time.perf_counter() - call_started)
+        call = {
+            "call_number": call_number,
+            "stage": stage,
+            "duration_s": duration,
+            "completed": True,
+            "model": model or self.model_name,
+        }
+        self.calls.append(call)
+        self.trace_writer.log_event("llm_call_timing", call)
+        self.trace_writer.complete_repair_attempt(duration, call_number)
+        self.trace_writer.check_budget(stage)
+        return response
 
 
 def _grouped_values(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
@@ -106,15 +380,6 @@ def extract_score_answer(result: AgentResult) -> Any | None:
     return None
 
 
-def _trace_metrics(writer: RunTraceWriter) -> dict[str, int]:
-    events = writer.read_events()
-    return {
-        "repair_attempts": sum(event.event_type == "planner_repair_attempt" for event in events),
-        "replans": sum(event.event_type == "replan_attempt" for event in events),
-        "tool_calls": sum(event.event_type == "tool_call" for event in events),
-    }
-
-
 def build_comparison(
     *,
     agent_answers: dict[str, Any],
@@ -170,7 +435,69 @@ def build_comparison(
 
 
 def render_markdown_summary(summary: dict[str, Any], json_path: Path) -> str:
-    """Render a concise human-readable score and question comparison."""
+    """Render current resumable reports and preserve the legacy helper's format."""
+    if "score_complete" in summary:
+        agent = summary["agent"]
+        lines = [
+            "# Dynamic agent evaluation",
+            "",
+            f"Detailed results: `{json_path}`",
+            f"Score complete: **{summary['score_complete']}**",
+            "",
+            "| Accuracy measure | Correct | Total | Accuracy |",
+            "| --- | ---: | ---: | ---: |",
+            (
+                f"| All questions (timeouts/not-run incorrect) | {agent['correct']} | "
+                f"{agent['total']} | {agent['accuracy_over_all_questions']:.3f} |"
+            ),
+        ]
+        completed_accuracy = agent["accuracy_over_completed_questions"]
+        completed_text = "n/a" if completed_accuracy is None else f"{completed_accuracy:.3f}"
+        lines.append(
+            f"| Completed only | {agent['correct'] if completed_accuracy is not None else 0} | "
+            f"{agent['completed_questions']} | {completed_text} |"
+        )
+        lines.extend(
+            [
+                "",
+                summary["baseline"]["note"],
+                "",
+                f"Total evaluation time: {summary['evaluation']['total_time_s']:.3f}s",
+                (
+                    f"Warm-up time (excluded from question budgets): "
+                    f"{summary['evaluation']['warmup_time_s']:.3f}s"
+                ),
+                f"Total LLM calls including warm-up: {summary['aggregate']['total_llm_call_count']}",
+                (
+                    f"Aggregate stage timings (s): "
+                    f"`{json.dumps(summary['aggregate']['stage_timings'], sort_keys=True)}`"
+                ),
+                (
+                    f"Agent-vs-baseline outcomes: "
+                    f"`{json.dumps(summary['baseline_comparison'], sort_keys=True)}`"
+                ),
+                (f"Failure reasons: `{json.dumps(summary['failure_reasons'], sort_keys=True)}`"),
+                "",
+                "## Per-question results",
+                "",
+                "| Question | Status | Accuracy | Baseline outcome | Total time (s) | Stage timings (s) | Tool executions | Repair attempts | LLM calls | Failure stage/reason |",
+                "| --- | --- | --- | --- | ---: | --- | --- | --- | ---: | --- |",
+            ]
+        )
+        for row in summary["per_question"]:
+            accuracy = "n/a" if row["accuracy"] is None else str(row["accuracy"])
+            stage_timings = json.dumps(row["stage_timings"], sort_keys=True)
+            tool_times = json.dumps(row["tool_executions"], sort_keys=True)
+            repair_times = json.dumps(row["repair_attempts"], sort_keys=True)
+            failure = f"{row['failure_stage'] or ''} / {row['failure_reason'] or ''}".strip(" /")
+            lines.append(
+                f"| {row['question_id']} | {row['status']} | {accuracy} | {row['outcome']} | "
+                f"{row['total_time_s']:.3f} | `{stage_timings}` | `{tool_times}` | "
+                f"`{repair_times}` | {row['llm_call_count']} | {failure} |"
+            )
+        lines.append("")
+        return "\n".join(lines)
+
     lines = [
         "# Dynamic agent evaluation",
         "",
@@ -238,149 +565,513 @@ def evaluate_agent(
     model: str | None = None,
     repeats: int = 1,
     per_call_timeout_s: float | None = None,
+    per_question_budget_s: float | None = None,
+    overall_timeout_s: float | None = None,
+    max_repair_attempts: int | None = None,
+    max_llm_calls_per_question: int | None = None,
+    thinking_enabled: bool | None = None,
+    keep_alive: str | int | None = None,
+    run_id: str | None = None,
+    resume: bool = False,
+    selected_question_ids: list[str] | None = None,
+    mode: str = "real",
+    client: LLMClient | None = None,
+    config: AppConfig | None = None,
 ) -> dict[str, Any]:
-    """Run all frozen questions through the free-text agent and compare with baseline."""
+    """Run/resume a bounded evaluation, persisting every question attempt immediately."""
     if repeats < 1:
         raise ValueError("repeats must be at least one")
-    config = load_config()
+    if mode not in {"real", "mock"}:
+        raise ValueError("mode must be 'real' or 'mock'")
+    if resume and not run_id:
+        raise ValueError("resume requires a run_id")
+
+    config = config or load_config()
     if model:
         config = config.model_copy(
             update={"model": config.model.model_copy(update={"name": model})}
         )
     config = apply_eval_timeout(config, per_call_timeout_s)
+    eval_values = config.evaluation.model_dump()
+    overrides = {
+        "per_question_budget_s": per_question_budget_s,
+        "overall_timeout_s": overall_timeout_s,
+        "max_repair_attempts": max_repair_attempts,
+        "max_llm_calls_per_question": max_llm_calls_per_question,
+        "thinking_enabled": thinking_enabled,
+        "keep_alive": keep_alive,
+    }
+    for key, value in overrides.items():
+        if value is not None:
+            eval_values[key] = value
+    config = config.model_copy(
+        update={"evaluation": type(config.evaluation).model_validate(eval_values)}
+    )
+    run_id = run_id or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "_" + uuid4().hex[:8]
+    if not run_id or Path(run_id).name != run_id or run_id in {".", ".."}:
+        raise ValueError("run_id must be a single safe directory name")
+    run_dir = results_dir / run_id
+    if resume and not run_dir.is_dir():
+        raise FileNotFoundError(f"Evaluation run directory does not exist: {run_dir}")
+    if not resume and run_dir.exists():
+        raise FileExistsError(f"Evaluation run already exists; use --resume {run_id}: {run_dir}")
+    run_dir.mkdir(parents=True, exist_ok=True)
+
     df = load_data(dataset_path)
     profile = compute_profile(df, file_path=dataset_path)
     oracle = load_oracle(oracle_path)
     questions = json.loads(questions_path.read_text(encoding="utf-8"))
+    questions_by_id = {item["id"]: item for item in questions}
+    unknown_ids = set(selected_question_ids or []) - questions_by_id.keys()
+    if unknown_ids:
+        raise ValueError(f"Unknown question IDs: {', '.join(sorted(unknown_ids))}")
+    selected_ids = (
+        selected_question_ids if selected_question_ids is not None else list(questions_by_id)
+    )
+    question_files_dir = run_dir / "questions"
+    attempts_dir = run_dir / "attempts"
+    question_files_dir.mkdir(parents=True, exist_ok=True)
+    attempts_dir.mkdir(parents=True, exist_ok=True)
+
     baseline = run_baseline(df=df, profile=profile, budgets=config.budgets)
+    run_trace = RunTraceWriter(
+        run_id=f"agent_eval_{run_id}",
+        base_dir=config.run_trace.base_dir,
+    )
+    llm_client: LLMClient
+    if mode == "mock":
+        llm_client = client or MockLLMClient(default_response={"tasks": []})
+    else:
+        llm_client = client or OllamaClient(
+            base_url=config.model.base_url,
+            model=config.model.name,
+            temperature=config.model.temperature,
+            seed=config.model.seed,
+            timeout_s=config.budgets.per_call_timeout_s,
+            thinking_enabled=config.evaluation.thinking_enabled,
+            keep_alive=config.evaluation.keep_alive,
+        )
 
-    raw_runs: list[dict[str, Any]] = []
-    latencies: list[float] = []
-    repair_runs = replan_runs = valid_plans = tool_calls = repair_attempts = 0
-    correct_by_question: Counter[str] = Counter()
-    failure_categories: Counter[str] = Counter()
-    unscored_questions: dict[str, str] = {}
+    diagnostics = {
+        "run_id": run_id,
+        "mode": mode,
+        "model": config.model.name,
+        "ollama_base_url": config.model.base_url.removesuffix("/v1"),
+        "thinking_enabled": config.evaluation.thinking_enabled,
+        "temperature": config.model.temperature,
+        "seed": config.model.seed,
+        "keep_alive": config.evaluation.keep_alive,
+        "per_call_timeout_s": config.budgets.per_call_timeout_s,
+        "per_question_budget_s": config.evaluation.per_question_budget_s,
+        "overall_timeout_s": config.evaluation.overall_timeout_s,
+        "max_repair_attempts": config.evaluation.max_repair_attempts,
+        "max_llm_calls_per_question": config.evaluation.max_llm_calls_per_question,
+    }
+    run_trace.log_event("evaluation_run_started", diagnostics | {"resume": resume})
+    warmup_started = time.perf_counter()
+    warmup_error: str | None = None
+    warmup_llm_calls: list[dict[str, Any]] = []
+    if mode == "real":
+        warmup_writer = EvaluationTraceWriter(
+            run_id=f"agent_eval_{run_id}_warmup",
+            base_dir=config.run_trace.base_dir,
+        )
+        warmup_client = TimedLLMClient(
+            llm_client,
+            trace_writer=warmup_writer,
+            max_llm_calls=1,
+            model_name=config.model.name,
+        )
+        try:
+            warmup_client.chat([{"role": "user", "content": "Reply with OK."}])
+            warmup_llm_calls = warmup_client.calls
+            run_trace.log_event(
+                "evaluation_warmup",
+                {
+                    "status": "complete",
+                    "duration_s": time.perf_counter() - warmup_started,
+                },
+            )
+        except Exception as exc:  # noqa: BLE001 - record warm-up failure and produce not_run rows
+            warmup_llm_calls = warmup_client.calls
+            warmup_error = f"{type(exc).__name__}: {exc}"
+            run_trace.log_event(
+                "evaluation_warmup",
+                {
+                    "status": "failed",
+                    "duration_s": time.perf_counter() - warmup_started,
+                    "error": warmup_error,
+                },
+            )
+    else:
+        run_trace.log_event("evaluation_warmup", {"status": "skipped", "reason": "mock_mode"})
+    warmup_time_s = time.perf_counter() - warmup_started
+    benchmark_started = time.perf_counter()
+    overall_deadline = benchmark_started + config.evaluation.overall_timeout_s
 
-    for item in questions:
-        question_id = item["id"]
-        for repeat in range(1, repeats + 1):
-            run_id = f"agent_eval_{question_id}_r{repeat}_{uuid4().hex[:8]}"
-            writer = RunTraceWriter(run_id=run_id, base_dir=config.run_trace.base_dir)
-            started = time.perf_counter()
-            result = run_agent(
-                item["question"],
-                df,
-                config,
-                run_id=run_id,
-                profile=profile,
+    saved_results: dict[str, dict[str, Any]] = {}
+    for question_id in questions_by_id:
+        result_file = question_files_dir / f"{question_id}.json"
+        stored_attempts = (
+            json.loads(result_file.read_text(encoding="utf-8")).get("attempts", [])
+            if result_file.is_file()
+            else []
+        )
+        attempt_dir = attempts_dir / question_id
+        if attempt_dir.is_dir():
+            known_run_ids = {attempt.get("run_id") for attempt in stored_attempts}
+            for attempt_file in sorted(attempt_dir.glob("attempt-*.json")):
+                attempt = json.loads(attempt_file.read_text(encoding="utf-8"))
+                if attempt.get("run_id") not in known_run_ids:
+                    stored_attempts.append(attempt)
+                    known_run_ids.add(attempt.get("run_id"))
+        if stored_attempts:
+            merged = _aggregate_question(question_id, stored_attempts)
+            saved_results[question_id] = merged
+            _write_json(result_file, merged)
+
+    for question_id in selected_ids:
+        previous = saved_results.get(question_id)
+        if resume and previous and previous.get("status") in {"passed", "failed", "timeout"}:
+            run_trace.log_event("evaluation_question_skipped", {"question_id": question_id})
+            continue
+        if warmup_error:
+            break
+        if time.perf_counter() >= overall_deadline:
+            run_trace.log_event(
+                "evaluation_overall_timeout",
+                {"elapsed_s": time.perf_counter() - benchmark_started},
+            )
+            break
+
+        item = questions_by_id[question_id]
+        previous_attempts = list(previous.get("attempts", [])) if previous else []
+        target_repeats = max(repeats, len(previous_attempts) + 1) if not resume else repeats
+        while len(previous_attempts) < target_repeats:
+            if time.perf_counter() >= overall_deadline:
+                break
+            attempt_number = len(previous_attempts) + 1
+            attempt_id = f"agent_eval_{run_id}_{question_id}_r{attempt_number}_{uuid4().hex[:8]}"
+            writer = EvaluationTraceWriter(
+                run_id=attempt_id,
+                base_dir=config.run_trace.base_dir,
+                question_budget_s=config.evaluation.per_question_budget_s,
+                max_repair_attempts=config.evaluation.max_repair_attempts,
+                overall_deadline=overall_deadline,
+            )
+            timed_client = TimedLLMClient(
+                llm_client,
                 trace_writer=writer,
+                max_llm_calls=config.evaluation.max_llm_calls_per_question,
+                model_name=config.model.name,
             )
-            latency = time.perf_counter() - started
-            metrics = _trace_metrics(writer)
-            latencies.append(latency)
-            repair_runs += metrics["repair_attempts"] > 0
-            replan_runs += metrics["replans"] > 0
-            repair_attempts += metrics["repair_attempts"]
-            tool_calls += metrics["tool_calls"]
-            valid_plans += result.plan is not None
-            for failure in result.failures:
-                failure_name = getattr(failure.failure_class, "value", failure.failure_class)
-                failure_categories[str(failure_name)] += 1
-
-            answer = extract_score_answer(result)
-            is_correct = answer is not None and answers_match(
-                answer,
-                oracle[question_id]["expected_answer"],
-                float(oracle[question_id]["tolerance"]),
-            )
-            correct_by_question[question_id] += is_correct
-            if answer is None:
-                unscored_questions[question_id] = (
-                    "No score-shaped answer could be assembled from successful tool evidence."
-                )
-            raw_runs.append(
+            writer.log_event(
+                "question_run_started",
                 {
                     "question_id": question_id,
-                    "repeat": repeat,
-                    "run_id": run_id,
-                    "status": result.status.value,
-                    "answer": answer,
-                    "correct": is_correct,
-                    "plan_valid": result.plan is not None,
-                    "repair_attempts": metrics["repair_attempts"],
-                    "replans": metrics["replans"],
-                    "tool_calls": metrics["tool_calls"],
-                    "latency_s": latency,
-                    "failure_categories": [
-                        str(getattr(failure.failure_class, "value", failure.failure_class))
-                        for failure in result.failures
-                    ],
-                }
+                    "attempt": attempt_number,
+                    "question_budget_s": config.evaluation.per_question_budget_s,
+                    "max_repair_attempts": config.evaluation.max_repair_attempts,
+                    "max_llm_calls": config.evaluation.max_llm_calls_per_question,
+                },
             )
-
-    count_runs = len(raw_runs) or 1
-    per_question_latency = {
-        item["id"]: mean(run["latency_s"] for run in raw_runs if run["question_id"] == item["id"])
-        for item in questions
-    }
-    metrics_summary = {
-        "runs": len(raw_runs),
-        "repeats_per_question": repeats,
-        "plan_validity_rate": valid_plans / count_runs,
-        "repair_rate": repair_runs / count_runs,
-        "repair_attempts_per_run": repair_attempts / count_runs,
-        "replan_rate": replan_runs / count_runs,
-        "tool_calls_per_run": tool_calls / count_runs,
-        "mean_latency_s": mean(latencies) if latencies else 0.0,
-        "mean_latency_by_question_s": per_question_latency,
-        "failure_categories": dict(failure_categories),
-        "unscored_questions": unscored_questions,
-    }
-    comparison = build_comparison(
-        agent_answers={},
-        baseline_answers=baseline.answers,
+            attempt_started = time.perf_counter()
+            answer: Any | None = None
+            status = "failed"
+            correct = False
+            failure_reason: str | None = None
+            failure_stage: str | None = None
+            failure_elapsed_s: float | None = None
+            result: AgentResult | None = None
+            try:
+                result = run_agent(
+                    item["question"],
+                    df,
+                    config,
+                    timed_client,
+                    run_id=attempt_id,
+                    profile=profile,
+                    trace_writer=writer,
+                    max_repairs=config.evaluation.max_repair_attempts,
+                )
+                answer = extract_score_answer(result)
+                correct = answer is not None and answers_match(
+                    answer,
+                    oracle[question_id]["expected_answer"],
+                    float(oracle[question_id]["tolerance"]),
+                )
+                status = "passed" if correct else "failed"
+                if answer is None:
+                    failure_reason = "no_score_shaped_answer"
+                    failure_stage = writer.current_stage
+                    failure_elapsed_s = writer.elapsed_s
+                elif not correct:
+                    failure_reason = "incorrect_answer"
+            except EvaluationLimitExceeded as exc:
+                status = (
+                    "timeout" if exc.reason in {"question_timeout", "overall_timeout"} else "failed"
+                )
+                failure_reason = exc.reason
+                failure_stage = exc.stage
+                failure_elapsed_s = exc.elapsed_s
+            except Exception as exc:  # noqa: BLE001 - persist question failures and continue
+                failure_reason = f"run_error:{type(exc).__name__}:{exc}"
+                failure_stage = writer.current_stage
+                failure_elapsed_s = writer.elapsed_s
+            elapsed = time.perf_counter() - attempt_started
+            if result is not None:
+                for task_record in result.task_results:
+                    writer.record_tool_execution(task_record)
+            stage_timings = dict(writer.stage_timings)
+            stage_timings["tool_executions"] = sum(
+                item["duration_s"] for item in writer.tool_executions
+            )
+            attempt_record = {
+                "question_id": question_id,
+                "attempt": attempt_number,
+                "run_id": attempt_id,
+                "status": status,
+                "accuracy": correct if status in {"passed", "failed"} else None,
+                "answer": answer,
+                "failure_reason": failure_reason,
+                "failure_stage": failure_stage,
+                "failure_elapsed_s": failure_elapsed_s,
+                "total_time_s": elapsed,
+                "stage_timings": stage_timings,
+                "tool_executions": writer.tool_executions,
+                "llm_calls": timed_client.calls,
+                "llm_call_count": len(timed_client.calls),
+                "repair_attempts": writer.repair_attempts,
+            }
+            writer.log_event(
+                "question_terminal",
+                {
+                    "question_id": question_id,
+                    "status": status,
+                    "failure_reason": failure_reason,
+                    "total_time_s": elapsed,
+                },
+            )
+            previous_attempts.append(attempt_record)
+            attempts_path = attempts_dir / question_id
+            attempts_path.mkdir(parents=True, exist_ok=True)
+            _write_json(
+                attempts_path / f"attempt-{attempt_number:03d}.json",
+                attempt_record,
+            )
+            question_result = _aggregate_question(question_id, previous_attempts)
+            saved_results[question_id] = question_result
+            _write_json(question_files_dir / f"{question_id}.json", question_result)
+            if failure_reason == "overall_timeout":
+                break
+    comparison = _build_resumable_summary(
+        questions_by_id=questions_by_id,
+        saved_results=saved_results,
         oracle=oracle,
-        agent_metrics=metrics_summary,
+        baseline_answers=baseline.answers,
+        diagnostics=diagnostics,
+        total_time_s=time.perf_counter() - benchmark_started,
+        warmup_time_s=warmup_time_s,
+        warmup_llm_calls=warmup_llm_calls,
     )
-    run_correct = sum(run["correct"] for run in raw_runs)
-    comparison["agent"] = {
-        "correct": run_correct,
-        "total": len(raw_runs),
-        "accuracy": run_correct / count_runs,
-        "attempted_runs": len(raw_runs),
-    }
-    comparison["evaluation"] = {
-        "mode": "real",
-        "model": config.model.name,
-        "dataset": str(dataset_path),
-        "repeats_per_question": repeats,
-        "per_call_timeout_s": config.budgets.per_call_timeout_s,
-    }
-    per_question_runs = {
-        item["id"]: [run for run in raw_runs if run["question_id"] == item["id"]]
-        for item in questions
-    }
-    for row in comparison["per_question"]:
-        runs = per_question_runs[row["question_id"]]
-        correct_runs = sum(run["correct"] for run in runs)
-        rate = correct_runs / len(runs) if runs else 0.0
-        row["agent_correct_rate"] = rate
-        row["agent_correct"] = bool(runs) and correct_runs == len(runs)
-        if runs and all(run["answer"] is None for run in runs):
-            row["outcome"] = "unscored"
-        elif rate == float(row["baseline_correct"]):
-            row["outcome"] = "tie"
-        else:
-            row["outcome"] = "win" if rate > float(row["baseline_correct"]) else "loss"
-    comparison["runs"] = raw_runs
-    results_dir.mkdir(parents=True, exist_ok=True)
-    json_path = results_dir / "agent_eval.json"
-    markdown_path = results_dir / "agent_eval.md"
-    json_path.write_text(json.dumps(comparison, indent=2, default=str) + "\n", encoding="utf-8")
-    markdown_path.write_text(
-        render_markdown_summary(comparison, json_path) + "\n", encoding="utf-8"
+    comparison["run_id"] = run_id
+    comparison["selected_question_ids"] = selected_ids
+    comparison["runs"] = [
+        attempt for result in saved_results.values() for attempt in result.get("attempts", [])
+    ]
+    _write_json(run_dir / "agent_eval.json", comparison)
+    (run_dir / "agent_eval.md").write_text(
+        render_markdown_summary(comparison, run_dir / "agent_eval.json"),
+        encoding="utf-8",
+    )
+    run_trace.log_event(
+        "evaluation_run_finished",
+        {
+            "score_complete": comparison["score_complete"],
+            "question_status_counts": comparison["question_status_counts"],
+            "total_time_s": comparison["evaluation"]["total_time_s"],
+        },
     )
     return comparison
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = path.with_suffix(path.suffix + ".tmp")
+    temporary_path.write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")
+    temporary_path.replace(path)
+
+
+def _aggregate_question(question_id: str, attempts: list[dict[str, Any]]) -> dict[str, Any]:
+    correct_attempts = [attempt for attempt in attempts if attempt["status"] == "passed"]
+    completed_attempts = [
+        attempt for attempt in attempts if attempt["status"] in {"passed", "failed"}
+    ]
+    if correct_attempts:
+        status = "passed"
+    elif completed_attempts:
+        status = "failed"
+    elif attempts:
+        status = "timeout"
+    else:
+        status = "not_run"
+    if correct_attempts:
+        accuracy = True
+    elif completed_attempts:
+        accuracy = False
+    else:
+        accuracy = None
+    return {
+        "question_id": question_id,
+        "status": status,
+        "accuracy": accuracy,
+        "total_time_s": sum(attempt["total_time_s"] for attempt in attempts),
+        "stage_timings": _sum_stage_timings(attempts),
+        "llm_call_count": sum(attempt["llm_call_count"] for attempt in attempts),
+        "llm_calls": [call for attempt in attempts for call in attempt.get("llm_calls", [])],
+        "tool_executions": [
+            execution for attempt in attempts for execution in attempt.get("tool_executions", [])
+        ],
+        "repair_attempts": [
+            repair for attempt in attempts for repair in attempt.get("repair_attempts", [])
+        ],
+        "attempt_count": len(attempts),
+        "failure_reason": attempts[-1].get("failure_reason") if attempts else None,
+        "failure_stage": attempts[-1].get("failure_stage") if attempts else None,
+        "attempts": attempts,
+    }
+
+
+def _sum_stage_timings(attempts: list[dict[str, Any]]) -> dict[str, float]:
+    totals: dict[str, float] = {}
+    for attempt in attempts:
+        for stage, duration in attempt.get("stage_timings", {}).items():
+            if isinstance(duration, (int, float)):
+                totals[stage] = totals.get(stage, 0.0) + float(duration)
+    return totals
+
+
+def _build_resumable_summary(
+    *,
+    questions_by_id: dict[str, dict[str, Any]],
+    saved_results: dict[str, dict[str, Any]],
+    oracle: dict[str, dict[str, Any]],
+    baseline_answers: dict[str, Any],
+    diagnostics: dict[str, Any],
+    total_time_s: float,
+    warmup_time_s: float,
+    warmup_llm_calls: list[dict[str, Any]],
+) -> dict[str, Any]:
+    per_question: list[dict[str, Any]] = []
+    correct_all = 0
+    completed_count = 0
+    correct_completed = 0
+    outcomes: Counter[str] = Counter()
+    failure_reasons: Counter[str] = Counter()
+    for question_id in questions_by_id:
+        result = saved_results.get(question_id, _aggregate_question(question_id, []))
+        status = result["status"]
+        accuracy = result.get("accuracy")
+        agent_correct = status == "passed"
+        baseline_correct = question_id in baseline_answers and answers_match(
+            baseline_answers[question_id],
+            oracle[question_id]["expected_answer"],
+            float(oracle[question_id]["tolerance"]),
+        )
+        outcome = "tie" if agent_correct == baseline_correct else "win" if agent_correct else "loss"
+        outcomes[outcome] += 1
+        failure_reason = result.get("failure_reason")
+        if failure_reason:
+            failure_reasons[str(failure_reason)] += 1
+        if status in {"passed", "failed"}:
+            completed_count += 1
+            correct_completed += status == "passed"
+        correct_all += status == "passed"
+        per_question.append(
+            {
+                "question_id": question_id,
+                "status": status,
+                "accuracy": accuracy,
+                "baseline_accuracy": baseline_correct,
+                "total_time_s": result.get("total_time_s", 0.0),
+                "stage_timings": result.get("stage_timings", {}),
+                "llm_call_count": result.get("llm_call_count", 0),
+                "llm_calls": result.get("llm_calls", []),
+                "tool_executions": result.get("tool_executions", []),
+                "repair_attempts": result.get("repair_attempts", []),
+                "attempt_count": result.get("attempt_count", 0),
+                "failure_reason": result.get("failure_reason"),
+                "failure_stage": result.get("failure_stage"),
+                "outcome": outcome,
+            }
+        )
+    total_questions = len(questions_by_id)
+    status_counts = Counter(row["status"] for row in per_question)
+    terminal_statuses = {"passed", "failed", "timeout"}
+    score_complete = all(row["status"] in terminal_statuses for row in per_question)
+    completed_accuracy = correct_completed / completed_count if completed_count else None
+    aggregate_total_time = sum(row["total_time_s"] for row in per_question)
+    aggregate_stage_timings: dict[str, float] = {}
+    for row in per_question:
+        for stage, duration in row["stage_timings"].items():
+            aggregate_stage_timings[stage] = aggregate_stage_timings.get(stage, 0.0) + float(
+                duration
+            )
+    aggregate_tool_executions = [
+        execution for row in per_question for execution in row["tool_executions"]
+    ]
+    aggregate_repairs = [repair for row in per_question for repair in row["repair_attempts"]]
+    aggregate_llm_calls = sum(row["llm_call_count"] for row in per_question)
+    return {
+        "score_complete": score_complete,
+        "agent": {
+            "correct": correct_all,
+            "total": total_questions,
+            "accuracy_over_all_questions": correct_all / total_questions
+            if total_questions
+            else 0.0,
+            "accuracy_over_completed_questions": completed_accuracy,
+            "completed_questions": completed_count,
+            "timeouts": status_counts["timeout"],
+            "not_run": status_counts["not_run"],
+        },
+        "baseline": {
+            "correct": sum(row["baseline_accuracy"] for row in per_question),
+            "total": total_questions,
+            "accuracy": (
+                sum(row["baseline_accuracy"] for row in per_question) / total_questions
+                if total_questions
+                else 0.0
+            ),
+            "note": "The baseline's 20/20 is a template-keyed ceiling, not a fair competitor.",
+        },
+        "question_status_counts": dict(status_counts),
+        "baseline_comparison": dict(outcomes),
+        "failure_reasons": dict(failure_reasons),
+        "aggregate": {
+            "status": "complete" if score_complete else "incomplete",
+            "accuracy_over_all_questions": (
+                correct_all / total_questions if total_questions else 0.0
+            ),
+            "accuracy_over_completed_questions": completed_accuracy,
+            "completed_questions": completed_count,
+            "total_time_s": aggregate_total_time,
+            "stage_timings": aggregate_stage_timings,
+            "llm_call_count": aggregate_llm_calls,
+            "warmup_llm_call_count": len(warmup_llm_calls),
+            "total_llm_call_count": aggregate_llm_calls + len(warmup_llm_calls),
+            "llm_calls": [call for row in per_question for call in row["llm_calls"]],
+            "tool_executions": aggregate_tool_executions,
+            "repair_attempts": aggregate_repairs,
+        },
+        "per_question": per_question,
+        "evaluation": {
+            **diagnostics,
+            "total_time_s": total_time_s,
+            "warmup_time_s": warmup_time_s,
+            "warmup_llm_calls": warmup_llm_calls,
+        },
+    }
 
 
 def main() -> None:
@@ -388,27 +1079,75 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, default=Path("Sample-Superstore.csv"))
     parser.add_argument("--oracle", type=Path, default=Path("evaluation/benchmark/oracle.json"))
     parser.add_argument(
-        "--questions", type=Path, default=Path("evaluation/benchmark/questions.json")
+        "--questions-file", type=Path, default=Path("evaluation/benchmark/questions.json")
+    )
+    parser.add_argument(
+        "--questions",
+        help="Comma-separated question IDs to run, for example q10,q11. Defaults to all.",
     )
     parser.add_argument("--results-dir", type=Path, default=Path("evaluation/results"))
     parser.add_argument("--model")
+    parser.add_argument("--mode", choices=("real", "mock"), default="real")
     parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument("--run-id", help="Name a new evaluation directory.")
+    parser.add_argument("--resume", metavar="RUN_ID", help="Resume an existing evaluation run.")
     parser.add_argument(
         "--per-call-timeout-s",
         type=float,
         help="Evaluation-only override; defaults to budgets.per_call_timeout_s in config.yaml.",
     )
+    parser.add_argument("--per-question-budget-s", type=float)
+    parser.add_argument("--overall-timeout-s", type=float)
+    parser.add_argument("--max-repair-attempts", type=int)
+    parser.add_argument("--max-llm-calls-per-question", type=int)
+    parser.add_argument(
+        "--thinking",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Enable/disable Ollama thinking mode; defaults to evaluation config.",
+    )
+    parser.add_argument(
+        "--keep-alive", help="Ollama keep_alive value; defaults to evaluation config."
+    )
     args = parser.parse_args()
+    resume_id = args.resume
+    run_id = resume_id or args.run_id
+    if args.resume and args.run_id:
+        parser.error("Use --resume RUN_ID or --run-id, not both.")
+    question_ids = (
+        [part.strip() for part in args.questions.split(",") if part.strip()]
+        if args.questions
+        else None
+    )
     summary = evaluate_agent(
         dataset_path=args.dataset,
         oracle_path=args.oracle,
-        questions_path=args.questions,
+        questions_path=args.questions_file,
         results_dir=args.results_dir,
         model=args.model,
         repeats=args.repeats,
         per_call_timeout_s=args.per_call_timeout_s,
+        per_question_budget_s=args.per_question_budget_s,
+        overall_timeout_s=args.overall_timeout_s,
+        max_repair_attempts=args.max_repair_attempts,
+        max_llm_calls_per_question=args.max_llm_calls_per_question,
+        thinking_enabled=args.thinking,
+        keep_alive=args.keep_alive,
+        run_id=run_id,
+        resume=bool(resume_id),
+        selected_question_ids=question_ids,
+        mode=args.mode,
     )
-    print(json.dumps({key: value for key, value in summary.items() if key != "runs"}, indent=2))
+    print(
+        json.dumps(
+            {
+                "run_id": summary["run_id"],
+                "score_complete": summary["score_complete"],
+                "summary_path": str(args.results_dir / summary["run_id"] / "agent_eval.json"),
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
