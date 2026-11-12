@@ -10,6 +10,7 @@ M6 real-model evaluation diagnostics and resumability. The harness changes are i
 - No changes were made to the oracle, frozen benchmark questions, or fixed-workflow baseline.
 - Full suite: `uv run pytest -q` — 232 passed (baseline before this task: 225).
 - Ruff: `uv run ruff check .` — clean; `uv run ruff format --check .` — 82 files clean.
+- Diagnostics/resumability implementation is committed as `2d73daf`.
 - No real-model benchmark was run for this task.
 - Evaluation defaults in `config.yaml`: 300 seconds per question, 7200 seconds overall, 2 repair attempts, 8 LLM calls per question, thinking disabled, and Ollama `keep_alive: 10m`.
 - Traces now include graph-stage durations, individual repair and tool durations, every LLM call's duration, budget/cap events, diagnostics, and warm-up status.
