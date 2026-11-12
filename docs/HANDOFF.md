@@ -7,6 +7,7 @@ Complete the owner-approved M6 Steps 5-8: evidence-grounded answers, evaluation 
 
 ## State
 - M6 Steps 1-4 remain committed in `e066882`, `5aa65e4`, and `067242a`.
+- M6 Steps 5-8 implementation and real-evaluation artifacts are in commit `2d27aea`.
 - Current full suite: `uv run pytest -q` — 222 passed.
 - Ruff: `uv run ruff check .` — clean; `uv run ruff format --check .` — 81 files clean.
 - D-029 records the owner's explicit override of D-027's prior M10 scoring deferral. No shared contracts changed.
