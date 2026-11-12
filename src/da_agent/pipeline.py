@@ -3,45 +3,24 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 from uuid import uuid4
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, Field
 
+from da_agent.agent.answer import AgentResult, build_agent_result
 from da_agent.agent.baseline import BaselineRun
 from da_agent.agent.baseline import run_baseline as _run_baseline
-from da_agent.agent.executor import TaskExecutionRecord
 from da_agent.agent.graph import run_agent as _run_agent
 from da_agent.agent.planner import LLMClient, OllamaClient, Plan, generate_plan
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
-    ExecutionStatus,
     Failure,
-    PlanRevision,
-    ResolvedQuestion,
 )
 from da_agent.core.config import AppConfig, load_config
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
-
-
-class AgentResult(BaseModel):
-    """Typed output from a complete dynamic-agent pipeline run."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    run_id: str
-    status: ExecutionStatus
-    resolved_question: ResolvedQuestion | None = None
-    plan: Plan | None = None
-    task_results: list[TaskExecutionRecord] = Field(default_factory=list)
-    evidence_ids: list[str] = Field(default_factory=list)
-    failures: list[Failure] = Field(default_factory=list)
-    revisions: list[PlanRevision] = Field(default_factory=list)
-    final_answer: dict[str, Any] = Field(default_factory=dict)
 
 
 def run_baseline(
@@ -160,14 +139,15 @@ def run_agent(
         trace_writer=trace_writer,
         max_replans=max_replans,
     )
-    return AgentResult(
+    return build_agent_result(
         run_id=run_id,
-        status=ExecutionStatus(state["status"]),
-        resolved_question=state.get("resolved"),
+        question=question,
+        resolved=state.get("resolved"),
         plan=state.get("plan"),
         task_results=state.get("executed_records", []),
-        evidence_ids=state.get("evidence_ids", []),
+        evidence_store=state.get("evidence_store", {}),
+        run_status=state["status"],
         failures=state.get("failures", []),
         revisions=state.get("revisions", []),
-        final_answer=state.get("final_answer") or {},
+        trace_writer=trace_writer,
     )

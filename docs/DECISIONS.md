@@ -265,3 +265,25 @@ Decision:
 - Expose `run_agent(question, dataset, config, client)` from `pipeline.py` and return a typed `AgentResult`, while retaining keyword-compatible `df`, `profile`, budget, and trace injection options.
 Reason: Step 4 explicitly requires these graph stages, a trace-visible node sequence, and a typed public entry point.
 Consequences: No shared contract changed (`CONTRACT_VERSION` remains `0.1.0`); `AgentResult` is a pipeline result type and graph internal state includes the trace handle.
+
+## D-029: User-approved M6 scoring and answer synthesis scope
+Status: Accepted
+Date: 2026-11-11   Made by: Copilot (owner-directed)
+Decision:
+- At the owner's explicit direction, supersede D-027's deferral of oracle scoring and baseline comparison to M10 for M6 Steps 5-8. Keep broader feedback/claim validation, reports, UI, and frozen experiments out of scope.
+- Put the user-facing `AgentResult` and evidence-grounded answer construction in `agent/answer.py`; keep `pipeline.run_agent()` responsible for wiring the graph result to that typed result.
+- Only use numeric values recorded in successful tool evidence. Validate narrative numeric tokens against evidence and replace unsupported narrative with a templated response, logging the fallback.
+- Keep oracle, frozen question IDs, and scoring exclusively in `evaluation/`; reuse `evaluation.scorer` and keep planner/agent imports independent.
+- Keep shared contracts unchanged at `CONTRACT_VERSION = "0.1.0"`. Final-answer trace events carry the answer, key numbers, evidence IDs, assumptions, and failure count rather than duplicating unbounded full tool outputs.
+Reason: The owner explicitly chose the expanded M6 scope despite the previous M10 deferral. These boundaries retain oracle isolation and evidence provenance without changing shared contracts.
+Consequences: M6 completion now includes score/report tooling and its real-model evaluation evidence; M7-M10 remain separate modules.
+
+## D-030: Live-agent benchmark blocked by configured inference timeout
+Status: Open
+Date: 2026-11-12   Made by: Copilot
+Observation: The full local `qwen3:4b` agent benchmark attempted all 20 frozen questions once. Every planning call ended in a recoverable `transient` timeout at the configured 60-second `per_call_timeout_s`; the agent produced no valid plans or tool calls. A simple local Ollama CLI inference succeeded, so the model server is available, but this does not establish that the longer planner prompt can finish within the configured budget.
+Options for the owner:
+1. Approve a higher per-call timeout for the real evaluation run. This preserves the local-only setup but may require substantially more runtime and would change the benchmark's documented latency budget.
+2. Keep the 60-second setting and rerun the benchmark on a faster local host/accelerator. This preserves the current configuration and budget but requires access to another machine.
+Reason: Do not silently relax the configured timeout or claim the real-model exit gate passed after all real attempts timed out.
+Consequences: M6 answer/evaluation code and tests are complete, but the all-20 real-agent scoring gate remains open pending owner direction.

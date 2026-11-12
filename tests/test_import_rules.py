@@ -1,9 +1,15 @@
 """Enforce architectural import layering rules across all da_agent packages."""
 
 import ast
+import json
 from pathlib import Path
 
 import pytest
+
+from da_agent.agent.planner import build_system_prompt
+from da_agent.data.loader import load_data
+from da_agent.data.profiler import compute_profile
+from da_agent.tools.registry import export_tool_specs
 
 
 def get_imported_modules(py_file: Path) -> set[str]:
@@ -164,6 +170,7 @@ def test_dynamic_agent_independence() -> None:
     """M6 orchestration must not depend on evaluation or the fixed baseline."""
     agent_files = (
         Path("src/da_agent/agent/executor.py"),
+        Path("src/da_agent/agent/answer.py"),
         Path("src/da_agent/agent/graph.py"),
         Path("src/da_agent/agent/planner.py"),
         Path("src/da_agent/agent/resolver.py"),
@@ -206,3 +213,29 @@ def test_dynamic_agent_independence() -> None:
     ]
     if "question_id" in run_agent_args:
         pytest.fail("pipeline.run_agent must accept free-text questions, not question_id")
+
+
+def test_planner_prompt_and_examples_exclude_frozen_questions() -> None:
+    """Benchmark question text must not leak into planner templates or few-shot examples."""
+    with Path("evaluation/benchmark/questions.json").open("r", encoding="utf-8") as source:
+        benchmark_questions = json.load(source)
+    with Path("src/da_agent/agent/planner.py").open("r", encoding="utf-8") as source:
+        planner_tree = ast.parse(source.read(), filename="planner.py")
+
+    source_literals = [
+        node.value
+        for node in ast.walk(planner_tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    ]
+    profile = compute_profile(
+        load_data(Path("Sample-Superstore.csv")),
+        file_path=Path("Sample-Superstore.csv"),
+    )
+    prompt = build_system_prompt(profile, export_tool_specs())
+    prompt_sources = "\n".join([prompt, *source_literals]).casefold()
+
+    for item in benchmark_questions:
+        question = " ".join(item["question"].split()).casefold()
+        assert question not in prompt_sources, (
+            f"Benchmark question leaked into planner: {item['id']}"
+        )

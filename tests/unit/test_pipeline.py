@@ -46,8 +46,8 @@ def test_pipeline_run_agent_wires_graph_and_trace() -> None:
         )
         event_types = [event.event_type for event in writer.read_events()]
 
-    assert result.status == "complete"
+    assert result.status == "answered"
     assert isinstance(result, AgentResult)
-    assert result.evidence_ids
+    assert result.evidence
     assert result.final_answer
     assert "status" in event_types

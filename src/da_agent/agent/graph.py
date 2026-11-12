@@ -460,7 +460,7 @@ def build_nodes(
             )
             trace_writer.log_status(run_status)
             trace_writer.log_event(
-                "final_answer",
+                "agent_execution_state",
                 {
                     "status": status,
                     "answer": final_answer,

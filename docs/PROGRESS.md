@@ -1,21 +1,19 @@
 # PROGRESS.md: what is done and what is pending
 
-## M6 Implementation Plan (Dynamic Planning Agent; Phase 4 scope)
-- Preserve completed M6 Steps 1–2: planner-model evidence/configuration and the deterministic DAG executor.
-- Complete typed shared state for question, resolved intent, plan/version, execution results, evidence, failures, budgets, and status.
-- Build the fixed LangGraph path: resolve -> plan -> execute -> inspect -> bounded revise or finalize.
-- Expose the graph through `pipeline.run_agent()` as the public wiring entry point.
-- Keep LLM and trace dependencies in graph-node closures; declare every state key used by routing in `AgentState`.
-- Execute only through the M3 registry executor; retain deterministic task ordering, evidence, and trace events.
-- Replan within configured limits after recoverable execution failures or informative results, using factual task/error/result/schema feedback.
-- Reject invalid or unchanged revisions; increment plan versions and record each accepted `PlanRevision` with its trigger.
-- Inspect concise typed result summaries; do not send raw frames or oracle answers to the planner.
-- Return structured final answers backed by tool evidence and a terminal complete/partial/failed status.
-- Defer baseline/oracle scoring and comparison to M10; defer M7 feedback/claim validation, M8 reports, and M9 UI.
-- Tests: DAG execution (linear/branching/failure/limits/revision reuse), graph success and repair, replan success/exhaustion/invalid or unchanged plan, trace events, pipeline wiring, and import rules.
-- Exit gates: multistep execution produces valid evidence; a changed revision records its factual trigger; no-ready/invalid plans stop; full tests and Ruff pass.
+## M6 Completion Plan (owner-approved Steps 5-8 expansion)
+- Preserve completed M6 Steps 1-4: model evidence, DAG executor, bounded replanning, LangGraph orchestration, and typed pipeline wiring.
+- Synthesize a typed user-facing result containing answer text, key numbers, evidence references, assumptions, failures, and status.
+- Derive every numeric claim from successful tool evidence; reject unsupported narrative numbers, use a grounded template, and trace the fallback.
+- Keep declined/failed outcomes well-formed and record the structured final result in the run trace.
+- Add evaluation-only answer extraction from tool evidence and reuse the M4 scorer.
+- Run all 20 frozen questions through `run_agent()` with the chosen local Ollama model; keep question IDs and oracle data out of agent code and prompts.
+- Compare against the fixed baseline using accuracy, plan validity, repair/replan rates, tool-call counts, latency, failures, and per-question outcomes.
+- Report repeated-run variance when feasible and label the baseline's template-keyed ceiling accurately.
+- Extend architecture/prompt-leakage tests without weakening existing import rules or frozen benchmark data.
+- Preserve `CONTRACT_VERSION = "0.1.0"` and defer broader M7 feedback/validation, M8 reports, M9 UI, and other M10 experiments.
+- Exit gates: complete tests and Ruff checks, real-model benchmark artifacts, honest score comparison, traceable answers, and updated decisions/handoff.
 
-Last updated: 2026-11-11 by Copilot. Tick items only after you ran the tests in the current session.
+Last updated: 2026-11-11 by Copilot. Run and record every gate before marking it passed.
 Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 
 ## Module checklist
@@ -33,6 +31,8 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [ ] M8 Reports and rendering. GATE passed: [ ]
 - [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
 - [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
+
+M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture checks, documentation, and local test gates are complete. The real-agent gate is still open: local `qwen3:4b` timed out on all 20 questions at the configured 60-second per-call limit; see D-030 and the current handoff.
 
 ## Requirement status
 
@@ -75,3 +75,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-11 | antigravity | M5 | resolver, planner with bounded repair, DAG validator, pipeline entry, benchmark eval harness (M5 gate passed) | uv run pytest -q: 190 passed; ruff clean; run_plan_eval: 90% validity | pending
 2026-11-11 | Copilot | M6 | local model evidence and DAG executor (D-025/D-026); fixed LangGraph orchestration, bounded failure repair and result-driven revisions, revision-safe evidence reuse, pipeline entry; deferred scoring/comparison to M10 per Phase 4 | uv run pytest -q: 212 passed; uv run ruff check . clean; uv run ruff format --check . clean | e066882
 2026-11-11 | Copilot | M6 Step 4 | added explicit validate_repair/replan stages, graph node-sequence trace events, decline/no-LLM branch test, typed AgentResult and positional pipeline signature | uv run pytest -q: 213 passed; uv run ruff check . clean; uv run ruff format --check . clean | 5aa65e4
+2026-11-12 | Copilot | M6 Steps 5-8 | added evidence-grounded answers, pipeline integration, scoring/comparison harness, prompt/import checks, D-029/D-030 and handoff; real qwen3:4b agent evaluation attempted all 20 questions but timed out on every planner call at 60 seconds | uv run pytest -q: 222 passed; uv run ruff check . and format --check clean; real eval 0/20 plans, 0 tool calls, baseline 20/20 | pending

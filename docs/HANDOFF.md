@@ -1,38 +1,47 @@
 # HANDOFF.md: current task and continuation
 
-Updated: 2026-11-11 by Copilot
+Updated: 2026-11-12 by Copilot
 
 ## Current task
-M6 Step 4 (LangGraph orchestration and public pipeline contract) has been aligned with the user's explicit checklist and verified. M6 is complete; next module is M7. `CONTRACT_VERSION` remains `0.1.0`.
+Complete the owner-approved M6 Steps 5-8: evidence-grounded answers, evaluation and baseline comparison, architecture hygiene, and documentation. The implementation and local checks are complete. The real-agent benchmark gate is blocked pending a timeout/hardware decision. `CONTRACT_VERSION` remains `0.1.0`.
 
 ## State
-- Prior M6 commit: `e066882`; this Step 4 alignment is committed separately (see progress session log).
-- Full suite: `uv run pytest -q` — 213 passed.
-- Repository Ruff: `uv run ruff check .` — clean; `uv run ruff format --check .` — 77 files clean.
-- Focused Step 4 verification: `uv run pytest tests/unit/agent/test_graph.py tests/unit/test_pipeline.py tests/test_import_rules.py -q` — 23 passed.
-- Live Ollama evaluation has not been run.
+- M6 Steps 1-4 remain committed in `e066882`, `5aa65e4`, and `067242a`.
+- Current full suite: `uv run pytest -q` — 222 passed.
+- Ruff: `uv run ruff check .` — clean; `uv run ruff format --check .` — 81 files clean.
+- D-029 records the owner's explicit override of D-027's prior M10 scoring deferral. No shared contracts changed.
+- New answer synthesis is in `src/da_agent/agent/answer.py`; `pipeline.run_agent()` returns that typed result.
+- Evaluation code is in `evaluation/run_agent_eval.py`; reports are saved in `evaluation/results/m6_qwen3-4b/`.
+
+## Real-model benchmark result and blocker
+- The real harness attempted all 20 questions once with local `qwen3:4b`.
+- 0/20 plans were valid; 0 tool calls; all 20 planning calls ended in `FailureClass.TRANSIENT` with `LLM inference error: timed out` at the configured 60-second timeout.
+- The fixed baseline scored 20/20 (1.000); its result is a template-keyed ceiling, not a fair competitor.
+- The simple `ollama run qwen3:4b` check succeeded, but the longer planner requests exceeded the configured timeout.
+- JSON/Markdown report: `evaluation/results/m6_qwen3-4b/agent_eval.json` and `agent_eval.md`. Per-run traces exist under `runs/agent_eval_*` and are gitignored.
+- D-030 asks the owner to choose: (1) approve a higher configured real-evaluation timeout, with longer runtime and a different latency budget, or (2) keep 60 seconds and rerun on faster local hardware.
+- Do not claim the real-model exit gate passed or silently change the timeout. The earlier real planner/model-selection evidence remains recorded in D-025.
 
 ## What changed in this continuation
-- `agent/graph.py` now has explicit `resolve`, `plan`, `validate_repair`, `execute`, `replan`, and `finalize` stages.
-- Successful plan generation/repair is revalidated by `validate_repair` before execution. Failure and result-driven revisions route through one bounded replan stage.
-- Every graph node writes start/end events to the run trace. Tests assert decline path invokes no LLM, validation failure finalizes, and execution recovery traces the expected stage order.
-- `AgentState` includes a typed trace writer field.
-- `pipeline.run_agent(question, dataset, config, client)` accepts free text without question IDs and returns typed `AgentResult`. Prior keyword injection options remain available.
-- D-028 records these choices.
-
-## Scope decisions
-- Per Phase 4 of `docs/implementation_plan.docx`, oracle scoring/baseline comparison is M10; broader feedback/claim validation is M7. Neither was added here.
-- No shared contract changes were made.
+- Added typed answer synthesis with evidence references, key numbers, ambiguity assumptions, declined/failed outcomes, narrative number-grounding checks, fallback tracing, and a concise final-answer trace event.
+- Integrated synthesis into the pipeline result.
+- Added evidence-to-score extraction, M4 scorer reuse, repeat-aware metrics and baseline comparison, JSON/Markdown output, and a prompt/import architecture check.
+- Corrected trailing punctuation handling in narrative numeric validation.
+- Full suite increased from 213 to 222 passing tests; Ruff checks pass.
 
 ## Next steps
-1. Begin M7 only after the owner confirms the live model-evaluation question if it is considered a prerequisite.
+1. Get the owner's direction on D-030.
+2. Rerun the real all-20 agent benchmark with the approved timeout or machine.
+3. If real runs produce plans, verify evidence-backed scoring and update the results, handoff, and progress log.
+4. Do not start M7 until this M6 extension is closed.
 
 ## Open questions
+- D-030: approve a higher planner inference timeout, or preserve the 60-second budget and use faster local hardware?
 - Dataset redistribution approval remains as recorded in D-007.
-- The prior handoff notes that live candidate model planner evaluation was not rerun in this continuation; resolve whether the owner considers it a prerequisite before M7.
 
 ## How to run
 - `uv run pytest -q`
 - `uv run ruff check .`
 - `uv run ruff format --check .`
-- `uv run python evaluation/run_plan_eval.py` (mock mode by default; live Ollama with `--mode real --model <name>`)
+- `uv run python evaluation/run_agent_eval.py --model qwen3:4b --repeats 1 --results-dir evaluation/results/m6_qwen3-4b`
+- `uv run python evaluation/run_plan_eval.py --mode real --model qwen3:4b`
