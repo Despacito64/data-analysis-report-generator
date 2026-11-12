@@ -117,7 +117,7 @@ def validate_narrative_grounding(narrative: str, tool_outputs: list[dict[str, An
 
 
 def _format_number(value: float) -> str:
-    return f"{value:,}" if isinstance(value, int) else f"{value:.8g}"
+    return f"{value:,}" if isinstance(value, int) else str(value)
 
 
 def _template_answer(

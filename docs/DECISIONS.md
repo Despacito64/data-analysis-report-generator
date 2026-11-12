@@ -279,11 +279,10 @@ Reason: The owner explicitly chose the expanded M6 scope despite the previous M1
 Consequences: M6 completion now includes score/report tooling and its real-model evaluation evidence; M7-M10 remain separate modules.
 
 ## D-030: Live-agent benchmark blocked by configured inference timeout
-Status: Open
+Status: Accepted
 Date: 2026-11-12   Made by: Copilot
 Observation: The full local `qwen3:4b` agent benchmark attempted all 20 frozen questions once. Every planning call ended in a recoverable `transient` timeout at the configured 60-second `per_call_timeout_s`; the agent produced no valid plans or tool calls. A simple local Ollama CLI inference succeeded, so the model server is available, but this does not establish that the longer planner prompt can finish within the configured budget.
-Options for the owner:
-1. Approve a higher per-call timeout for the real evaluation run. This preserves the local-only setup but may require substantially more runtime and would change the benchmark's documented latency budget.
-2. Keep the 60-second setting and rerun the benchmark on a faster local host/accelerator. This preserves the current configuration and budget but requires access to another machine.
-Reason: Do not silently relax the configured timeout or claim the real-model exit gate passed after all real attempts timed out.
-Consequences: M6 answer/evaluation code and tests are complete, but the all-20 real-agent scoring gate remains open pending owner direction.
+Owner approval: On 2026-11-12 the owner approved a 180-second per-call timeout for a local rerun.
+Implementation: Added `--per-call-timeout-s` to `evaluation/run_agent_eval.py` as an evaluation-only override. The application `config.yaml` and normal runtime budget remain unchanged; `Budgets` validation still applies.
+Reason: Do not silently relax the application timeout or claim the real-model exit gate passed after all original attempts timed out.
+Consequences: The approved 180-second rerun did not complete. Traces were produced for q01-q09: q03 and q04 reached `answered` with tool evidence, q01, q02, and q05-q08 failed on planner timeouts, and q09 has no terminal event. The remaining questions were not run. No score summary was written, so the real-agent gate remains open. Do not treat partial trace results as a complete benchmark.

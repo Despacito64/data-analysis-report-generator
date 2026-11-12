@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from collections import Counter
 from pathlib import Path
@@ -12,7 +13,8 @@ from typing import Any
 from uuid import uuid4
 
 from da_agent.agent.answer import AgentAnswerStatus, AgentResult
-from da_agent.core.config import load_config
+from da_agent.contracts.models import Budgets
+from da_agent.core.config import AppConfig, load_config
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
@@ -215,6 +217,18 @@ def render_markdown_summary(summary: dict[str, Any], json_path: Path) -> str:
     return "\n".join(lines)
 
 
+def apply_eval_timeout(config: AppConfig, timeout_s: float | None) -> AppConfig:
+    """Apply an explicit evaluation-only inference timeout without changing app defaults."""
+    if timeout_s is None:
+        return config
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        raise ValueError("Evaluation timeout must be a positive finite number of seconds")
+    budget_values = config.budgets.model_dump()
+    budget_values["per_call_timeout_s"] = timeout_s
+    budgets = Budgets.model_validate(budget_values)
+    return config.model_copy(update={"budgets": budgets})
+
+
 def evaluate_agent(
     *,
     dataset_path: Path,
@@ -223,6 +237,7 @@ def evaluate_agent(
     results_dir: Path,
     model: str | None = None,
     repeats: int = 1,
+    per_call_timeout_s: float | None = None,
 ) -> dict[str, Any]:
     """Run all frozen questions through the free-text agent and compare with baseline."""
     if repeats < 1:
@@ -232,6 +247,7 @@ def evaluate_agent(
         config = config.model_copy(
             update={"model": config.model.model_copy(update={"name": model})}
         )
+    config = apply_eval_timeout(config, per_call_timeout_s)
     df = load_data(dataset_path)
     profile = compute_profile(df, file_path=dataset_path)
     oracle = load_oracle(oracle_path)
@@ -338,6 +354,7 @@ def evaluate_agent(
         "model": config.model.name,
         "dataset": str(dataset_path),
         "repeats_per_question": repeats,
+        "per_call_timeout_s": config.budgets.per_call_timeout_s,
     }
     per_question_runs = {
         item["id"]: [run for run in raw_runs if run["question_id"] == item["id"]]
@@ -376,6 +393,11 @@ def main() -> None:
     parser.add_argument("--results-dir", type=Path, default=Path("evaluation/results"))
     parser.add_argument("--model")
     parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument(
+        "--per-call-timeout-s",
+        type=float,
+        help="Evaluation-only override; defaults to budgets.per_call_timeout_s in config.yaml.",
+    )
     args = parser.parse_args()
     summary = evaluate_agent(
         dataset_path=args.dataset,
@@ -384,6 +406,7 @@ def main() -> None:
         results_dir=args.results_dir,
         model=args.model,
         repeats=args.repeats,
+        per_call_timeout_s=args.per_call_timeout_s,
     )
     print(json.dumps({key: value for key, value in summary.items() if key != "runs"}, indent=2))
 

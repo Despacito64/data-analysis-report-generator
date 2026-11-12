@@ -59,6 +59,23 @@ def test_grounding_check_rejects_unsupported_number() -> None:
     )
 
 
+def test_templated_answer_preserves_tool_precision() -> None:
+    value = 125.123456789
+    record = _record().model_copy(update={"output_summary": {"value": value}})
+    output = {"value": value}
+    result = build_agent_result(
+        run_id="answer_precision",
+        question="What is the total sales?",
+        resolved=_resolved(),
+        task_results=[record],
+        evidence_store={"ev_task_sales_abc": output},
+        run_status="complete",
+    )
+
+    assert str(value) in result.answer_text
+    assert validate_narrative_grounding(result.answer_text, [output])
+
+
 def test_unsupported_narrative_falls_back_and_logs_trace() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         writer = RunTraceWriter(run_id="answer_fallback", base_dir=temp_dir)

@@ -3,8 +3,10 @@
 from pathlib import Path
 
 from da_agent.agent.answer import AgentAnswerStatus
+from da_agent.core.config import load_config
 from da_agent.pipeline import AgentResult
 from evaluation.run_agent_eval import (
+    apply_eval_timeout,
     build_comparison,
     extract_score_answer,
     render_markdown_summary,
@@ -65,3 +67,23 @@ def test_comparison_and_markdown_include_baseline_ceiling_note() -> None:
     assert summary["baseline"]["correct"] == 1
     assert summary["per_question"][0]["outcome"] == "tie"
     assert "template-keyed ceiling" in markdown
+
+
+def test_eval_timeout_override_changes_only_evaluation_config() -> None:
+    config = load_config()
+
+    updated = apply_eval_timeout(config, 180.0)
+
+    assert updated.budgets.per_call_timeout_s == 180.0
+    assert config.budgets.per_call_timeout_s == 60.0
+
+
+def test_eval_timeout_override_rejects_non_positive_values() -> None:
+    config = load_config()
+
+    try:
+        apply_eval_timeout(config, 0)
+    except ValueError as exc:
+        assert "positive" in str(exc)
+    else:
+        raise AssertionError("Expected non-positive evaluation timeout to fail")

@@ -32,7 +32,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
 - [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
 
-M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture checks, documentation, and local test gates are complete. The real-agent gate is still open: local `qwen3:4b` timed out on all 20 questions at the configured 60-second per-call limit; see D-030 and the current handoff.
+M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture checks, documentation, and local test gates are complete. The real-agent gate remains open: the complete 60-second run timed out on all 20 questions; an owner-approved 180-second rerun stopped after q09, with q03/q04 producing answers and repeated planner timeouts on other completed questions. See D-030 and the current handoff.
 
 ## Requirement status
 
@@ -75,4 +75,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-11 | antigravity | M5 | resolver, planner with bounded repair, DAG validator, pipeline entry, benchmark eval harness (M5 gate passed) | uv run pytest -q: 190 passed; ruff clean; run_plan_eval: 90% validity | pending
 2026-11-11 | Copilot | M6 | local model evidence and DAG executor (D-025/D-026); fixed LangGraph orchestration, bounded failure repair and result-driven revisions, revision-safe evidence reuse, pipeline entry; deferred scoring/comparison to M10 per Phase 4 | uv run pytest -q: 212 passed; uv run ruff check . clean; uv run ruff format --check . clean | e066882
 2026-11-11 | Copilot | M6 Step 4 | added explicit validate_repair/replan stages, graph node-sequence trace events, decline/no-LLM branch test, typed AgentResult and positional pipeline signature | uv run pytest -q: 213 passed; uv run ruff check . clean; uv run ruff format --check . clean | 5aa65e4
-2026-11-12 | Copilot | M6 Steps 5-8 | added evidence-grounded answers, pipeline integration, scoring/comparison harness, prompt/import checks, D-029/D-030 and handoff; real qwen3:4b agent evaluation attempted all 20 questions but timed out on every planner call at 60 seconds | uv run pytest -q: 222 passed; uv run ruff check . and format --check clean; real eval 0/20 plans, 0 tool calls, baseline 20/20 | 2d27aea
+2026-11-12 | Copilot | M6 Steps 5-8 | added evidence-grounded answers, pipeline integration, scoring/comparison harness, prompt/import checks, D-029/D-030 and handoff; complete qwen3:4b run timed out at 60 seconds; approved 180-second partial run reached q09 but remained too slow | uv run pytest -q: 225 passed; uv run ruff check . and format --check clean; 60-second real eval 0/20 plans, baseline 20/20; longer partial run q03/q04 answered, other completed requests timed out | pending
