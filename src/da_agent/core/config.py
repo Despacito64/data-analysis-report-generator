@@ -28,6 +28,16 @@ class ClaimValidationConfig(BaseModel):
     drop_policy: FindingDropPolicy = Field(default=FindingDropPolicy.DROP_FINDING)
 
 
+class RecoveryLimits(BaseModel):
+    """Execution caps for retries, per-task repairs, and plan revisions."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    identical_retry_cap: int = Field(default=2, ge=0)
+    repair_attempts_per_task: int = Field(default=2, ge=0)
+    replans_per_question: int = Field(default=3, ge=0)
+
+
 class ModelConfig(BaseModel):
     """Model endpoint and inference settings."""
 
@@ -93,6 +103,7 @@ class AppConfig(BaseModel):
     run_trace: RunTraceConfig = Field(default_factory=RunTraceConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     claim_validation: ClaimValidationConfig = Field(default_factory=ClaimValidationConfig)
+    recovery_limits: RecoveryLimits = Field(default_factory=RecoveryLimits)
 
 
 def load_config(path: str | Path = "config.yaml") -> AppConfig:

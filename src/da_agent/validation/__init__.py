@@ -20,6 +20,16 @@ from da_agent.validation.claims import (
     validate_single_claim,
 )
 from da_agent.validation.plan_check import validate_plan
+from da_agent.validation.recovery import (
+    NoProgressPattern,
+    NoProgressResult,
+    RecoveryAction,
+    RecoveryCounters,
+    RecoveryDecision,
+    decide_recovery,
+    detect_no_progress,
+    fingerprint,
+)
 from da_agent.validation.results import validate_tool_result
 
 __all__ = [
@@ -27,11 +37,19 @@ __all__ = [
     "ClaimValidationResult",
     "EvidenceNumber",
     "ExtractedNumericClaim",
+    "NoProgressPattern",
+    "NoProgressResult",
+    "RecoveryAction",
+    "RecoveryCounters",
+    "RecoveryDecision",
     "RejectedFinding",
     "TextSpan",
     "ValidatedClaimRecord",
+    "decide_recovery",
+    "detect_no_progress",
     "extract_evidence_numbers",
     "extract_numeric_claims",
+    "fingerprint",
     "match_claim_to_evidence",
     "normalize_claim_number",
     "validate_findings",

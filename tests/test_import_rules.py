@@ -298,7 +298,7 @@ def test_failures_and_invalidation_modules_leakage_and_independence() -> None:
         "evaluation",
     )
 
-    for mod_name in ("failures.py", "invalidation.py"):
+    for mod_name in ("failures.py", "invalidation.py", "recovery.py"):
         target_path = Path("src/da_agent/validation") / mod_name
         assert target_path.exists(), f"{mod_name} must exist"
 

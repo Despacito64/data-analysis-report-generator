@@ -44,3 +44,8 @@ claim_validation:
   rounding_digits: 4
   allow_recomputation: true
   drop_policy: "drop_finding"
+
+recovery_limits:
+  identical_retry_cap: 2
+  repair_attempts_per_task: 2
+  replans_per_question: 3

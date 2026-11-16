@@ -6,6 +6,7 @@ from da_agent.core.config import (
     FindingDropPolicy,
     InputLimitsConfig,
     ModelConfig,
+    RecoveryLimits,
     SamplingConfig,
     load_config,
 )
@@ -17,6 +18,7 @@ __all__ = [
     "FindingDropPolicy",
     "InputLimitsConfig",
     "ModelConfig",
+    "RecoveryLimits",
     "RunTraceWriter",
     "SamplingConfig",
     "TraceEvent",
