@@ -277,12 +277,8 @@ def detect_no_progress(history: list[Any]) -> NoProgressResult:
         is_allowed_identical = False
 
         if isinstance(curr, dict) and isinstance(prev, dict):
-            curr_fp = curr.get("fingerprint") or (
-                fingerprint(curr) if "tool" in curr else None
-            )
-            prev_fp = prev.get("fingerprint") or (
-                fingerprint(prev) if "tool" in prev else None
-            )
+            curr_fp = curr.get("fingerprint") or (fingerprint(curr) if "tool" in curr else None)
+            prev_fp = prev.get("fingerprint") or (fingerprint(prev) if "tool" in prev else None)
             is_allowed_identical = bool(curr.get("allowed_identical", False))
         elif hasattr(curr, "tool") and hasattr(prev, "tool"):
             curr_fp = fingerprint(curr)
@@ -306,16 +302,17 @@ def detect_no_progress(history: list[Any]) -> NoProgressResult:
                     pattern=NoProgressPattern.EMPTY_REVISION,
                     reason="Plan revision specifies no affected tasks",
                 )
-        elif isinstance(item, dict):
-            if item.get("event") == "revision" or "new_evidence_count" in item:
-                new_ev = item.get("new_evidence_count", 0)
-                changed_tasks = item.get("changed_pending_tasks", 0)
-                if new_ev == 0 and changed_tasks == 0:
-                    return NoProgressResult(
-                        no_progress=True,
-                        pattern=NoProgressPattern.EMPTY_REVISION,
-                        reason="Plan revision produced no new valid evidence and left pending tasks unchanged",
-                    )
+        elif isinstance(item, dict) and (
+            item.get("event") == "revision" or "new_evidence_count" in item
+        ):
+            new_ev = item.get("new_evidence_count", 0)
+            changed_tasks = item.get("changed_pending_tasks", 0)
+            if new_ev == 0 and changed_tasks == 0:
+                return NoProgressResult(
+                    no_progress=True,
+                    pattern=NoProgressPattern.EMPTY_REVISION,
+                    reason="Plan revision produced no new valid evidence and left pending tasks unchanged",
+                )
 
     # (c) Check for cycling among 3+ alternating states
     state_tokens: list[str] = []

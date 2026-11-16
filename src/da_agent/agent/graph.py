@@ -61,19 +61,49 @@ def route_after_validate_repair(state: AgentState) -> str:
 
 
 def route_after_inspect(state: AgentState) -> str:
-    result = state.get("last_exec_result")
-    replan_count: int = state.get("replan_count", 0)
-    max_replans: int = state.get("max_replans", load_config().budgets.max_replans)
+    """Determine the next step after execution inspection using recovery logic.
 
+    Graph nodes/edges changed (D-034 note):
+    - Only this routing function changes; graph shape (nodes and edges) is unchanged.
+    - Failure path: previously used result.failure.recoverable boolean; now routed
+      through decide_recovery() which enforces identical_retry_cap, repair cap,
+      replan cap, and terminal classification deterministically.
+    - Retry-identical (transient): returns "execute" directly instead of "replan".
+    - Success path (no failure): unchanged — still sends to "replan" when evidence
+      exists and replan budget remains, so follow-up plans continue to work.
+    - Behaviour change: a failure that was previously recoverable=True but has hit
+      the identical_retry_cap or is classified terminal is now routed to "finalize"
+      (stops) rather than into an unbounded replan loop.
+    """
+    result = state.get("last_exec_result")
     if result is None:
         return "finalize"
 
-    failed_records = [r for r in result.records if r.status == TaskStatus.FAILED]
-    if failed_records:
-        if result.failure and result.failure.recoverable:
-            return "replan"
-        return "finalize"
-    if result.status == "complete" and result.evidence_ids and replan_count < max_replans:
+    replan_count: int = state.get("replan_count", 0)
+    max_replans: int = state.get("max_replans", load_config().budgets.max_replans)
+
+    # --- Success path: no failure, may still trigger a follow-up replan ---
+    if result.failure is None:
+        failed_records = [r for r in result.records if r.status == TaskStatus.FAILED]
+        if not failed_records:
+            if result.status == "complete" and result.evidence_ids and replan_count < max_replans:
+                return "replan"
+            return "finalize"
+
+    # --- Failure path: route through deterministic recovery decision ---
+    from da_agent.validation.recovery import decide_recovery
+
+    counters = {
+        "identical_retry_count": state.get("identical_retry_count", 0),
+        "repair_attempts": state.get("repair_attempts", 0),
+        "replan_count": replan_count,
+    }
+    limits = load_config().recovery_limits
+    decision = decide_recovery(result.failure, state, counters, limits)
+
+    if decision.action == "retry_identical":
+        return "execute"
+    if decision.action in ("repair", "replan"):
         return "replan"
     return "finalize"
 
@@ -522,7 +552,7 @@ def build_agent_graph(
     graph.add_conditional_edges(
         "inspect",
         route_after_inspect,
-        {"replan": "replan", "finalize": "finalize"},
+        {"execute": "execute", "replan": "replan", "finalize": "finalize"},
     )
     graph.add_conditional_edges(
         "replan",
