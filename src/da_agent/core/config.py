@@ -1,11 +1,31 @@
 """Configuration loader and models for da_agent."""
 
+from enum import Enum
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from da_agent.contracts import Budgets
+
+
+class FindingDropPolicy(str, Enum):
+    """Policy for findings containing unsupported or ambiguous claims."""
+
+    DROP_FINDING = "drop_finding"
+    REMOVE_CLAIM = "remove_claim"
+
+
+class ClaimValidationConfig(BaseModel):
+    """Tolerance, rounding, recomputation, and drop policy settings for claim validation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    rtol: float = Field(default=0.001, ge=0.0)
+    atol: float = Field(default=0.01, ge=0.0)
+    rounding_digits: int = Field(default=4, ge=0)
+    allow_recomputation: bool = Field(default=True)
+    drop_policy: FindingDropPolicy = Field(default=FindingDropPolicy.DROP_FINDING)
 
 
 class ModelConfig(BaseModel):
@@ -72,6 +92,7 @@ class AppConfig(BaseModel):
     input_limits: InputLimitsConfig
     run_trace: RunTraceConfig = Field(default_factory=RunTraceConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
+    claim_validation: ClaimValidationConfig = Field(default_factory=ClaimValidationConfig)
 
 
 def load_config(path: str | Path = "config.yaml") -> AppConfig:

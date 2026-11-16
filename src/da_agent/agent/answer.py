@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import re
 from enum import StrEnum
 from typing import Any
@@ -17,6 +16,7 @@ from da_agent.contracts.models import (
     ResolvedQuestion,
 )
 from da_agent.core.trace import RunTraceWriter
+from da_agent.validation.claims import extract_evidence_numbers, normalize_claim_number
 
 
 class AgentAnswerStatus(StrEnum):
@@ -76,29 +76,11 @@ _NON_CLAIM_KEYS = {"matched_indices", "sample_matched_indices"}
 
 def _numeric_values(value: Any, path: str = "") -> list[tuple[str, int | float]]:
     """Extract evidence numbers while excluding row indexes, booleans, and non-finite floats."""
-    numbers: list[tuple[str, int | float]] = []
-    if isinstance(value, bool):
-        return numbers
-    if isinstance(value, int) or (isinstance(value, float) and math.isfinite(value)):
-        numbers.append((path or "value", value))
-    elif isinstance(value, dict):
-        for key, child in value.items():
-            if key not in _NON_CLAIM_KEYS:
-                child_path = f"{path}.{key}" if path else str(key)
-                numbers.extend(_numeric_values(child, child_path))
-    elif isinstance(value, list):
-        for child in value:
-            numbers.extend(_numeric_values(child, path))
-    return numbers
+    return [(num.path, num.value) for num in extract_evidence_numbers(value, path)]
 
 
 def _normalize_number(text: str) -> float | None:
-    stripped = text.strip().rstrip("%").replace(",", "")
-    try:
-        value = float(stripped)
-    except ValueError:
-        return None
-    return value if math.isfinite(value) else None
+    return normalize_claim_number(text)
 
 
 def validate_narrative_grounding(narrative: str, tool_outputs: list[dict[str, Any]]) -> bool:

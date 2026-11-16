@@ -87,16 +87,24 @@ def test_data_imports_only_contracts_and_core() -> None:
 
 
 def test_validation_never_imports_tools() -> None:
-    """Layer 4: validation must NEVER import da_agent.tools."""
+    """Layer 4: validation must NEVER import da_agent.tools, da_agent.agent, da_agent.reports, da_agent.pipeline, or evaluation."""
     val_dir = Path("src/da_agent/validation")
     if not val_dir.exists():
         return
 
+    disallowed_prefixes = (
+        "da_agent.tools",
+        "da_agent.agent",
+        "da_agent.reports",
+        "da_agent.pipeline",
+        "evaluation",
+    )
     for py_file in val_dir.glob("*.py"):
         imported = get_imported_modules(py_file)
         for mod in imported:
-            if mod.startswith("da_agent.tools"):
-                pytest.fail(f"Validation layer rule violation in {py_file}: imports '{mod}'")
+            for dis in disallowed_prefixes:
+                if mod.startswith(dis):
+                    pytest.fail(f"Validation layer rule violation in {py_file}: imports '{mod}'")
 
 
 def test_tools_imports_only_allowed_layers() -> None:
@@ -238,4 +246,40 @@ def test_planner_prompt_and_examples_exclude_frozen_questions() -> None:
         question = " ".join(item["question"].split()).casefold()
         assert question not in prompt_sources, (
             f"Benchmark question leaked into planner: {item['id']}"
+        )
+
+
+def test_claims_validator_leakage_and_independence() -> None:
+    """Claims validator must not leak frozen questions or import prohibited modules."""
+    claims_file = Path("src/da_agent/validation/claims.py")
+    assert claims_file.exists(), "claims.py must exist"
+
+    imported = get_imported_modules(claims_file)
+    prohibited = (
+        "da_agent.tools",
+        "da_agent.agent",
+        "da_agent.reports",
+        "da_agent.pipeline",
+        "evaluation",
+    )
+    for mod in imported:
+        for p in prohibited:
+            if mod == p or mod.startswith(f"{p}."):
+                pytest.fail(f"claims.py violates layer independence: imports '{mod}'")
+
+    with Path("evaluation/benchmark/questions.json").open("r", encoding="utf-8") as source:
+        benchmark_questions = json.load(source)
+    with claims_file.open("r", encoding="utf-8") as source:
+        claims_tree = ast.parse(source.read(), filename="claims.py")
+
+    source_literals = [
+        node.value
+        for node in ast.walk(claims_tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    ]
+    all_literals = " ".join(source_literals).casefold()
+    for item in benchmark_questions:
+        question = " ".join(item["question"].split()).casefold()
+        assert question not in all_literals, (
+            f"Benchmark question leaked into claims.py: {item['id']}"
         )

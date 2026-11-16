@@ -299,3 +299,32 @@ Decision:
 - Do not close M6 or claim its real-model gate passed based on mock-mode verification or partial earlier real runs.
 Reason: The earlier real benchmark stopped before producing a complete score and gave little stage-level diagnostic data. Bounded attempts and per-question persistence make slow/failed runs inspectable and safely resumable without changing agent-facing contracts or benchmark assets.
 Consequences: Mock-mode tests validate timing, budgets/caps, persistence, resume/merge, report completeness, and Ollama option serialization. No real-model benchmark was run as part of this decision; the M6 real-evaluation gate remains open.
+
+## D-032: Layer 4 deterministic numeric claim validator and finding verification
+Status: Accepted
+Date: 2026-11-16   Made by: Antigravity
+Decision:
+- Implemented deterministic claim validator in `src/da_agent/validation/claims.py` (Architectural Layer 4) covering FR07 and FR09 claim-validation requirements, with configuration in `ClaimValidationConfig` and `AppConfig`.
+- Overlap Audit (M6 Answer Synthesis vs M7 Claim Validation):
+  - M6 (`da_agent.agent.answer`) performed coarse regex matching of numeric tokens against tool outputs (`validate_narrative_grounding`), checked exact float membership in flattened outputs, and triggered full template narrative fallback when unsupported. It did not capture spans, units, currency, ordinals, or context filtering.
+  - M7 (`da_agent.validation.claims`) generalizes this into structured typed extraction (`ExtractedNumericClaim` with span, unit, currency/percentage flags, decimal digits), ignores non-claim tokens (dates, years in context, ordinals, IDs, list numbering, quoted postal codes), and performs rigorous evidence verification.
+  - Refactoring: M6 `answer.py` (Layer 6) now reuses Layer 4's `extract_evidence_numbers` and `normalize_claim_number`, eliminating duplicate traversal and normalization code while maintaining full backward compatibility with all 232 existing tests.
+- Explicit Tolerance and Matching Rules:
+  - Relative tolerance `rtol = 0.001` (0.1%) and absolute tolerance `atol = 0.01` (allows cent-level/rounding variations).
+  - Rounding rules: Detects the claim's explicit decimal precision $d$ from string representation; if $d < 4$, evidence candidate values are rounded to $d$ places before comparison, allowing e.g. "12.3%" to match evidence fraction 0.1234 (scaled to 12.34% and rounded to 12.3%).
+  - Percentage vs fraction handling: Evaluates percentage claims against both direct percentage scale and fractional evidence scaled by 100 ($\times 100.0$); evaluates fractional claims against direct fraction and percentage evidence divided by 100.
+  - Cheap recomputations: When no direct match exists and `allow_recomputation = True`, searches binary derivations across unique evidence numbers in the same record (capped to top 25 numbers): sums ($a + b$), differences ($a - b$, $b - a$), shares ($a / b$), and percentage changes ($(b - a) / |a|$).
+- Claim Status Taxonomy:
+  - `supported`: Exact or within-tolerance/rounding match with an evidence value.
+  - `recomputed`: Derived via recomputation within tolerance, recording the mathematical formula in reason.
+  - `ambiguous`: Multiple distinct evidence paths or conflicting derivations match the claim.
+  - `unsupported`: Missing evidence record, evidence marked invalid (`valid=False` or `invalidated_by` set), or no matching/recomputed value found.
+- Finding Drop Policy:
+  - Configurable via `FindingDropPolicy` (`drop_policy` in `ClaimValidationConfig`).
+  - `drop_finding` (default): Any unsupported or ambiguous claim drops the entire `Finding`, moving it to `rejected_findings` with explicit reasons.
+  - `remove_claim`: Prunes unsupported claims from `finding.numeric_claims`; if valid claims remain, the updated finding is retained in `validated_findings`; if all claims are removed, the finding is moved to `rejected_findings`.
+  - Validation records an additive trace event `"claim_validation"` via `RunTraceWriter` without breaking existing trace consumers.
+- Boundaries & Contracts:
+  - `CONTRACT_VERSION` remains strictly `"0.1.0"`.
+  - Layer 4 strictly imports `contracts` and `core`. Never imports `tools`, `agent`, `reports`, `pipeline`, `evaluation`, or `oracle`.
+  - Benchmark question leakage tests verified clean. M6 real-model gate and M7 remain open.

@@ -1,44 +1,45 @@
 # HANDOFF.md: current task and continuation
 
-Updated: 2026-11-12 by Copilot
+Updated: 2026-11-16 by Antigravity
 
 ## Current task
-M6 real-model evaluation diagnostics and resumability. The harness changes are implemented and verified using mock-mode tests only. Do not mark M6 closed: the all-20 real-model scoring gate is still open, as recorded in D-030.
+M7 Session 1 — numeric claim validator (`src/da_agent/validation/claims.py`) implemented and verified using mock mode and fixtures only. M7 is in progress (claim validator done). Do NOT mark M6 or M7 closed: M6's all-20 real-model scoring gate remains open (D-030/D-031), and M7 has remaining sessions.
 
 ## State
 - `CONTRACT_VERSION` remains `0.1.0`.
-- No changes were made to the oracle, frozen benchmark questions, or fixed-workflow baseline.
-- Full suite: `uv run pytest -q` — 232 passed (baseline before this task: 225).
-- Ruff: `uv run ruff check .` — clean; `uv run ruff format --check .` — 82 files clean.
-- Diagnostics/resumability implementation is committed as `2d73daf`.
-- No real-model benchmark was run for this task.
-- Evaluation defaults in `config.yaml`: 300 seconds per question, 7200 seconds overall, 2 repair attempts, 8 LLM calls per question, thinking disabled, and Ollama `keep_alive: 10m`.
-- Traces now include graph-stage durations, individual repair and tool durations, every LLM call's duration, budget/cap events, diagnostics, and warm-up status.
-- Each attempt is persisted in `evaluation/results/<run_id>/attempts/<question_id>/`; merged question results are persisted in `evaluation/results/<run_id>/questions/`. Resume merges existing attempt files, including orphan attempts, and skips terminal results (`passed`, `failed`, `timeout`).
-- JSON and Markdown summaries distinguish accuracy over all questions (timeouts/not-run count incorrect) from accuracy over completed questions. The score is marked incomplete while any question is `not_run`.
-- Existing partial real-run artifacts and the timeout findings remain documented in D-030; they were not altered.
+- Full suite: `uv run pytest -q` — 243 passed (baseline before this task: 232).
+- Ruff: `uv run ruff check .` — clean; `uv run ruff format --check .` — 85 files clean.
+- Layer 4 claim validator implemented in `src/da_agent/validation/claims.py`:
+  - Typed extraction: `extract_numeric_claims` extracts plain numbers, thousands separators, currency amounts, percentages, signed changes, ratios, and values with units into `ExtractedNumericClaim` models with text spans, decimal digits, and unit/currency/percentage flags.
+  - Context filtering: ignores non-claim numbers including dates, years in context, ordinals, alphanumeric IDs, list numbering, and quoted identifiers/postal codes.
+  - Tolerance and rounding: `match_claim_to_evidence` applies configurable `rtol` (default 0.001), `atol` (default 0.01), rounding to claim's stated decimal precision ($d < 4$), and percentage-fraction scaling ($\times 100$).
+  - Cheap recomputation: recomputes pairwise sums, differences, shares, and percentage changes from unique evidence numbers in the same evidence record (capped to top 25 values).
+  - Status classification: `supported`, `recomputed` (with derivation formula recorded), `ambiguous` (multiple distinct paths/derivations), and `unsupported` (missing/invalid evidence or no match).
+  - Finding validation: `validate_findings` processes finding statements and `numeric_claims`, rejecting or dropping unsupported claims according to `FindingDropPolicy` (`drop_finding` by default, or `remove_claim`).
+  - Trace auditing: logs additive optional `"claim_validation"` event to `RunTraceWriter`.
+- Config: added `ClaimValidationConfig` and `FindingDropPolicy` to `src/da_agent/core/config.py` and `config.yaml`.
+- Refactoring (Step 0 overlap audit): `src/da_agent/agent/answer.py` refactored to reuse Layer 4 `extract_evidence_numbers` and `normalize_claim_number`, eliminating duplication while keeping all 232 baseline tests passing.
+- Import layering: `tests/test_import_rules.py` extended to verify Layer 4 never imports tools/agent/reports/pipeline/evaluation, and verified `claims.py` contains no benchmark question leakage.
+- New decision D-032 accepted in `docs/DECISIONS.md`.
 
-## Next steps
-1. Run the new all-question real attempt below when the local Ollama host is available. The warm-up call is outside question budgets and benchmark timing.
-2. If interrupted, resume the same run with the same model and limits. Terminal timeouts/failures are intentionally skipped; use a new run ID to retry them.
-3. Inspect `evaluation/results/<run_id>/agent_eval.json`, `agent_eval.md`, per-question files, and `runs/` traces. Confirm every question has a terminal status and all 20 have been scored before closing M6.
-4. Do not start M7 until M6's real-model gate is closed.
+## Next steps (M7 remaining items)
+1. Failure classification & recovery context: implement failure classifier mapping tool and execution errors into typed `Failure` contracts with factual context (never expected answers).
+2. Bounded recovery & no-progress detection: enforce retry and replan limits, allowing identical retries only for transient errors, and detecting no-progress loops.
+3. Dependent-evidence invalidation: ensure invalidating an evidence record cascades to dependent tasks, findings, and derived claims.
+4. Controlled-failure suite: build `evaluation/recovery_suite/` separate from frozen benchmark questions to test each failure class and claim tampering.
+5. In parallel (when local Ollama host is available): complete or resume the M6 real-model evaluation benchmark run across all 20 frozen questions to close the M6 exit gate.
 
 ## Open questions
-- The 180-second planner-call timeout previously approved in D-030 still did not finish the complete real benchmark on this host. The diagnosable, bounded run below is the next attempt; no real-model outcome is claimed yet.
+- Real-model evaluation on CPU host remains bounded and resumable via `evaluation/run_agent_eval.py` per D-030 and D-031; gate remains open until all 20 questions are scored with a real model.
 - Dataset redistribution approval remains as recorded in D-007.
 
 ## How to run
-Mock-only validation:
+Validation and tests:
 - `uv run pytest -q`
 - `uv run ruff check .`
 - `uv run ruff format --check .`
+- `uv run pytest tests/unit/validation/test_claims.py`
+- `uv run pytest tests/test_import_rules.py`
+
+Evaluation mock mode:
 - `uv run python evaluation/run_agent_eval.py --mode mock --questions q03`
-
-Next real-model attempt (not run in this task):
-- `uv run python evaluation/run_agent_eval.py --model qwen3:4b --run-id m6-qwen3-4b-diag-20261112 --per-call-timeout-s 180 --per-question-budget-s 300 --overall-timeout-s 7200 --max-repair-attempts 2 --max-llm-calls-per-question 8 --no-thinking --keep-alive 10m`
-
-Resume that run with:
-- `uv run python evaluation/run_agent_eval.py --model qwen3:4b --resume m6-qwen3-4b-diag-20261112 --per-call-timeout-s 180 --per-question-budget-s 300 --overall-timeout-s 7200 --max-repair-attempts 2 --max-llm-calls-per-question 8 --no-thinking --keep-alive 10m`
-
-Run a subset with `--questions q10,q11`; `--questions-file PATH` selects a different question file. Existing results marked terminal are skipped on resume. A new run ID is required to retry a terminal question.
