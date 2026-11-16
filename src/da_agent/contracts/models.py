@@ -198,6 +198,45 @@ class FailureClass(str, Enum):
     BUDGET_EXHAUSTED = "budget_exhausted"
 
 
+class RecoveryFailureClass(str, Enum):
+    """Closed taxonomy of fine-grained recovery and execution failures."""
+
+    INVALID_ARGUMENT = "invalid_argument"
+    UNKNOWN_COLUMN = "unknown_column"
+    TYPE_MISMATCH = "type_mismatch"
+    EMPTY_RESULT = "empty_result"
+    INVARIANT_VIOLATION = "invariant_violation"
+    TOOL_TIMEOUT = "tool_timeout"
+    TRANSIENT_ERROR = "transient_error"
+    RUNTIME_ERROR = "runtime_error"
+    UNSUPPORTED_OPERATION = "unsupported_operation"
+    DEPENDENCY_FAILURE = "dependency_failure"
+    UNKNOWN = "unknown"
+
+
+class RetryPolicy(str, Enum):
+    """Execution and repair policy for classified failures."""
+
+    RETRYABLE_IDENTICAL = "retryable_identical"
+    REPAIRABLE = "repairable"
+    TERMINAL = "terminal"
+
+
+class RecoveryContext(BaseModel):
+    """Factual execution and domain context for planner recovery (never oracle data)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    valid_columns: list[str] = Field(default_factory=list)
+    observed_row_count: int | None = None
+    input_row_count: int | None = None
+    failing_parameter: str | None = None
+    expected_type: str | None = None
+    actual_type: str | None = None
+    available_tools: list[str] = Field(default_factory=list)
+    failed_upstream_task_id: str | None = None
+
+
 class Failure(BaseModel):
     """Structured failure description with recovery classification."""
 
@@ -208,6 +247,50 @@ class Failure(BaseModel):
     message: str
     context: dict[str, Any] = Field(default_factory=dict)
     task_id: str | None = None
+    failing_args: dict[str, Any] | None = None
+    detailed_class: RecoveryFailureClass | None = None
+
+
+class ClassifiedFailure(BaseModel):
+    """Typed failure record carrying fine-grained failure class, recovery context, and retry policy."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    failure_class: RecoveryFailureClass
+    task_id: str | None = None
+    failing_args: dict[str, Any] = Field(default_factory=dict)
+    message: str
+    recovery_context: RecoveryContext = Field(default_factory=RecoveryContext)
+    retry_policy: RetryPolicy
+
+    def to_contract_failure(self) -> Failure:
+        """Convert to canonical contract Failure model."""
+        coarse_class_map = {
+            RecoveryFailureClass.INVALID_ARGUMENT: FailureClass.INVALID_ARGS,
+            RecoveryFailureClass.UNKNOWN_COLUMN: FailureClass.INVALID_ARGS,
+            RecoveryFailureClass.TYPE_MISMATCH: FailureClass.INVALID_ARGS,
+            RecoveryFailureClass.EMPTY_RESULT: FailureClass.EMPTY_RESULT,
+            RecoveryFailureClass.INVARIANT_VIOLATION: FailureClass.INVARIANT_VIOLATION,
+            RecoveryFailureClass.TOOL_TIMEOUT: FailureClass.TRANSIENT,
+            RecoveryFailureClass.TRANSIENT_ERROR: FailureClass.TRANSIENT,
+            RecoveryFailureClass.RUNTIME_ERROR: FailureClass.SCHEMA_VIOLATION,
+            RecoveryFailureClass.UNSUPPORTED_OPERATION: FailureClass.UNKNOWN_TOOL,
+            RecoveryFailureClass.DEPENDENCY_FAILURE: FailureClass.INVALID_ARGS,
+            RecoveryFailureClass.UNKNOWN: FailureClass.SCHEMA_VIOLATION,
+        }
+        coarse = coarse_class_map.get(self.failure_class, FailureClass.SCHEMA_VIOLATION)
+        ctx = dict(self.recovery_context.model_dump(exclude_none=True))
+        if self.failing_args:
+            ctx["failing_args"] = self.failing_args
+        return Failure(
+            failure_class=coarse,
+            recoverable=self.retry_policy != RetryPolicy.TERMINAL,
+            message=self.message,
+            context=ctx,
+            task_id=self.task_id,
+            failing_args=self.failing_args or None,
+            detailed_class=self.failure_class,
+        )
 
 
 class RevisionChangeType(str, Enum):

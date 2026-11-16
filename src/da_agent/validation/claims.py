@@ -53,6 +53,7 @@ class ExtractedNumericClaim(BaseModel):
     is_percentage: bool = False
     is_currency: bool = False
     decimal_digits: int = 0
+    magnitude_multiplier: float = 1.0
 
 
 class EvidenceNumber(BaseModel):
@@ -161,12 +162,38 @@ _STOP_WORDS_AS_UNITS = {
 
 _CURRENCY_CODES = {"usd", "eur", "gbp", "jpy", "cad", "aud", "inr", "cny"}
 
+_MAGNITUDE_MULTIPLIERS = {
+    "k": 1e3,
+    "thousand": 1e3,
+    "thousands": 1e3,
+    "m": 1e6,
+    "million": 1e6,
+    "millions": 1e6,
+    "b": 1e9,
+    "billion": 1e9,
+    "billions": 1e9,
+    "t": 1e12,
+    "trillion": 1e12,
+}
+
 
 def normalize_claim_number(text: str) -> float | None:
-    """Normalize numeric string representation to a finite float."""
+    """Normalize numeric string representation to a finite float, handling currency, commas, and magnitude suffixes."""
     stripped = text.strip().rstrip("%").replace(",", "")
     for symbol in ("$", "€", "£", "¥", "₹"):
         stripped = stripped.replace(symbol, "")
+    stripped = stripped.strip()
+
+    # Check for magnitude suffix (e.g. 2.3M or 2.3 million)
+    for suffix, m_val in _MAGNITUDE_MULTIPLIERS.items():
+        if stripped.lower().endswith(suffix):
+            num_part = stripped[: -len(suffix)].strip()
+            try:
+                val = float(num_part) * m_val
+                return val if math.isfinite(val) else None
+            except ValueError:
+                break
+
     try:
         val = float(stripped)
     except ValueError:
@@ -218,8 +245,10 @@ def extract_numeric_claims(text: str) -> list[ExtractedNumericClaim]:
         text,
     ):
         matched_str = m.group(0)
-        # Preserve scientific notation like 1.5e6 or 2e+04
+        # Preserve scientific notation (1.5e6) and magnitude suffix abbreviations (3M, 10k, 5B)
         if re.match(r"^\d+(?:\.\d+)?[eE][+-]?\d+$", matched_str):
+            continue
+        if re.match(r"^\d+(?:\.\d+)?[kKmMgGbBtT]$", matched_str):
             continue
         for i in range(m.start(), m.end()):
             ignored_spans.add(i)
@@ -338,14 +367,25 @@ def extract_numeric_claims(text: str) -> list[ExtractedNumericClaim]:
         unit: str | None = None
         end = num_end
 
+        magnitude_mult = 1.0
         if is_curr:
             unit = m.group("prefix")
+            if m.group("unit"):
+                unit_candidate = m.group("unit")
+                unit_lower = unit_candidate.lower()
+                if unit_lower in _MAGNITUDE_MULTIPLIERS:
+                    magnitude_mult = _MAGNITUDE_MULTIPLIERS[unit_lower]
+                    end = m.end("unit")
         elif is_pct:
             unit = "%"
         elif m.group("unit"):
             unit_candidate = m.group("unit")
             unit_lower = unit_candidate.lower()
-            if unit_lower in _CURRENCY_CODES:
+            if unit_lower in _MAGNITUDE_MULTIPLIERS:
+                magnitude_mult = _MAGNITUDE_MULTIPLIERS[unit_lower]
+                unit = unit_candidate
+                end = m.end("unit")
+            elif unit_lower in _CURRENCY_CODES:
                 unit = unit_candidate.upper()
                 is_curr = True
                 end = m.end("unit")
@@ -362,6 +402,7 @@ def extract_numeric_claims(text: str) -> list[ExtractedNumericClaim]:
                 is_percentage=is_pct,
                 is_currency=is_curr,
                 decimal_digits=decimal_digits,
+                magnitude_multiplier=magnitude_mult,
             )
         )
 
@@ -375,8 +416,17 @@ def match_claim_to_evidence(
     config: ClaimValidationConfig,
 ) -> tuple[ClaimStatus, str, str | None, float | None]:
     """Match a single claim value against a list of evidence numbers using tolerance and recomputations."""
+    mult = 1.0
     if isinstance(claim, NumericClaim):
         raw_val = claim.value
+        if claim.unit and claim.unit.lower() in _MAGNITUDE_MULTIPLIERS:
+            mult = _MAGNITUDE_MULTIPLIERS[claim.unit.lower()]
+        elif isinstance(raw_val, str):
+            for suffix, m_val in _MAGNITUDE_MULTIPLIERS.items():
+                if raw_val.strip().lower().endswith(suffix):
+                    mult = m_val
+                    break
+
         if isinstance(raw_val, (int, float)):
             claim_val = float(raw_val)
             digits = (
@@ -385,9 +435,24 @@ def match_claim_to_evidence(
                 else 0
             )
         else:
-            norm = normalize_claim_number(str(raw_val))
-            claim_val = norm if norm is not None else float("nan")
-            digits = len(str(raw_val).split(".")[1]) if "." in str(raw_val) else 0
+            cleaned_str = (
+                str(raw_val)
+                .replace("$", "")
+                .replace("€", "")
+                .replace("£", "")
+                .replace(",", "")
+                .strip()
+            )
+            for suffix in _MAGNITUDE_MULTIPLIERS:
+                if cleaned_str.lower().endswith(suffix):
+                    cleaned_str = cleaned_str[: -len(suffix)].strip()
+                    break
+            try:
+                claim_val = float(cleaned_str)
+            except ValueError:
+                norm = normalize_claim_number(str(raw_val))
+                claim_val = norm if norm is not None else float("nan")
+            digits = len(cleaned_str.split(".")[1]) if "." in cleaned_str else 0
 
         is_pct = claim.unit in ("%", "percent") or (
             isinstance(raw_val, str) and "%" in str(raw_val)
@@ -396,6 +461,7 @@ def match_claim_to_evidence(
         claim_val = claim.value
         digits = claim.decimal_digits
         is_pct = claim.is_percentage
+        mult = getattr(claim, "magnitude_multiplier", 1.0)
 
     if not math.isfinite(claim_val):
         return (
@@ -405,24 +471,38 @@ def match_claim_to_evidence(
             None,
         )
 
+    # Stated precision tolerance: follows claim's stated precision
+    if mult > 1.0 and digits is not None and digits > 0:
+        effective_atol = 0.5 * (10**-digits)
+    elif digits is not None and digits < config.rounding_digits:
+        effective_atol = max(config.atol, 0.5 * (10**-digits))
+    else:
+        effective_atol = config.atol
+
     # 1. Direct matches
     direct_matches: list[tuple[EvidenceNumber, float]] = []
     for ev_num in evidence_numbers:
         ev_val = ev_num.value
         candidates = [ev_val]
+        if mult > 1.0:
+            candidates.append(ev_val / mult)
         if is_pct:
             candidates.append(ev_val * 100.0)
+            if mult > 1.0:
+                candidates.append((ev_val / mult) * 100.0)
         elif abs(claim_val) <= 1.0 and abs(ev_val) > 1.0:
             candidates.append(ev_val / 100.0)
 
         matched_cand = None
         for cand in candidates:
-            if math.isclose(claim_val, cand, rel_tol=config.rtol, abs_tol=config.atol):
+            if math.isclose(claim_val, cand, rel_tol=config.rtol, abs_tol=effective_atol):
                 matched_cand = cand
                 break
             if digits is not None and digits < config.rounding_digits:
                 rounded_cand = round(cand, digits)
-                if math.isclose(claim_val, rounded_cand, rel_tol=config.rtol, abs_tol=config.atol):
+                if math.isclose(
+                    claim_val, rounded_cand, rel_tol=config.rtol, abs_tol=effective_atol
+                ):
                     matched_cand = cand
                     break
         if matched_cand is not None:

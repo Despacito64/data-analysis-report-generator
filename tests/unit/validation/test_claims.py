@@ -295,3 +295,79 @@ def test_extract_evidence_numbers_traversal_and_filtering() -> None:
     assert "summary.matched_indices" not in paths
     assert "is_active" not in paths
     assert "invalid_val" not in paths
+
+
+def test_abbreviated_magnitude_claims_and_stated_precision() -> None:
+    """Test abbreviated magnitude claims ('$2.3M', '2.3 million') against raw evidence value 2,297,201."""
+    config = ClaimValidationConfig(rtol=0.001, atol=0.01)
+    ev_numbers = extract_evidence_numbers({"total_revenue": 2297201.0})
+
+    # 1. "$2.3M" claim against 2,297,201
+    claims_m = extract_numeric_claims("Total revenue reached $2.3M in the period")
+    assert len(claims_m) == 1
+    assert claims_m[0].raw_text == "$2.3M"
+    assert claims_m[0].value == 2.3
+    assert claims_m[0].magnitude_multiplier == 1e6
+    assert claims_m[0].decimal_digits == 1
+
+    status, _reason, path, val = match_claim_to_evidence(claims_m[0], ev_numbers, config)
+    assert status == ClaimStatus.SUPPORTED
+    assert path == "total_revenue"
+    assert val == 2297201.0
+
+    # 2. "2.3 million" claim against 2,297,201
+    claims_million = extract_numeric_claims("Total revenue was 2.3 million")
+    assert len(claims_million) == 1
+    assert claims_million[0].raw_text == "2.3 million"
+    assert claims_million[0].value == 2.3
+    assert claims_million[0].magnitude_multiplier == 1e6
+    assert claims_million[0].decimal_digits == 1
+
+    status, _, path, _ = match_claim_to_evidence(claims_million[0], ev_numbers, config)
+    assert status == ClaimStatus.SUPPORTED
+    assert path == "total_revenue"
+
+    # 3. Stated precision tolerance: 2 decimal places ($2.29M does not round to 2,297,201)
+    claim_229 = extract_numeric_claims("Revenue was $2.29M")[0]
+    status_229, _, _, _ = match_claim_to_evidence(claim_229, ev_numbers, config)
+    assert status_229 == ClaimStatus.UNSUPPORTED
+
+    # 4. Stated precision tolerance: 2 decimal places ($2.30M rounds correctly to 2.30M)
+    claim_230 = extract_numeric_claims("Revenue was $2.30M")[0]
+    status_230, _, _, _ = match_claim_to_evidence(claim_230, ev_numbers, config)
+    assert status_230 == ClaimStatus.SUPPORTED
+
+    # 5. Way out of bounds claim ($2.5M)
+    claim_250 = extract_numeric_claims("Revenue was $2.5M")[0]
+    status_250, _, _, _ = match_claim_to_evidence(claim_250, ev_numbers, config)
+    assert status_250 == ClaimStatus.UNSUPPORTED
+
+
+def test_right_number_wrong_field_limitation_documented() -> None:
+    """Document the Layer 4 limitation where numbers match across fields without semantic alignment.
+
+    In Layer 4, claim validation verifies numeric presence, precision tolerance, and cheap
+    recomputations across evidence outputs, but does NOT perform semantic entity-field binding
+    (e.g., verifying that a claim asserting 'Profit was 1000' actually matches the 'profit' field
+    rather than a coincidentally identical 'sales' field).
+    This semantic alignment is deferred to M8 (report insight generation).
+    """
+    config = ClaimValidationConfig()
+    ev_numbers = extract_evidence_numbers(
+        {
+            "sales": 1000.0,
+            "profit": 250.0,
+        }
+    )
+
+    # The claim falsely asserts profit was 1000.0
+    claim_wrong_field = extract_numeric_claims("Total profit was 1000.0")[0]
+
+    # In Layer 4, this matches the 'sales' field because 1000.0 is present in the evidence
+    status, _reason, matched_path, matched_val = match_claim_to_evidence(
+        claim_wrong_field, ev_numbers, config
+    )
+    assert status == ClaimStatus.SUPPORTED
+    assert matched_path == "sales"
+    assert matched_val == 1000.0
+    # Note: M8 will resolve this limitation by binding claim entities to specific evidence schema paths.

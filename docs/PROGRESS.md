@@ -27,7 +27,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M5 Resolver and planner. GATE passed: [x]
 - [x] M4 Baseline, oracle, scorer, question files. GATE passed: [x]
 - [ ] M6 Dynamic agent. GATE passed: [ ]
-- [ ] M7 Feedback and evidence validation. GATE passed: [ ] (In progress: claim validator complete)
+- [ ] M7 Feedback and evidence validation. GATE passed: [ ] (In progress: claim validator, invalidation, and failure classification complete)
 - [ ] M8 Reports and rendering. GATE passed: [ ]
 - [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
 - [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
@@ -52,7 +52,8 @@ M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture 
 | FR15 | passed | `src/da_agent/core/trace.py`, `src/da_agent/agent/graph.py`, `tests/unit/agent/test_graph.py` |
 | FR07 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR09 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
-| FR08 (feedback validation), FR10, FR12 | not started | Deferred to M7 (session 2) - M9 |
+| FR08 (feedback validation) | passed (invalidation & failure classification) | `src/da_agent/validation/invalidation.py`, `src/da_agent/validation/failures.py`, `tests/unit/validation/test_invalidation.py`, `tests/unit/validation/test_failures.py` |
+| FR10, FR12 | not started | Deferred to M8 - M9 |
 | NFR1 to NFR3 | not started | |
 
 Update this table as modules pass their gates, naming the test or artifact.
@@ -80,3 +81,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-12 | Copilot | M6 Steps 5-8 | added evidence-grounded answers, pipeline integration, scoring/comparison harness, prompt/import checks, D-029/D-030 and handoff; complete qwen3:4b run timed out at 60 seconds; approved 180-second partial run reached q09 but remained too slow | uv run pytest -q: 225 passed; uv run ruff check . and format --check clean; 60-second real eval 0/20 plans, baseline 20/20; longer partial run q03/q04 answered, other completed requests timed out | pending
 2026-11-12 | Copilot | M6 diagnostics/resumability | added stage and per-call timing, bounded question/overall budgets, distinct repair/LLM caps, per-attempt persistence, resume/subset CLI, warm-up/model diagnostics, and timeout-aware reports; M6 remains open and no real-model run was made | uv run pytest -q: 232 passed; uv run ruff check . clean; uv run ruff format --check . clean | 2d73daf
 2026-11-16 | antigravity | M7 session 1 | numeric claim extraction, evidence matching, recomputation, finding validation, drop policies, import rules (D-032); M6 gate and M7 remain open | uv run pytest -q: 243 passed; uv run ruff check . clean; uv run ruff format --check . clean | pending
+2026-11-16 | antigravity | M7 session 2 | failure classification, factual recovery context, dependent-evidence invalidation cascade, stated-precision magnitude claims (D-033); M6 gate and M7 remain open | uv run pytest -q: 258 passed; uv run ruff check . clean; uv run ruff format --check . clean | afa2f5c

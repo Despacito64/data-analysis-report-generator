@@ -328,3 +328,34 @@ Decision:
   - `CONTRACT_VERSION` remains strictly `"0.1.0"`.
   - Layer 4 strictly imports `contracts` and `core`. Never imports `tools`, `agent`, `reports`, `pipeline`, `evaluation`, or `oracle`.
   - Benchmark question leakage tests verified clean. M6 real-model gate and M7 remain open.
+
+## D-033: Failure classification, recovery context, and dependent-evidence invalidation
+Status: Accepted
+Date: 2026-11-16   Made by: Antigravity
+Decision:
+- Step 0 Overlap Audit (Existing Failure and Invalidation Infrastructure across M0-M6):
+  1. Failure classes: `contracts.models.FailureClass` defines 8 coarse enum members (`invalid_args`, `unknown_tool`, `empty_result`, `schema_violation`, `invariant_violation`, `transient`, `no_progress`, `budget_exhausted`).
+  2. ToolError mapping: `tools.errors.ToolError` carries `failure_class`, `message`, `context`, and computes `recoverable`. Tools raise `ToolError` for domain conditions. Executor (`tools.executor.execute_task`) maps `ToolError`, `FuturesTimeoutError`, unknown tools, and unexpected exceptions.
+  3. Executor failure records: `agent.executor.TaskExecutionRecord` captures `TaskStatus` (`ok`, `failed`, `skipped`) and error strings; skips downstream tasks on dependency failure.
+  4. M6 failure repair: `agent.planner.replan_with_failure` and `agent.graph.node_inspect`/`node_replan` conduct bounded replanning using coarse error messages.
+  5. Evidence validity flags: `contracts.models.EvidenceRecord` contains `valid: bool = True` and `invalidated_by: str | None = None`. Layer 4 `validation.claims.validate_single_claim` already treats `valid=False` or `invalidated_by is not None` as `ClaimStatus.UNSUPPORTED`.
+  6. Task dependency tracking: `Task.depends_on`, `agent.executor.topological_sort_tasks`, and `resolve_references` track and resolve task references.
+- Failure Classification Architecture (Layer 1 & Layer 4):
+  - Added `RecoveryFailureClass` closed taxonomy: `invalid_argument`, `unknown_column`, `type_mismatch`, `empty_result`, `invariant_violation`, `tool_timeout`, `transient_error`, `runtime_error`, `unsupported_operation`, `dependency_failure`, and `unknown` (safe default).
+  - Added `RetryPolicy` enum: `retryable_identical` (restricted strictly to `tool_timeout` and `transient_error`), `repairable` (requires modified arguments or plan), and `terminal` (unrecoverable execution/invariant/dependency failures).
+  - Added typed `RecoveryContext` and `ClassifiedFailure` in contracts/models with optional additive fields on `Failure` (`failing_args`, `detailed_class`). `CONTRACT_VERSION` remains `"0.1.0"`.
+  - Created centralized mapping `classify_failure()` in `validation.failures` that safely normalizes `ToolError`, `Failure`, exceptions, or task execution outcomes to `ClassifiedFailure`, never raising.
+  - Implemented `render_recovery_context()` producing structured factual planner context (valid columns, observed row counts, failing parameter, expected type) without benchmark question or oracle leakage.
+- Dependent-Evidence Invalidation Cascade (Layer 4):
+  - Created `invalidate_evidence()` in `validation.invalidation`: given a root evidence ID, task list, evidence store, and findings, deterministically cascades invalidation through the DAG to every downstream task, every evidence record produced by those tasks, and every finding and claim linking to any invalidated record.
+  - Handles diamond dependencies without duplicate processing or duplicate paths; guarantees termination on any valid DAG.
+  - Leaves independent, unlinked evidence records and findings valid.
+  - Records additive `"evidence_invalidation"` events to the run trace.
+- Stated-Precision and Unit Abbreviation Matching in Claims (Layer 4):
+  - Extended `extract_numeric_claims` and `match_claim_to_evidence` in `validation.claims` to support magnitude suffixes ("M", "million", "B", "billion", "k", "thousand").
+  - Matching scales candidates or claims by stated magnitude and allows rounding tolerance to follow the claim's explicit decimal precision ($d$), successfully matching e.g. "$2.3M" and "2.3 million" against raw evidence value 2,297,201.
+- Known Limitation: Right-Number-Wrong-Field (Documented for M8):
+  - Layer 4 claim validation checks numeric presence, tolerance, scale, and cheap mathematical derivation across evidence record summaries. However, it does not perform semantic field alignment (e.g. distinguishing a claim of "$2.3M in Profit" from an evidence record containing "$2.3M in Sales"). This entity-attribute binding is deferred to M8 (report insight builder and semantic assertion checking). A dedicated test documents this boundary.
+Reason: Address M7 session 2 requirements cleanly by extending and wrapping existing M0-M6 infrastructure while preserving backward compatibility, strict Layer 4 isolation, and contract stability.
+Consequences: All 243 baseline tests continue to pass; failure mapping is centralized and typed; invalidation cascades deterministically through evidence and claim verification; benchmark leakage tests verify factual-only recovery context.
+

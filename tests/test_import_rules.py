@@ -283,3 +283,42 @@ def test_claims_validator_leakage_and_independence() -> None:
         assert question not in all_literals, (
             f"Benchmark question leaked into claims.py: {item['id']}"
         )
+
+
+def test_failures_and_invalidation_modules_leakage_and_independence() -> None:
+    """Failures and invalidation modules must not leak frozen questions or violate layer rules."""
+    with Path("evaluation/benchmark/questions.json").open("r", encoding="utf-8") as source:
+        benchmark_questions = json.load(source)
+
+    prohibited = (
+        "da_agent.tools",
+        "da_agent.agent",
+        "da_agent.reports",
+        "da_agent.pipeline",
+        "evaluation",
+    )
+
+    for mod_name in ("failures.py", "invalidation.py"):
+        target_path = Path("src/da_agent/validation") / mod_name
+        assert target_path.exists(), f"{mod_name} must exist"
+
+        imported = get_imported_modules(target_path)
+        for mod in imported:
+            for p in prohibited:
+                if mod == p or mod.startswith(f"{p}."):
+                    pytest.fail(f"{mod_name} violates layer independence: imports '{mod}'")
+
+        with target_path.open("r", encoding="utf-8") as source:
+            tree = ast.parse(source.read(), filename=mod_name)
+
+        source_literals = [
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        ]
+        all_literals = " ".join(source_literals).casefold()
+        for item in benchmark_questions:
+            question = " ".join(item["question"].split()).casefold()
+            assert question not in all_literals, (
+                f"Benchmark question leaked into {mod_name}: {item['id']}"
+            )
