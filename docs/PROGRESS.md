@@ -26,13 +26,13 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M3 Registry and executor. GATE passed: [x]
 - [x] M5 Resolver and planner. GATE passed: [x]
 - [x] M4 Baseline, oracle, scorer, question files. GATE passed: [x]
-- [ ] M6 Dynamic agent. GATE passed: [ ]
+- [x] M6 Dynamic agent. GATE passed: [x] (real-model score complete: 13/20, D-034)
 - [ ] M7 Feedback and evidence validation. GATE passed: [ ] (In progress: claim validator, invalidation, and failure classification complete)
 - [ ] M8 Reports and rendering. GATE passed: [ ]
 - [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
 - [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
 
-M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture checks, documentation, and local test gates are complete. This continuation adds per-stage/LLM/tool timing, question budgets and caps, resumable attempts, model diagnostics, and timeout-aware reporting. The real-agent gate remains open: the complete 60-second run timed out on all 20 questions; an owner-approved 180-second rerun stopped after q09, with q03/q04 producing answers and repeated planner timeouts on other completed questions. See D-030, D-031, and the current handoff.
+M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17, `qwen3:4b` on a GTX 1650 finished all 20 questions at the default 60-second per-call timeout: 13/20 correct, score complete, no timeouts. Earlier CPU runs in D-030 remain historical. See D-034.
 
 ## Requirement status
 
@@ -82,3 +82,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-12 | Copilot | M6 diagnostics/resumability | added stage and per-call timing, bounded question/overall budgets, distinct repair/LLM caps, per-attempt persistence, resume/subset CLI, warm-up/model diagnostics, and timeout-aware reports; M6 remains open and no real-model run was made | uv run pytest -q: 232 passed; uv run ruff check . clean; uv run ruff format --check . clean | 2d73daf
 2026-11-16 | antigravity | M7 session 1 | numeric claim extraction, evidence matching, recomputation, finding validation, drop policies, import rules (D-032); M6 gate and M7 remain open | uv run pytest -q: 243 passed; uv run ruff check . clean; uv run ruff format --check . clean | pending
 2026-11-16 | antigravity | M7 session 2 | failure classification, factual recovery context, dependent-evidence invalidation cascade, stated-precision magnitude claims (D-033); M6 gate and M7 remain open | uv run pytest -q: 258 passed; uv run ruff check . clean; uv run ruff format --check . clean | afa2f5c
+2026-11-17 | Cursor | M6 | pulled qwen3:4b; full real eval on GTX 1650, default 60s timeout, score complete 13/20 (D-034); M7 remains open | no pytest this session; eval exit 0 | not committed

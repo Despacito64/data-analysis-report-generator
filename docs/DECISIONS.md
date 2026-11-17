@@ -359,3 +359,15 @@ Decision:
 Reason: Address M7 session 2 requirements cleanly by extending and wrapping existing M0-M6 infrastructure while preserving backward compatibility, strict Layer 4 isolation, and contract stability.
 Consequences: All 243 baseline tests continue to pass; failure mapping is centralized and typed; invalidation cascades deterministically through evidence and claim verification; benchmark leakage tests verify factual-only recovery context.
 
+## D-034: M6 real-model gate closed on local GPU
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Treat the M6 real-model scoring gate as met by one complete `qwen3:4b` run on this machine. Do not change `config.yaml` budgets. The run used the existing 60-second `per_call_timeout_s`.
+Evidence:
+- Host: Ollama 0.23.3, NVIDIA GeForce GTX 1650 (4 GB). After load, `ollama ps` showed `qwen3:4b` at `100% GPU`, about 3.6 GB.
+- Command: `uv run python evaluation/run_agent_eval.py --mode real --model qwen3:4b --run-id m6-shivam-full`
+- Result: `score_complete: true`. Agent 13/20 correct. Baseline 20/20. Wall time about 768 seconds. Warm-up about 1.8 seconds. Failure reasons: `incorrect_answer` 6, `no_score_shaped_answer` 1 (q01, q06, q07, q08, q11, q12, q20). No question timed out.
+- Artifact: `evaluation/results/m6-shivam-full/`.
+Reason: Earlier full runs (D-030) timed out at 60 seconds before this GPU was used. This run finished inside the existing budget, so a timeout increase was not required.
+Consequences: M6 can be marked complete. The 13/20 score is the measured result, not a claim that the agent matches the template baseline. M7 remains open. Do not retune prompts on the frozen questions to chase the seven misses.
+

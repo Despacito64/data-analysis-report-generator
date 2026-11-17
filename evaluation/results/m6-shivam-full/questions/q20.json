@@ -1,0 +1,163 @@
+{
+  "question_id": "q20",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 103.70529699593317,
+  "stage_timings": {
+    "question_resolution": 0.0006133220158517361,
+    "plan_generation": 31.00985153100919,
+    "plan_validation": 0.02800492208916694,
+    "tool_execution": 0.6044861540431157,
+    "result_inspection": 0.00015301606617867947,
+    "repair_attempt_1": 29.036961439065635,
+    "repair_attempt_2": 5.00148502108641,
+    "replanning": 71.96716197801288,
+    "graph_finalization": 0.004176416900008917,
+    "answer_synthesis": 0.06488185608759522,
+    "tool_executions": 0.5002
+  },
+  "llm_call_count": 4,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.992751204990782,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 37.89722278795671,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 29.036961439065635,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 5.00148502108641,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0092
+    },
+    {
+      "task_id": "t2",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.491
+    }
+  ],
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 29.036961439065635
+    },
+    {
+      "attempt": 2,
+      "duration_s": 5.00148502108641
+    }
+  ],
+  "attempt_count": 1,
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q20",
+      "attempt": 1,
+      "run_id": "agent_eval_m6-shivam-full_q20_r1_40dafcc5",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Seattle",
+        "Newark",
+        "Detroit"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 103.70529699593317,
+      "stage_timings": {
+        "question_resolution": 0.0006133220158517361,
+        "plan_generation": 31.00985153100919,
+        "plan_validation": 0.02800492208916694,
+        "tool_execution": 0.6044861540431157,
+        "result_inspection": 0.00015301606617867947,
+        "repair_attempt_1": 29.036961439065635,
+        "repair_attempt_2": 5.00148502108641,
+        "replanning": 71.96716197801288,
+        "graph_finalization": 0.004176416900008917,
+        "answer_synthesis": 0.06488185608759522,
+        "tool_executions": 0.5002
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0092
+        },
+        {
+          "task_id": "t2",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.491
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 30.992751204990782,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 37.89722278795671,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 3,
+          "stage": "replanning",
+          "duration_s": 29.036961439065635,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 4,
+          "stage": "replanning",
+          "duration_s": 5.00148502108641,
+          "completed": true,
+          "model": "qwen3:4b"
+        }
+      ],
+      "llm_call_count": 4,
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 29.036961439065635
+        },
+        {
+          "attempt": 2,
+          "duration_s": 5.00148502108641
+        }
+      ]
+    }
+  ]
+}
