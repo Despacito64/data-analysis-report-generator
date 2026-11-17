@@ -413,6 +413,13 @@ Decision: `core.follow_up.seed_reused_evidence()` copies explicitly selected `Ev
 Reason: M9 requires follow-up context to reach the executor, not only UI trace metadata (D-039).
 Consequences: Prior-run evidence files enable reference resolution; bounded summaries alone may suffice for simple follow-ups.
 
+## D-044: M10 freeze manifest and reproduction command
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Store `evaluation/benchmark/freeze_manifest.json` with SHA-256 hashes for dataset, questions, oracle, and `config.yaml`, plus model/budget snapshots and `CONTRACT_VERSION`. Reproduce via `uv run python evaluation/run_frozen_experiment.py` (documented in `docs/REPRODUCTION.md`). Default CI/smoke uses `--mode mock`; full protocol uses `--mode real --repeats 3`. Recovery suite runs in the same entrypoint; combined summary at `evaluation/results/frozen_experiment/latest.json`.
+Reason: M10 gate requires a frozen benchmark and one documented reproduction path.
+Consequences: `--write-freeze` after intentional benchmark/config changes needs owner approval and a new manifest commit. `--require-git-match` optional for strict reproduction.
+
 ## D-040: Central references audit log
 Status: Accepted
 Date: 2026-11-17   Made by: Cursor

@@ -3,20 +3,22 @@
 Updated: 2026-11-17 by Cursor
 
 ## Current task
-**M9** near complete; **M10** is next. Follow-up evidence now pre-seeds the graph (`seed_reused_evidence`, D-043). Presenters cover `group_aggregate`, `rank`, `period_compare`, `trend`.
+**M10** in progress: freeze manifest + `run_frozen_experiment.py` + `docs/REPRODUCTION.md` (D-044). M9 gate closed.
 
 ## State
-- Branch: `shivam` (commits through trace progress `1c9745c`; newer work may be uncommitted until pushed).
-- Tests: `uv run pytest -q` → **293 passed**.
-- UI: `uv run streamlit run app.py` — demo mode, live progress, follow-up checkboxes seed executor when hash matches.
-- M8 gate passed; M9 gate: hash-gated reuse + executor seed + Streamlit path.
+- Branch: `shivam`.
+- Tests: `uv run pytest -q` (run after changes).
+- Freeze: `evaluation/benchmark/freeze_manifest.json` committed; verify with `--verify-only`.
+- Reproduction smoke: `uv run python evaluation/run_frozen_experiment.py --mode mock --repeats 1 --questions q03`
+- Full eval (long, real Ollama): `--mode real --repeats 3`
 
-## Next steps
-1. **M10:** freeze step, eval runner (baseline vs agent, 3×20 questions), reproduction command, manuscript.
-2. Optional: gitignore or commit `demo/report.*`, `.agents/`, `skills-lock.json`.
-3. Presenters: `segment_contribution`, charts for rank/period/trend in HTML.
+## Next steps (M10)
+1. Run full real-model frozen experiment; archive results under `evaluation/results/`.
+2. Manuscript / measured-results doc with limitations (per `EVALUATION.md`).
+3. Optional: gitignore generated `evaluation/results/*` except pinned reference run.
 
 ## How to run
-- `uv run pytest -q`
+- `uv run python evaluation/run_frozen_experiment.py --verify-only`
+- `uv run python evaluation/recovery_suite/run_recovery_suite.py`
 - `uv run streamlit run app.py`
-- `uv run python demo/run_real_demo.py`
+- See `docs/REPRODUCTION.md`

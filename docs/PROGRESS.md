@@ -29,8 +29,8 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M6 Dynamic agent. GATE passed: [x] (real-model score complete: 13/20, D-034)
 - [x] M7 Feedback and evidence validation. GATE passed: [x] (D-035–D-037; full suite 281 passed with registered dataset hash)
 - [x] M8 Reports and rendering. GATE passed: [x] (HTML + `run_agent` writes report.json/html; PDF deferred)
-- [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
-- [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
+- [x] M9 Streamlit interface and follow-ups. GATE passed: [x]
+- [ ] M10 Frozen experiments and documentation. GATE passed: [ ] (freeze + runner done; full 3×20 real run pending)
 
 M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17, `qwen3:4b` on a GTX 1650 finished all 20 questions at the default 60-second per-call timeout: 13/20 correct, score complete, no timeouts. Earlier CPU runs in D-030 remain historical. See D-034.
 
@@ -55,7 +55,7 @@ M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17,
 | FR08 (feedback validation) | passed (invalidation & failure classification) | `src/da_agent/validation/invalidation.py`, `src/da_agent/validation/failures.py`, `tests/unit/validation/test_invalidation.py`, `tests/unit/validation/test_failures.py` |
 | FR10 (report artifact) | passed | `src/da_agent/pipeline.py`, `src/da_agent/reports/delivery.py`, `tests/integration/test_agent_report_e2e.py` |
 | FR12 (follow-up reuse policy) | passed | `src/da_agent/core/follow_up.py`, `tests/unit/core/test_follow_up_seed.py` |
-| FR12 (Streamlit UI) | in progress | `app.py`, `src/da_agent/ui/trace_progress.py`, `src/da_agent/ui/demo.py` |
+| FR12 (Streamlit UI) | passed | `app.py`, `src/da_agent/ui/` |
 | NFR1 to NFR3 | not started | |
 
 Update this table as modules pass their gates, naming the test or artifact.
@@ -97,4 +97,5 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M9 | demo presets, reader-first answer UI, real Ollama only (D-041) | uv run pytest -q: 287 passed | 5b27965
 2026-11-17 | Cursor | docs | REFERENCES audit, demo script, DECISIONS D-040–D-042 | uv run pytest -q: 287 passed | d294892
 2026-11-17 | Cursor | M9 | live trace progress in st.status, XLSX sheet hints, `list_excel_sheet_names` | uv run pytest -q: 290 passed | 1c9745c
-2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | pending
+2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | 5acc4f1..9afc25d
+2026-11-17 | Cursor | M10 | freeze manifest, run_frozen_experiment, REPRODUCTION.md (D-044) | uv run pytest -q: 298 passed | pending

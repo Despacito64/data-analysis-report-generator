@@ -97,6 +97,10 @@ Reviewed in Cursor session 2026-11-17 when shaping the **M8 E2E report pipeline*
 
 ## Demos and reproduction commands
 
+| Command | Purpose |
+| --- | --- |
+| `docs/REPRODUCTION.md` | M10 frozen experiment (baseline + agent + recovery), **D-044** |
+
 | Source | Type | Where used | Justification | Risk / limitation |
 | --- | --- | --- | --- | --- |
 | `demo/run_real_demo.py` | Script | Regenerates `demo/report.html` via **real Ollama** | Owner-requested non-mock demo; trace `runs/demo-visual-real/` | Requires local Ollama + `qwen3:4b` pull |
