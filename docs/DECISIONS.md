@@ -406,6 +406,13 @@ Decision: `core/follow_up.py` holds session rules: `apply_new_dataset_hash()` cl
 Reason: M9 gate requires that a changed upload cannot silently reuse stale evidence. Keeping reuse policy in `core` avoids coupling tests to Streamlit.
 Consequences: M9 gate test covers hash mismatch; executor-level reuse remains optional follow-up work if the owner requires tool results to be pre-seeded.
 
+## D-043: Follow-up evidence pre-seeds graph state
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: `core.follow_up.seed_reused_evidence()` copies explicitly selected `EvidenceRecord` objects into initial `AgentState` (`evidence_records`, `evidence_ids`, `evidence_store`), loading full JSON from `runs/<prior_run_id>/evidence/<id>.json` when present else `result_summary`. Each item logs `evidence_reused` and `evidence` on the new trace. `pipeline.run_agent()` and Streamlit pass `reused_evidence` and `prior_run_dir`; hash mismatches are skipped (no silent reuse).
+Reason: M9 requires follow-up context to reach the executor, not only UI trace metadata (D-039).
+Consequences: Prior-run evidence files enable reference resolution; bounded summaries alone may suffice for simple follow-ups.
+
 ## D-040: Central references audit log
 Status: Accepted
 Date: 2026-11-17   Made by: Cursor

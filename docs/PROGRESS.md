@@ -54,7 +54,7 @@ M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17,
 | FR09 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR08 (feedback validation) | passed (invalidation & failure classification) | `src/da_agent/validation/invalidation.py`, `src/da_agent/validation/failures.py`, `tests/unit/validation/test_invalidation.py`, `tests/unit/validation/test_failures.py` |
 | FR10 (report artifact) | passed | `src/da_agent/pipeline.py`, `src/da_agent/reports/delivery.py`, `tests/integration/test_agent_report_e2e.py` |
-| FR12 (follow-up reuse policy) | in progress | `src/da_agent/core/follow_up.py`, `tests/unit/core/test_follow_up.py` |
+| FR12 (follow-up reuse policy) | passed | `src/da_agent/core/follow_up.py`, `tests/unit/core/test_follow_up_seed.py` |
 | FR12 (Streamlit UI) | in progress | `app.py`, `src/da_agent/ui/trace_progress.py`, `src/da_agent/ui/demo.py` |
 | NFR1 to NFR3 | not started | |
 
@@ -96,4 +96,5 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M8 | reader presenters + compact HTML for group_aggregate (D-042) | uv run pytest -q: 287 passed | 7abf512
 2026-11-17 | Cursor | M9 | demo presets, reader-first answer UI, real Ollama only (D-041) | uv run pytest -q: 287 passed | 5b27965
 2026-11-17 | Cursor | docs | REFERENCES audit, demo script, DECISIONS D-040–D-042 | uv run pytest -q: 287 passed | d294892
-2026-11-17 | Cursor | M9 | live trace progress in st.status, XLSX sheet hints, `list_excel_sheet_names` | uv run pytest -q: 290 passed | pending
+2026-11-17 | Cursor | M9 | live trace progress in st.status, XLSX sheet hints, `list_excel_sheet_names` | uv run pytest -q: 290 passed | 1c9745c
+2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | pending
