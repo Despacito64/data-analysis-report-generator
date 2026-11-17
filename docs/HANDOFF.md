@@ -9,8 +9,10 @@ M8 HTML reports are in `src/da_agent/reports/` (validated findings, escaped HTML
 - Branch: `shivam`. Recent commits: M6 eval artifacts, recovery/no-progress, answer claim validation, recovery suite.
 - `CONTRACT_VERSION` remains `0.1.0`.
 - M6 real-model gate: complete (`m6-shivam-full`, 13/20, D-034).
-- M7: Layer 4 validators wired through inspect/finalize answer path. Recovery suite: 12 scenarios, mock-only, no benchmark IDs or oracle imports.
-- Tests: `uv run pytest -q --ignore=tests/unit/test_dataset_registry.py` — 275 passed. One failure remains: `tests/unit/test_dataset_registry.py` (local `Sample-Superstore.csv` SHA does not match D-007 registration).
+- M7 gate passed: recovery wiring, answer claim checks, recovery suite (D-035–D-037).
+- M8 gate passed: HTML report from validated findings (`3cca72e`).
+- Dataset: `Sample-Superstore.csv` CRLF restored to registered SHA `dc81c957…` (D-007); commit `88451fc`.
+- Tests: `uv run pytest -q` — 281 passed (including dataset registry).
 - Recovery CLI: `uv run python evaluation/recovery_suite/run_recovery_suite.py` → writes `evaluation/results/recovery_suite/latest.json`.
 
 ## Next steps (M8)
@@ -19,8 +21,7 @@ M8 HTML reports are in `src/da_agent/reports/` (validated findings, escaped HTML
 3. Final re-validation before render; PDF only after HTML is stable.
 
 ## Open questions
-- Dataset redistribution / re-register hash for the local CSV copy (D-007 vs on-disk `52ed3a6f…`).
-- Owner confirmation to tick M7 gate in `PROGRESS.md`.
+- Dataset redistribution approval remains as recorded in D-007.
 
 ## How to run
 - `uv run pytest -q`
