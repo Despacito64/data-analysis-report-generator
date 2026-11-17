@@ -420,6 +420,13 @@ Decision: Store `evaluation/benchmark/freeze_manifest.json` with SHA-256 hashes 
 Reason: M10 gate requires a frozen benchmark and one documented reproduction path.
 Consequences: `--write-freeze` after intentional benchmark/config changes needs owner approval and a new manifest commit. `--require-git-match` optional for strict reproduction.
 
+## D-045: M10 reference evaluation run pinned
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: The canonical real-model frozen experiment is run id **`m10-frozen-real-20261117`** (`--mode real --repeats 3`), summarized in `docs/M10_RESULTS.md` and `evaluation/results/frozen_experiment/latest.json`. Score: dynamic agent **13/20** vs baseline **20/20**, recovery suite 12/12, zero question timeouts under default budgets.
+Reason: M10 requires recorded measured results tied to the freeze manifest, not percentages alone.
+Consequences: Re-runs with different hardware/models get new run ids; update M10_RESULTS only when the owner accepts a new reference.
+
 ## D-040: Central references audit log
 Status: Accepted
 Date: 2026-11-17   Made by: Cursor

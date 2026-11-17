@@ -1,0 +1,29 @@
+{
+  "status": "complete",
+  "started_at": "2026-11-17T06:15:02.726433+00:00",
+  "finished_at": "2026-11-17T07:02:48.848424+00:00",
+  "manifest_path": "evaluation/benchmark/freeze_manifest.json",
+  "manifest_git_revision": "5acc4f14f30714f359dc8c04c2640c19e3f267c8",
+  "mode": "real",
+  "repeats": 3,
+  "baseline": {
+    "correct": 20,
+    "total": 20,
+    "accuracy": 1.0,
+    "mismatches": [],
+    "status": "complete"
+  },
+  "agent_run_id": "m10-frozen-real-20261117",
+  "agent_summary_path": "evaluation/results/m10-frozen-real-20261117/agent_eval.json",
+  "agent": {
+    "correct": 13,
+    "total": 20,
+    "accuracy_over_all_questions": 0.65,
+    "score_complete": true
+  },
+  "recovery_suite": {
+    "all_passed": true,
+    "scenario_count": 12
+  },
+  "limitations": "Results apply to Sample Superstore and the frozen 20-question benchmark only."
+}

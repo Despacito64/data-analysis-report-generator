@@ -34,6 +34,12 @@ Outputs:
 | Agent per-question traces | `evaluation/results/<run_id>/` |
 | Recovery suite | `evaluation/results/recovery_suite/latest.json` |
 
+## Reference run (2026-11-17)
+
+Measured results with **`qwen3:4b`**, real Ollama, **3 repeats × 20 questions**: see `docs/M10_RESULTS.md`.
+
+Pinned run id: `m10-frozen-real-20261117` → `evaluation/results/m10-frozen-real-20261117/agent_eval.json`.
+
 ## Refreshing the freeze (owner approval)
 
 After an intentional change to questions, oracle, dataset, or `config.yaml`:

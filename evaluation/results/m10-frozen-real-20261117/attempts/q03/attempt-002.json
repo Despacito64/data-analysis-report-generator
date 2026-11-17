@@ -1,0 +1,54 @@
+{
+  "question_id": "q03",
+  "attempt": 2,
+  "run_id": "agent_eval_m10-frozen-real-20261117_q03_r2_176124a7",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "Central": 501239.8908,
+    "East": 678781.24,
+    "South": 391721.905,
+    "West": 725457.8245
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 11.9807245999109,
+  "stage_timings": {
+    "question_resolution": 0.0009123709751293063,
+    "plan_generation": 3.3149300350341946,
+    "plan_validation": 0.0280982960248366,
+    "tool_execution": 0.017462996998801827,
+    "result_inspection": 0.006001717993058264,
+    "replanning": 8.530078020063229,
+    "graph_finalization": 0.00041917094495147467,
+    "answer_synthesis": 0.003078205045312643,
+    "tool_executions": 0.0112
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0112
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 3.281603134004399,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 8.49283219804056,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

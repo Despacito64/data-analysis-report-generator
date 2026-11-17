@@ -30,7 +30,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M7 Feedback and evidence validation. GATE passed: [x] (D-035–D-037; full suite 281 passed with registered dataset hash)
 - [x] M8 Reports and rendering. GATE passed: [x] (HTML + `run_agent` writes report.json/html; PDF deferred)
 - [x] M9 Streamlit interface and follow-ups. GATE passed: [x]
-- [ ] M10 Frozen experiments and documentation. GATE passed: [ ] (freeze + runner done; full 3×20 real run pending)
+- [ ] M10 Frozen experiments and documentation. GATE passed: [ ] (reference run `m10-frozen-real-20261117` + M10_RESULTS.md; owner sign-off pending)
 
 M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17, `qwen3:4b` on a GTX 1650 finished all 20 questions at the default 60-second per-call timeout: 13/20 correct, score complete, no timeouts. Earlier CPU runs in D-030 remain historical. See D-034.
 
@@ -99,3 +99,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M9 | live trace progress in st.status, XLSX sheet hints, `list_excel_sheet_names` | uv run pytest -q: 290 passed | 1c9745c
 2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | 5acc4f1..9afc25d
 2026-11-17 | Cursor | M10 | freeze manifest, run_frozen_experiment, REPRODUCTION.md (D-044) | uv run pytest -q: 298 passed | 1b9853e
+2026-11-17 | Cursor | M10 | real Ollama 3×20 run m10-frozen-real-20261117, M10_RESULTS.md (D-045) | run_frozen_experiment ~48min; 13/20 agent | pending
