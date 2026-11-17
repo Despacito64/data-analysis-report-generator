@@ -63,3 +63,26 @@ def test_group_aggregate_report_uses_category_labels() -> None:
     assert len(report.findings) == 1
     assert len(report.findings[0].numeric_claims) == 3
     assert report.summary.count(";") == 0
+
+
+def test_period_compare_presenter_labels() -> None:
+    evidence = EvidenceRecord(
+        evidence_id="ev_pc",
+        task_id="t1",
+        tool="period_compare",
+        args_hash="ab12cd34",
+        dataset_hash="hash",
+        input_row_count=100,
+        result_schema_version="0.1.0",
+        result_summary={
+            "base_period": {"present": True, "value": 100.0},
+            "compare_period": {"present": True, "value": 120.0},
+            "absolute_change": 20.0,
+            "relative_growth": 0.2,
+        },
+    )
+    from da_agent.reports.presenters import present_period_compare_findings
+
+    findings, highlights = present_period_compare_findings(evidence)
+    assert findings[0].statement == "Period-over-period comparison"
+    assert any("Growth" in line for line in highlights)
