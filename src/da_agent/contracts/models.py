@@ -410,6 +410,7 @@ class AnalysisRun(BaseModel):
     dropped_claims: list[str] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     evidence_records: dict[str, EvidenceRecord] = Field(default_factory=dict)
+    answer_text: str = ""
 
 
 class Report(BaseModel):
@@ -421,6 +422,7 @@ class Report(BaseModel):
     dataset_hash: str
     question: str
     summary: str
+    highlights: list[str] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     charts: list[dict[str, Any]] = Field(default_factory=list)
     methods: list[str] = Field(default_factory=list)

@@ -56,6 +56,7 @@ def _analysis_run_from_result(
         dropped_claims=list(result.dropped_claims),
         assumptions=list(result.assumptions),
         evidence_records=dict(evidence_records),
+        answer_text=result.answer_text,
     )
 
 

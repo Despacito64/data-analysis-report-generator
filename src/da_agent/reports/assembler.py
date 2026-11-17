@@ -33,4 +33,5 @@ def assemble_report(
         status=status,
         limitations=limitations,
         claim_config=claim_config,
+        answer_text=run.answer_text,
     )

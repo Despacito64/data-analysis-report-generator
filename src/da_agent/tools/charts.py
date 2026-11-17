@@ -201,3 +201,43 @@ def build_anomalies_chart(result: AnomaliesIQRResult, unit: str = "") -> go.Figu
         template="plotly_white",
     )
     return fig
+
+
+def build_group_aggregate_chart(
+    result_summary: dict,
+    *,
+    unit: str = "",
+) -> go.Figure | None:
+    """Build a bar chart from a bounded group_aggregate evidence summary."""
+    groups = result_summary.get("sample_groups") or result_summary.get("rows") or []
+    if not groups:
+        return None
+    metric = str(result_summary.get("metric_column") or "Value")
+    agg = str(result_summary.get("aggregation") or "sum")
+    x_vals: list[str] = []
+    y_vals: list[float] = []
+    for item in groups:
+        if not isinstance(item, dict):
+            continue
+        value = item.get("value")
+        if not isinstance(value, (int, float)):
+            continue
+        keys = item.get("group_keys") or {}
+        if isinstance(keys, dict) and keys:
+            label = ", ".join(f"{k}" for k in keys.values())
+        else:
+            label = "Group"
+        x_vals.append(str(label))
+        y_vals.append(float(value))
+    if not x_vals:
+        return None
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=x_vals, y=y_vals, name=metric, marker_color="#1f77b4"))
+    y_label = f"{metric} ({agg})" + (f" {unit}" if unit else "")
+    fig.update_layout(
+        title=f"{metric} by group ({agg})",
+        xaxis_title="Group",
+        yaxis_title=y_label,
+        template="plotly_white",
+    )
+    return fig
