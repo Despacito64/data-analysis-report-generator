@@ -378,3 +378,10 @@ Decision: `node_inspect` calls `assess_recovery()`. That function passes `identi
 Reason: The previous route read `identical_retry_count` while `decide_recovery()` reads `identical_retries`, so the cap never applied. Passing the whole state as history also made the current attempt look like a repeated fingerprint.
 Consequences: Transient failures retry up to `recovery_limits.identical_retry_cap` and then stop. Repair still goes through replan. Claim validation and `evaluation/recovery_suite/` remain open.
 
+## D-036: Recovery stops and answer claims follow the contracts
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: A `no_progress` stop and a recovery-budget stop both end as `partial`, including when no evidence was produced. An unrecoverable terminal failure with no evidence ends as `failed`. Before `AgentResult` is returned, key numbers are checked with `validate_findings()`. A failure that names `context["evidence_id"]`, or an invariant failure for a task that already has evidence, runs `invalidate_evidence()` first. Invalidated evidence and its dependents are removed from key numbers and answer text. Surviving independent evidence stays. Dropped claim text is stored on `AgentResult.dropped_claims`. `CONTRACT_VERSION` stays `0.1.0`. Typed evidence records are kept beside the raw evidence store so execution can still read tool fields such as `matched_indices`.
+Reason: `CONTRACTS.md` says `no_progress` terminates as partial and `budget_exhausted` finalizes as partial. A number reaches the answer only through valid evidence. The first recovery wiring used `failed` whenever evidence was absent, which contradicted that table.
+Consequences: Tests cover a transient retry cap, a repeated fingerprint with no evidence, a tampered narrative, a dependent-evidence cascade, and a supported claim that stays. `evaluation/recovery_suite/` is still not built. M7 stays open. M8 still owns the report `RunStatus`.
+

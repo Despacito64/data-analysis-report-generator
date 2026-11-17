@@ -20,6 +20,7 @@ from da_agent.agent.planner import Plan
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
+    EvidenceRecord,
     Failure,
     FailureClass,
     Task,
@@ -63,6 +64,7 @@ class PlanExecutionResult(BaseModel):
     plan_version: int = 1
     records: list[TaskExecutionRecord] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
+    evidence_records: dict[str, EvidenceRecord] = Field(default_factory=dict)
     status: str = "complete"  # "complete" | "partial" | "failed"
     failure: Failure | None = None
 
@@ -189,6 +191,7 @@ def execute_plan(
             reusable_task_ids.add(task.id)
     records_by_id: dict[str, TaskExecutionRecord] = dict(prior_by_id)
     evidence_ids: list[str] = []
+    evidence_records: dict[str, EvidenceRecord] = {}
     first_failure: Failure | None = None
 
     # Track dataframe state per task to propagate filter outputs
@@ -342,6 +345,7 @@ def execute_plan(
             records.append(rec)
             records_by_id[task.id] = rec
             evidence_ids.append(evidence.evidence_id)
+            evidence_records[evidence.evidence_id] = evidence
             dfs_by_task[task.id] = task_df
             profiles_by_task[task.id] = task_profile
 
@@ -370,6 +374,7 @@ def execute_plan(
         plan_version=plan.plan_version,
         records=records,
         evidence_ids=evidence_ids,
+        evidence_records=evidence_records,
         status=overall_status,
         failure=first_failure,
     )

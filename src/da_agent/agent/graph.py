@@ -104,8 +104,10 @@ def _stop_for_recovery(state: AgentState, reason: str, pattern: str) -> dict[str
         message=reason,
         context={"pattern": pattern},
     )
+    # CONTRACTS: no_progress terminates as partial, and a budget stop
+    # finalizes as partial even when no evidence was produced.
     return {
-        "status": "partial" if evidence_ids else "failed",
+        "status": "partial",
         "failures": list(state.get("failures") or []) + [failure],
         "recovery_action": "stop",
     }
@@ -303,6 +305,8 @@ def build_nodes(
         new_evidence_ids = list(
             dict.fromkeys(list(state.get("evidence_ids") or []) + result.evidence_ids)
         )
+        evidence_records = dict(state.get("evidence_records") or {})
+        evidence_records.update(result.evidence_records)
         existing_records = previous_records
         new_records = existing_records + [
             record
@@ -324,6 +328,7 @@ def build_nodes(
             "executed_records": new_records,
             "evidence_store": evidence_store,
             "evidence_ids": new_evidence_ids,
+            "evidence_records": evidence_records,
             "failures": failures,
             "last_exec_result": result,
         }
@@ -711,6 +716,7 @@ def run_agent(
         "executed_records": [],
         "evidence_store": {},
         "evidence_ids": [],
+        "evidence_records": {},
         "failures": [],
         "budgets": budgets,
         "replan_count": 0,

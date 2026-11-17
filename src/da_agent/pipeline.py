@@ -154,4 +154,7 @@ def run_agent(
         failures=state.get("failures", []),
         revisions=state.get("revisions", []),
         trace_writer=trace_writer,
+        evidence_records=state.get("evidence_records") or None,
+        tasks=state["plan"].tasks if state.get("plan") is not None else None,
+        claim_config=config.claim_validation,
     )

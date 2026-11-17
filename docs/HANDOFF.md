@@ -3,7 +3,7 @@
 Updated: 2026-11-17 by Cursor
 
 ## Current task
-M7 Task 1 is done (D-035): recovery counters and no-progress stops are wired in `assess_recovery()`. Next is Task 2: call `invalidate_evidence()` when evidence is invalidated, then `validate_findings()` before the user-facing answer. Task 3 is `evaluation/recovery_suite/`. Do not start M8. Do not mark M7 closed.
+M7 Tasks 1 and 2 are in the agent path (D-035, D-036). Recovery stops as `partial` for no-progress and budget limits. Answers drop invalidated and unsupported claims. Next is Task 3: `evaluation/recovery_suite/`, separate from the frozen benchmark. Do not start M8. Do not mark M7 closed.
 
 ## State
 - Branch: `shivam`, based on `main` at `be78cab` plus this session's evaluation artifacts and doc updates. Not committed.

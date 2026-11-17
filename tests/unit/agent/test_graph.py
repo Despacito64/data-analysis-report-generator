@@ -667,9 +667,11 @@ def test_graph_stops_when_identical_retry_cap_is_reached(monkeypatch):
     )
 
     assert result["identical_retry_count"] == 2
-    assert result["status"] == "failed"
+    assert result["status"] == "partial"
     assert result["recovery_action"] == "stop"
-    assert any(failure.failure_class == FailureClass.TRANSIENT for failure in result["failures"])
+    assert any(
+        failure.failure_class == FailureClass.BUDGET_EXHAUSTED for failure in result["failures"]
+    )
 
 
 def test_graph_stops_when_replanned_tasks_do_not_change():
@@ -723,7 +725,7 @@ def test_graph_stops_on_repeated_task_fingerprint():
         max_replans=2,
     )
 
-    assert result["status"] == "failed"
+    assert result["status"] == "partial"
     assert result["recovery_action"] == "stop"
     assert any(failure.failure_class == FailureClass.NO_PROGRESS for failure in result["failures"])
     assert len(client.call_history) == 2
@@ -769,6 +771,42 @@ def test_assess_recovery_stops_on_a_cycle_and_allows_a_real_change():
     )
     assert cycling["recovery_action"] == "stop"
     assert cycling["status"] == "partial"
+    without_evidence = assess_recovery(
+        {
+            "recovery_history": [
+                {"tool": "filter", "args": {"token": "same"}, "depends_on": []},
+            ],
+            "evidence_ids": [],
+            "failures": [],
+            "replan_count": 0,
+            "identical_retry_count": 0,
+            "repair_attempts": 0,
+            "last_exec_result": PlanExecutionResult(
+                status="failed",
+                records=[
+                    TaskExecutionRecord(
+                        task_id="t2",
+                        tool="filter",
+                        args={"token": "same"},
+                        status=TaskStatus.FAILED,
+                        error="matched 0 rows",
+                    )
+                ],
+                failure=Failure(
+                    failure_class=FailureClass.EMPTY_RESULT,
+                    recoverable=True,
+                    message="matched 0 rows",
+                    context={},
+                    task_id="t2",
+                ),
+            ),
+        }
+    )
+    assert without_evidence["status"] == "partial"
+    assert any(
+        failure.failure_class == FailureClass.NO_PROGRESS
+        for failure in without_evidence["failures"]
+    )
     assert any(failure.failure_class == FailureClass.NO_PROGRESS for failure in cycling["failures"])
 
     changed = assess_recovery(
