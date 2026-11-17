@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>M9 visual demo — Sample Superstore (real Ollama)</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; line-height: 1.45; color: #111; background: #f6f6f8; }
+    body { margin: 0; padding: 24px; max-width: 960px; }
+    h1 { font-size: 1.35rem; font-weight: 500; margin: 0 0 8px; }
+    .sub { color: #555; margin-bottom: 24px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+    .card h2 { font-size: 0.95rem; font-weight: 500; margin: 0 0 12px; }
+    code { font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>Data analysis agent — end-to-end demo</h1>
+  <p class="sub">
+    <strong>Real</strong> run via Ollama <code>qwen3:4b</code> · run <code>demo-visual-real</code> ·
+    status <strong>answered</strong> · 34 trace events · ~45s wall time
+  </p>
+  <div class="grid">
+    <div class="card">
+      <h2>Pipeline</h2>
+      <ol>
+        <li>Upload CSV → profile + hash</li>
+        <li>LLM plan (Ollama) → <code>group_aggregate</code></li>
+        <li>Evidence + claim validation</li>
+        <li><code>report.json</code> + <code>report.html</code></li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>Grounded numbers (from tools)</h2>
+      <ul>
+        <li>Technology sales sum: 836,154.03</li>
+        <li>Furniture sales sum: 741,999.80</li>
+        <li>Office supplies sum: 719,047.03</li>
+      </ul>
+      <p class="sub" style="margin:0">Same category totals whether the planner is mock or live—the plan tool matched in this question.</p>
+    </div>
+    <div class="card">
+      <h2>Regenerate</h2>
+      <p><code>uv run python demo/run_real_demo.py</code></p>
+      <p>Ollama must be up at <code>config.yaml</code> <code>model.base_url</code>.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>HTML report (M8)</h2>
+    <p><a href="report.html">Open validated report</a> — numbers link to evidence ids.</p>
+    <iframe src="report.html" title="Report preview" style="width:100%;height:420px;border:1px solid #ddd;border-radius:4px;background:#fff"></iframe>
+  </div>
+</body>
+</html>

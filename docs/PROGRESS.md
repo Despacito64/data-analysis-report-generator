@@ -92,4 +92,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M0 | restored Sample Superstore CSV to CRLF bytes matching D-007 registered hash | uv run pytest tests/unit/test_dataset_registry.py: 3 passed | 88451fc
 2026-11-17 | Cursor | M7 | gate closed after full pytest 281 passed | uv run pytest -q: 281 passed | (docs only)
 2026-11-17 | Cursor | M8 | wired `run_agent` → report.json/html via AnalysisRun assembler and trace `report_written` (D-038) | uv run pytest -q: 283 passed; ruff clean | b1afe13
-2026-11-17 | Cursor | M9 | Streamlit shell + hash-gated follow-up selection (D-039) | uv run pytest -q: 285 passed | (pending)
+2026-11-17 | Cursor | M9 | Streamlit shell + hash-gated follow-up selection (D-039) | uv run pytest -q: 285 passed | 0235464
