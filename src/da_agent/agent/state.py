@@ -15,6 +15,7 @@ from da_agent.agent.planner import Plan
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
+    EvidenceRecord,
     Failure,
     PlanRevision,
     ResolvedQuestion,
@@ -35,11 +36,16 @@ class AgentState(TypedDict, total=False):
     executed_records: list[TaskExecutionRecord]
     evidence_store: dict[str, Any]
     evidence_ids: list[str]
+    evidence_records: dict[str, EvidenceRecord]
     failures: list[Failure]
     budgets: Budgets
     replan_count: int
     max_replans: int
     max_repairs: int
+    identical_retry_count: int
+    repair_attempts: int
+    recovery_history: list[dict[str, Any]]
+    recovery_action: str | None
     status: str  # "complete" | "partial" | "failed"
     final_answer: Any | None
     run_id: str

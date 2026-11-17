@@ -1,0 +1,84 @@
+{
+  "question_id": "q19",
+  "attempt": 3,
+  "run_id": "agent_eval_m10-frozen-real-20261117_q19_r3_e0e5729e",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "Furniture": 3046.1658000000007,
+    "Office Supplies": 41014.5791,
+    "Technology": 47462.0351
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 50.64037952607032,
+  "stage_timings": {
+    "question_resolution": 0.0005944139556959271,
+    "plan_generation": 30.921530119958334,
+    "plan_validation": 0.03636196011211723,
+    "tool_execution": 0.12233249901328236,
+    "result_inspection": 0.006087937974371016,
+    "repair_attempt_1": 4.876325327903032,
+    "repair_attempt_2": 4.89712799701374,
+    "replanning": 19.47074453497771,
+    "graph_finalization": 0.000979208038188517,
+    "answer_synthesis": 0.005123264039866626,
+    "tool_executions": 0.0159
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.008
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0079
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.90600842004642,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 9.650527040939778,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 4.876325327903032,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.89712799701374,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 4,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 4.876325327903032
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.89712799701374
+    }
+  ]
+}

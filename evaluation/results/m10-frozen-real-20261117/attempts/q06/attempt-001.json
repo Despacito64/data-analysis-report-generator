@@ -1,0 +1,80 @@
+{
+  "question_id": "q06",
+  "attempt": 1,
+  "run_id": "agent_eval_m10-frozen-real-20261117_q06_r1_8c24591f",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Machines",
+    "Copiers",
+    "Copiers",
+    "Copiers",
+    "Copiers"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 189.6527004429372,
+  "stage_timings": {
+    "question_resolution": 0.0007025060476735234,
+    "plan_generation": 3.449574208003469,
+    "plan_validation": 0.015919983969070017,
+    "tool_execution": 0.7029436760349199,
+    "result_inspection": 0.0058558250311762094,
+    "repair_attempt_1": 30.40280977403745,
+    "repair_attempt_2": 6.127399979974143,
+    "replanning": 75.93157425604295,
+    "graph_finalization": 0.0061667460249736905,
+    "answer_synthesis": 109.35732107097283,
+    "tool_executions": 0.6992
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.6992
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 3.428870002971962,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 39.35748359397985,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 30.40280977403745,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 6.127399979974143,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 4,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 30.40280977403745
+    },
+    {
+      "attempt": 2,
+      "duration_s": 6.127399979974143
+    }
+  ]
+}

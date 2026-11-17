@@ -1,0 +1,1 @@
+"""UI helpers (demo presets) for Streamlit; no Streamlit import here."""

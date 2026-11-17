@@ -7,6 +7,7 @@ Never imports evaluation/oracle or da_agent.agent.baseline.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -26,6 +27,7 @@ from da_agent.agent.state import AgentState
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
+    EvidenceRecord,
     ExecutionStatus,
     Failure,
     FailureClass,
@@ -34,9 +36,11 @@ from da_agent.contracts.models import (
     RunStatus,
 )
 from da_agent.core.config import load_config
+from da_agent.core.follow_up import ReusedEvidence, seed_reused_evidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.tools.registry import DEFAULT_REGISTRY, export_tool_specs
 from da_agent.validation.plan_check import validate_plan
+from da_agent.validation.recovery import decide_recovery, detect_no_progress, fingerprint
 
 # ---------------------------------------------------------------------------
 # Routing Logic (pure functions of state)
@@ -60,51 +64,150 @@ def route_after_validate_repair(state: AgentState) -> str:
     return "execute"
 
 
-def route_after_inspect(state: AgentState) -> str:
-    """Determine the next step after execution inspection using recovery logic.
+def _history_entry(task: Any) -> dict[str, Any]:
+    """Build a fingerprint history record from a task or execution record."""
+    if task is None:
+        return {"tool": "", "args": {}, "depends_on": []}
+    tool = getattr(task, "tool", None)
+    if tool is None and isinstance(task, dict):
+        tool = task.get("tool", "")
+        args = task.get("args", {})
+        depends_on = task.get("depends_on", [])
+    else:
+        args = getattr(task, "args", {})
+        depends_on = getattr(task, "depends_on", [])
+    return {"tool": tool or "", "args": args or {}, "depends_on": list(depends_on or [])}
 
-    Graph nodes/edges changed (D-034 note):
-    - Only this routing function changes; graph shape (nodes and edges) is unchanged.
-    - Failure path: previously used result.failure.recoverable boolean; now routed
-      through decide_recovery() which enforces identical_retry_cap, repair cap,
-      replan cap, and terminal classification deterministically.
-    - Retry-identical (transient): returns "execute" directly instead of "replan".
-    - Success path (no failure): unchanged — still sends to "replan" when evidence
-      exists and replan budget remains, so follow-up plans continue to work.
-    - Behaviour change: a failure that was previously recoverable=True but has hit
-      the identical_retry_cap or is classified terminal is now routed to "finalize"
-      (stops) rather than into an unbounded replan loop.
+
+def _task_for_record(state: AgentState, record: Any) -> Any:
+    """Return the plan task matching a failed record, or the record itself."""
+    if record is None:
+        return None
+    plan = state.get("plan")
+    if plan is not None:
+        for task in plan.tasks:
+            if task.id == record.task_id:
+                return task
+    return record
+
+
+def _stop_for_recovery(state: AgentState, reason: str, pattern: str) -> dict[str, Any]:
+    """Stop the run when recovery cannot continue."""
+    evidence_ids = state.get("evidence_ids") or []
+    no_progress = pattern in {"identical_fingerprint", "empty_revision", "cycling", "no_progress"}
+    failure_class = FailureClass.NO_PROGRESS if no_progress else FailureClass.BUDGET_EXHAUSTED
+    if not no_progress and "terminal" in reason.lower():
+        return {
+            "status": "partial" if evidence_ids else "failed",
+            "recovery_action": "stop",
+        }
+    failure = Failure(
+        failure_class=failure_class,
+        recoverable=False,
+        message=reason,
+        context={"pattern": pattern},
+    )
+    # CONTRACTS: no_progress terminates as partial, and a budget stop
+    # finalizes as partial even when no evidence was produced.
+    return {
+        "status": "partial",
+        "failures": list(state.get("failures") or []) + [failure],
+        "recovery_action": "stop",
+    }
+
+
+def assess_recovery(state: AgentState) -> dict[str, Any]:
+    """Choose retry, repair, replan, or stop from the latest execution result.
+
+    Identical retries are recorded so detect_no_progress() does not treat an
+    authorized transient retry as a stall. Counter names match decide_recovery().
     """
     result = state.get("last_exec_result")
     if result is None:
+        return {"recovery_action": "finalize"}
+
+    replan_count = state.get("replan_count", 0)
+    max_replans = state.get("max_replans", load_config().budgets.max_replans)
+    failed_records = [record for record in result.records if record.status == TaskStatus.FAILED]
+
+    if result.failure is None and not failed_records:
+        if result.status == "complete" and result.evidence_ids and replan_count < max_replans:
+            return {"failed_task_id": None, "recovery_action": "replan"}
+        return {"failed_task_id": None, "recovery_action": "finalize"}
+
+    record = failed_records[0] if failed_records else None
+    current_task = _task_for_record(state, record)
+    history = list(state.get("recovery_history") or [])
+    entry = _history_entry(current_task if current_task is not None else record)
+    if state.get("recovery_action") == "retry_identical":
+        entry["allowed_identical"] = True
+    if entry.get("tool"):
+        entry["fingerprint"] = fingerprint(entry)
+    history.append(entry)
+
+    updates: dict[str, Any] = {
+        "recovery_history": history,
+        "failed_task_id": record.task_id if record is not None else state.get("failed_task_id"),
+    }
+    progress = detect_no_progress(history)
+    if progress.no_progress:
+        stopped = _stop_for_recovery(
+            state,
+            progress.reason or "No progress",
+            progress.pattern.value if progress.pattern is not None else "no_progress",
+        )
+        updates.update(stopped)
+        return updates
+
+    counters = {
+        "identical_retries": state.get("identical_retry_count", 0),
+        "repair_attempts": state.get("repair_attempts", 0),
+        "replan_count": replan_count,
+    }
+    decision = decide_recovery(
+        result.failure if result.failure is not None else (record.error if record else "unknown"),
+        history[:-1],
+        counters,
+        load_config().recovery_limits,
+        current_task if current_task is not None else entry,
+    )
+    updates["recovery_action"] = decision.action.value
+    if decision.action.value == "retry_identical":
+        updates["identical_retry_count"] = counters["identical_retries"] + 1
+        return updates
+    if decision.action.value == "repair":
+        updates["repair_attempts"] = counters["repair_attempts"] + 1
+        return updates
+    if decision.action.value == "replan":
+        return updates
+
+    stopped = _stop_for_recovery(state, decision.reason, decision.failure_class.value)
+    updates.update(stopped)
+    updates["recovery_action"] = "stop"
+    return updates
+
+
+def route_after_inspect(state: AgentState) -> str:
+    """Route using the recovery action chosen in inspect."""
+    action = state.get("recovery_action")
+    if action == "retry_identical":
+        return "execute"
+    if action in ("repair", "replan"):
+        return "replan"
+    if action in ("stop", "finalize"):
         return "finalize"
 
+    result = state.get("last_exec_result")
+    if result is None:
+        return "finalize"
     replan_count: int = state.get("replan_count", 0)
     max_replans: int = state.get("max_replans", load_config().budgets.max_replans)
-
-    # --- Success path: no failure, may still trigger a follow-up replan ---
     if result.failure is None:
-        failed_records = [r for r in result.records if r.status == TaskStatus.FAILED]
+        failed_records = [record for record in result.records if record.status == TaskStatus.FAILED]
         if not failed_records:
             if result.status == "complete" and result.evidence_ids and replan_count < max_replans:
                 return "replan"
             return "finalize"
-
-    # --- Failure path: route through deterministic recovery decision ---
-    from da_agent.validation.recovery import decide_recovery
-
-    counters = {
-        "identical_retry_count": state.get("identical_retry_count", 0),
-        "repair_attempts": state.get("repair_attempts", 0),
-        "replan_count": replan_count,
-    }
-    limits = load_config().recovery_limits
-    decision = decide_recovery(result.failure, state, counters, limits)
-
-    if decision.action == "retry_identical":
-        return "execute"
-    if decision.action in ("repair", "replan"):
-        return "replan"
     return "finalize"
 
 
@@ -205,6 +308,8 @@ def build_nodes(
         new_evidence_ids = list(
             dict.fromkeys(list(state.get("evidence_ids") or []) + result.evidence_ids)
         )
+        evidence_records = dict(state.get("evidence_records") or {})
+        evidence_records.update(result.evidence_records)
         existing_records = previous_records
         new_records = existing_records + [
             record
@@ -226,19 +331,32 @@ def build_nodes(
             "executed_records": new_records,
             "evidence_store": evidence_store,
             "evidence_ids": new_evidence_ids,
+            "evidence_records": evidence_records,
             "failures": failures,
             "last_exec_result": result,
         }
 
     def node_inspect(state: AgentState) -> dict[str, Any]:
-        """Inspect execution result and surface first failed task id for replanning."""
-        result = state.get("last_exec_result")
-        if result is None:
-            return {}
-        failed_records = [r for r in result.records if r.status == TaskStatus.FAILED]
-        if failed_records:
-            return {"failed_task_id": failed_records[0].task_id}
-        return {"failed_task_id": None}
+        """Inspect execution and choose retry, repair, replan, or stop."""
+        updates = assess_recovery(state)
+        if trace_writer:
+            for failure in updates.get("failures") or []:
+                if failure not in (state.get("failures") or []):
+                    trace_writer.log_failure(failure)
+            trace_writer.log_event(
+                "recovery_decision",
+                {
+                    "action": updates.get("recovery_action"),
+                    "status": updates.get("status"),
+                    "identical_retry_count": updates.get(
+                        "identical_retry_count", state.get("identical_retry_count", 0)
+                    ),
+                    "repair_attempts": updates.get(
+                        "repair_attempts", state.get("repair_attempts", 0)
+                    ),
+                },
+            )
+        return updates
 
     def node_replan_failure(state: AgentState) -> dict[str, Any]:
         """Ask the LLM for a corrected plan after a task failure."""
@@ -580,6 +698,8 @@ def run_agent(
     trace_writer: RunTraceWriter | None = None,
     max_replans: int | None = None,
     max_repairs: int = 1,
+    reused_evidence: list[ReusedEvidence] | None = None,
+    prior_run_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Run the full dynamic planning agent and return the final state."""
     if budgets is None:
@@ -590,6 +710,17 @@ def run_agent(
         config = load_config()
         trace_writer = RunTraceWriter(run_id=run_id, base_dir=config.run_trace.base_dir)
 
+    seeded_records: dict[str, EvidenceRecord] = {}
+    seeded_ids: list[str] = []
+    seeded_store: dict[str, Any] = {}
+    if reused_evidence:
+        seeded_records, seeded_ids, seeded_store = seed_reused_evidence(
+            reused_evidence,
+            current_dataset_hash=profile.dataset_hash,
+            trace_writer=trace_writer,
+            prior_run_dir=prior_run_dir,
+        )
+
     initial_state: AgentState = {
         "question": question,
         "df": df,
@@ -599,13 +730,18 @@ def run_agent(
         "plan_version": 1,
         "revisions": [],
         "executed_records": [],
-        "evidence_store": {},
-        "evidence_ids": [],
+        "evidence_store": seeded_store,
+        "evidence_ids": seeded_ids,
+        "evidence_records": seeded_records,
         "failures": [],
         "budgets": budgets,
         "replan_count": 0,
         "max_replans": max_replans,
         "max_repairs": max_repairs,
+        "identical_retry_count": 0,
+        "repair_attempts": 0,
+        "recovery_history": [],
+        "recovery_action": None,
         "status": "pending",
         "final_answer": None,
         "run_id": run_id,

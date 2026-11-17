@@ -3,6 +3,7 @@
 from da_agent.contracts.models import (
     CONTRACT_VERSION,
     AmbiguityDecision,
+    AnalysisRun,
     Budgets,
     ClassifiedFailure,
     ColumnProfile,
@@ -14,6 +15,7 @@ from da_agent.contracts.models import (
     FailureClass,
     FilterSpec,
     Finding,
+    KeyNumberCitation,
     NumericClaim,
     PeriodSpec,
     PlanRevision,
@@ -34,6 +36,7 @@ from da_agent.contracts.models import (
 __all__ = [
     "CONTRACT_VERSION",
     "AmbiguityDecision",
+    "AnalysisRun",
     "Budgets",
     "ClassifiedFailure",
     "ColumnProfile",
@@ -45,6 +48,7 @@ __all__ = [
     "FailureClass",
     "FilterSpec",
     "Finding",
+    "KeyNumberCitation",
     "NumericClaim",
     "PeriodSpec",
     "PlanRevision",

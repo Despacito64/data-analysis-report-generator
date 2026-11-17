@@ -1,0 +1,43 @@
+{
+  "benchmark": {
+    "oracle_path": "evaluation/benchmark/oracle.json",
+    "oracle_sha256": "91aae5d05fe247014752c0491b32b21eae387a918822ae16e4a3cdfa3b8b1ad3",
+    "question_count": 20,
+    "questions_path": "evaluation/benchmark/questions.json",
+    "questions_sha256": "d85ea88af205f52cd89146a195db3b8691a856f461edab9f8c74f170cb4219b4"
+  },
+  "budgets": {
+    "max_identical_retries": 2,
+    "max_llm_calls": 15,
+    "max_replans": 3,
+    "max_tool_calls": 25,
+    "max_total_tokens": 30000,
+    "per_call_timeout_s": 60.0
+  },
+  "config_path": "config.yaml",
+  "config_sha256": "b0cc95db844b7acb58e000bfbb23e4ee7e20ecf6b262a138a601089b8fce22de",
+  "contract_version": "0.1.0",
+  "dataset": {
+    "file": "Sample-Superstore.csv",
+    "registered_sha256": "dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c",
+    "row_count": 9994,
+    "sha256": "dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c"
+  },
+  "evaluation": {
+    "keep_alive": "10m",
+    "max_llm_calls_per_question": 8,
+    "max_repair_attempts": 2,
+    "overall_timeout_s": 7200.0,
+    "per_question_budget_s": 300.0,
+    "thinking_enabled": false
+  },
+  "freeze_version": "1.0",
+  "frozen_at": "2026-11-17T06:12:35.013317+00:00",
+  "git_revision": "5acc4f14f30714f359dc8c04c2640c19e3f267c8",
+  "model": {
+    "base_url": "http://localhost:11434/v1",
+    "name": "qwen3:4b",
+    "seed": 42,
+    "temperature": 0.0
+  }
+}

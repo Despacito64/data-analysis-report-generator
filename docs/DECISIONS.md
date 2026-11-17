@@ -359,3 +359,92 @@ Decision:
 Reason: Address M7 session 2 requirements cleanly by extending and wrapping existing M0-M6 infrastructure while preserving backward compatibility, strict Layer 4 isolation, and contract stability.
 Consequences: All 243 baseline tests continue to pass; failure mapping is centralized and typed; invalidation cascades deterministically through evidence and claim verification; benchmark leakage tests verify factual-only recovery context.
 
+## D-034: M6 real-model gate closed on local GPU
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Treat the M6 real-model scoring gate as met by one complete `qwen3:4b` run on this machine. Do not change `config.yaml` budgets. The run used the existing 60-second `per_call_timeout_s`.
+Evidence:
+- Host: Ollama 0.23.3, NVIDIA GeForce GTX 1650 (4 GB). After load, `ollama ps` showed `qwen3:4b` at `100% GPU`, about 3.6 GB.
+- Command: `uv run python evaluation/run_agent_eval.py --mode real --model qwen3:4b --run-id m6-shivam-full`
+- Result: `score_complete: true`. Agent 13/20 correct. Baseline 20/20. Wall time about 768 seconds. Warm-up about 1.8 seconds. Failure reasons: `incorrect_answer` 6, `no_score_shaped_answer` 1 (q01, q06, q07, q08, q11, q12, q20). No question timed out.
+- Artifact: `evaluation/results/m6-shivam-full/`.
+Reason: Earlier full runs (D-030) timed out at 60 seconds before this GPU was used. This run finished inside the existing budget, so a timeout increase was not required.
+Consequences: M6 can be marked complete. The 13/20 score is the measured result, not a claim that the agent matches the template baseline. M7 remains open. Do not retune prompts on the frozen questions to chase the seven misses.
+
+## D-035: Recovery counters and no-progress stops live in inspect
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: `node_inspect` calls `assess_recovery()`. That function passes `identical_retries`, `repair_attempts`, and `replan_count` into `decide_recovery()`, and it passes prior fingerprint history without the attempt currently being classified. Authorized identical retries are marked `allowed_identical`. `detect_no_progress()` stops the run on a repeated fingerprint, an empty revision, or a cycle. Status is `partial` when valid evidence remains and `failed` otherwise. The graph shape is unchanged.
+Reason: The previous route read `identical_retry_count` while `decide_recovery()` reads `identical_retries`, so the cap never applied. Passing the whole state as history also made the current attempt look like a repeated fingerprint.
+Consequences: Transient failures retry up to `recovery_limits.identical_retry_cap` and then stop. Repair still goes through replan. Claim validation and `evaluation/recovery_suite/` remain open.
+
+## D-036: Recovery stops and answer claims follow the contracts
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: A `no_progress` stop and a recovery-budget stop both end as `partial`, including when no evidence was produced. An unrecoverable terminal failure with no evidence ends as `failed`. Before `AgentResult` is returned, key numbers are checked with `validate_findings()`. A failure that names `context["evidence_id"]`, or an invariant failure for a task that already has evidence, runs `invalidate_evidence()` first. Invalidated evidence and its dependents are removed from key numbers and answer text. Surviving independent evidence stays. Dropped claim text is stored on `AgentResult.dropped_claims`. `CONTRACT_VERSION` stays `0.1.0`. Typed evidence records are kept beside the raw evidence store so execution can still read tool fields such as `matched_indices`.
+Reason: `CONTRACTS.md` says `no_progress` terminates as partial and `budget_exhausted` finalizes as partial. A number reaches the answer only through valid evidence. The first recovery wiring used `failed` whenever evidence was absent, which contradicted that table.
+Consequences: Tests cover a transient retry cap, a repeated fingerprint with no evidence, a tampered narrative, a dependent-evidence cascade, and a supported claim that stays. `evaluation/recovery_suite/` is still not built. M7 stays open. M8 still owns the report `RunStatus`.
+
+## D-037: Controlled-failure recovery suite separate from benchmark
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Add `evaluation/recovery_suite/scenarios.json` with handlers in `runners.py` and runner `run_recovery_suite.py`. Scenarios exercise classification, recovery decisions, no-progress detection, mock-agent transient retry/stop, fingerprint stall, claim tampering, and evidence invalidation. They do not use frozen benchmark question IDs, question text from `evaluation/benchmark/questions.json`, or `evaluation/oracle.py`. Results export to `evaluation/results/recovery_suite/latest.json`. Pytest enforces handler coverage and isolation.
+Reason: M7 exit gate requires a recovery suite that is separate from the 20-question eval set. Keeps recovery regression tests runnable without a live LLM or oracle leakage.
+Consequences: `uv run python evaluation/recovery_suite/run_recovery_suite.py` and `tests/unit/evaluation/test_recovery_suite.py` must pass before claiming M7 complete. M8 is next.
+
+## D-038: Report finalize in pipeline via AnalysisRun contract
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: After `build_agent_result()`, `pipeline.run_agent()` (default `emit_report=True`) maps the typed answer into contract `AnalysisRun` (key numbers as `KeyNumberCitation`, evidence records, execution status) and calls `reports.delivery.finalize_run_report()`. That path re-validates claims, saves `runs/<run_id>/report.json`, renders escaped HTML to `report.html`, and logs `report_written`. Reports never import `agent`; only `pipeline` bridges layers. Chart attachment from tool results remains optional and is not required for the M8 E2E gate.
+Reason: M8 exit gate requires an end-to-end run with downloadable HTML whose numbers match validated evidence. The report library existed but was not wired from the public entry point.
+Consequences: M9 can download artifacts from the run directory. Eval harness may set `emit_report=False` if report I/O should be skipped. `CONTRACT_VERSION` unchanged.
+
+## D-039: Follow-up evidence reuse is hash-gated and explicit
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: `core/follow_up.py` holds session rules: `apply_new_dataset_hash()` clears prior context when the profile hash changes; `select_reusable_evidence()` returns items only when the prior and current hashes match and the user selected evidence IDs. Reuse is logged as `follow_up_reuse` on the new run trace (metadata only in this slice). The Streamlit app does not inject reused records into the LangGraph executor yet.
+Reason: M9 gate requires that a changed upload cannot silently reuse stale evidence. Keeping reuse policy in `core` avoids coupling tests to Streamlit.
+Consequences: M9 gate test covers hash mismatch; executor-level reuse remains optional follow-up work if the owner requires tool results to be pre-seeded.
+
+## D-043: Follow-up evidence pre-seeds graph state
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: `core.follow_up.seed_reused_evidence()` copies explicitly selected `EvidenceRecord` objects into initial `AgentState` (`evidence_records`, `evidence_ids`, `evidence_store`), loading full JSON from `runs/<prior_run_id>/evidence/<id>.json` when present else `result_summary`. Each item logs `evidence_reused` and `evidence` on the new trace. `pipeline.run_agent()` and Streamlit pass `reused_evidence` and `prior_run_dir`; hash mismatches are skipped (no silent reuse).
+Reason: M9 requires follow-up context to reach the executor, not only UI trace metadata (D-039).
+Consequences: Prior-run evidence files enable reference resolution; bounded summaries alone may suffice for simple follow-ups.
+
+## D-044: M10 freeze manifest and reproduction command
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Store `evaluation/benchmark/freeze_manifest.json` with SHA-256 hashes for dataset, questions, oracle, and `config.yaml`, plus model/budget snapshots and `CONTRACT_VERSION`. Reproduce via `uv run python evaluation/run_frozen_experiment.py` (documented in `docs/REPRODUCTION.md`). Default CI/smoke uses `--mode mock`; full protocol uses `--mode real --repeats 3`. Recovery suite runs in the same entrypoint; combined summary at `evaluation/results/frozen_experiment/latest.json`.
+Reason: M10 gate requires a frozen benchmark and one documented reproduction path.
+Consequences: `--write-freeze` after intentional benchmark/config changes needs owner approval and a new manifest commit. `--require-git-match` optional for strict reproduction.
+
+## D-045: M10 reference evaluation run pinned
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: The canonical real-model frozen experiment is run id **`m10-frozen-real-20261117`** (`--mode real --repeats 3`), summarized in `docs/M10_RESULTS.md` and `evaluation/results/frozen_experiment/latest.json`. Score: dynamic agent **13/20** vs baseline **20/20**, recovery suite 12/12, zero question timeouts under default budgets.
+Reason: M10 requires recorded measured results tied to the freeze manifest, not percentages alone.
+Consequences: Re-runs with different hardware/models get new run ids; update M10_RESULTS only when the owner accepts a new reference.
+
+## D-040: Central references audit log
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Maintain `docs/REFERENCES.md` as the canonical table of datasets, models, libraries, evaluation assets, third-party skills, external agent repos reviewed for design, and cited URLs with per-row justification and risk notes. Real demos use `demo/run_real_demo.py` (Ollama); mock remains **tests only** (see **D-041**).
+Reason: Owner requested an auditable list of inspirations and sources; subagent compile failed on model quota so the main session wrote the file from repo evidence.
+Consequences: Update REFERENCES when adding externals; link decisions where applicable.
+
+## D-041: Streamlit demo mode is UX-only (real Ollama)
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: **Demo mode** in `app.py` means: auto-load registered `Sample-Superstore.csv`, prefill `da_agent/ui/demo.DEMO_QUESTION`, disable custom upload while on, and **always** use `OllamaClient` from `config.yaml`. It must not switch to `MockLLMClient`. Mock stays in `tests/` and evaluation harnesses only.
+Reason: Owner asked for easier live demos without fake LLM plans.
+Consequences: `tests/unit/ui/test_demo.py` guards benchmark load; REFERENCES and walkthrough describe real-model paths.
+
+## D-042: Reader-layer report presenters (group_aggregate first)
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Add `reports/presenters.py` to build human `Finding` rows from `group_aggregate` evidence summaries (`sample_groups` + `group_keys`). `build_report()` prefers presenter findings over per-scalar `key_numbers` for that evidence id. `Report.summary` becomes an executive line; `Report.highlights` lists category totals; HTML collapses evidence/dropped sections. Charts: `build_group_aggregate_chart()` on bounded evidence only. `AnalysisRun.answer_text` stored for future grounded narrative (not appended to summary yet).
+Reason: M8 HTML was audit-only; users need category labels without weakening claim validation (D-003).
+Consequences: Extend presenters for `rank`, `period_compare` later. `CONTRACT_VERSION` stays `0.1.0` (additive `highlights`, `answer_text` on contracts).
+

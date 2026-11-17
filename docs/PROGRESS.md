@@ -26,13 +26,13 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M3 Registry and executor. GATE passed: [x]
 - [x] M5 Resolver and planner. GATE passed: [x]
 - [x] M4 Baseline, oracle, scorer, question files. GATE passed: [x]
-- [ ] M6 Dynamic agent. GATE passed: [ ]
-- [ ] M7 Feedback and evidence validation. GATE passed: [ ] (In progress: claim validator, invalidation, and failure classification complete)
-- [ ] M8 Reports and rendering. GATE passed: [ ]
-- [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
-- [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
+- [x] M6 Dynamic agent. GATE passed: [x] (real-model score complete: 13/20, D-034)
+- [x] M7 Feedback and evidence validation. GATE passed: [x] (D-035–D-037; full suite 281 passed with registered dataset hash)
+- [x] M8 Reports and rendering. GATE passed: [x] (HTML + `run_agent` writes report.json/html; PDF deferred)
+- [x] M9 Streamlit interface and follow-ups. GATE passed: [x]
+- [ ] M10 Frozen experiments and documentation. GATE passed: [ ] (reference run `m10-frozen-real-20261117` + M10_RESULTS.md; owner sign-off pending)
 
-M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture checks, documentation, and local test gates are complete. This continuation adds per-stage/LLM/tool timing, question budgets and caps, resumable attempts, model diagnostics, and timeout-aware reporting. The real-agent gate remains open: the complete 60-second run timed out on all 20 questions; an owner-approved 180-second rerun stopped after q09, with q03/q04 producing answers and repeated planner timeouts on other completed questions. See D-030, D-031, and the current handoff.
+M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17, `qwen3:4b` on a GTX 1650 finished all 20 questions at the default 60-second per-call timeout: 13/20 correct, score complete, no timeouts. Earlier CPU runs in D-030 remain historical. See D-034.
 
 ## Requirement status
 
@@ -53,7 +53,9 @@ M6 owner-approved Steps 5-8: answer synthesis, evaluation harness, architecture 
 | FR07 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR09 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR08 (feedback validation) | passed (invalidation & failure classification) | `src/da_agent/validation/invalidation.py`, `src/da_agent/validation/failures.py`, `tests/unit/validation/test_invalidation.py`, `tests/unit/validation/test_failures.py` |
-| FR10, FR12 | not started | Deferred to M8 - M9 |
+| FR10 (report artifact) | passed | `src/da_agent/pipeline.py`, `src/da_agent/reports/delivery.py`, `tests/integration/test_agent_report_e2e.py` |
+| FR12 (follow-up reuse policy) | passed | `src/da_agent/core/follow_up.py`, `tests/unit/core/test_follow_up_seed.py` |
+| FR12 (Streamlit UI) | passed | `app.py`, `src/da_agent/ui/` |
 | NFR1 to NFR3 | not started | |
 
 Update this table as modules pass their gates, naming the test or artifact.
@@ -82,3 +84,19 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-12 | Copilot | M6 diagnostics/resumability | added stage and per-call timing, bounded question/overall budgets, distinct repair/LLM caps, per-attempt persistence, resume/subset CLI, warm-up/model diagnostics, and timeout-aware reports; M6 remains open and no real-model run was made | uv run pytest -q: 232 passed; uv run ruff check . clean; uv run ruff format --check . clean | 2d73daf
 2026-11-16 | antigravity | M7 session 1 | numeric claim extraction, evidence matching, recomputation, finding validation, drop policies, import rules (D-032); M6 gate and M7 remain open | uv run pytest -q: 243 passed; uv run ruff check . clean; uv run ruff format --check . clean | pending
 2026-11-16 | antigravity | M7 session 2 | failure classification, factual recovery context, dependent-evidence invalidation cascade, stated-precision magnitude claims (D-033); M6 gate and M7 remain open | uv run pytest -q: 258 passed; uv run ruff check . clean; uv run ruff format --check . clean | afa2f5c
+2026-11-17 | Cursor | M6 | pulled qwen3:4b; full real eval on GTX 1650, default 60s timeout, score complete 13/20 (D-034); M7 remains open | no pytest this session; eval exit 0 | 180e1bd
+2026-11-17 | Cursor | M7 | wired recovery counters and no-progress stops in the agent inspect node (D-035) | uv run pytest -q: 269 passed, 1 failed (pre-existing Sample-Superstore hash mismatch); graph tests 19 passed | 9c48b2a
+2026-11-17 | Cursor | M7 | recovery stops as partial per CONTRACTS; answer drops invalidated and unsupported claims (D-036) | uv run pytest -q --ignore=tests/unit/test_dataset_registry.py: 270 passed; dataset hash test still fails on the registered file | 0dc2029
+2026-11-17 | Cursor | M7 | controlled-failure recovery suite (12 scenarios, mock-only, no benchmark/oracle) (D-037) | uv run pytest -q --ignore=tests/unit/test_dataset_registry.py: 275 passed; recovery CLI all_passed | 2e1000c
+2026-11-17 | Cursor | M8 | validated findings, escaped HTML report, evidence links, chart values must match findings | uv run pytest tests/unit/reports -q: 3 passed | 3cca72e
+2026-11-17 | Cursor | M0 | restored Sample Superstore CSV to CRLF bytes matching D-007 registered hash | uv run pytest tests/unit/test_dataset_registry.py: 3 passed | 88451fc
+2026-11-17 | Cursor | M7 | gate closed after full pytest 281 passed | uv run pytest -q: 281 passed | (docs only)
+2026-11-17 | Cursor | M8 | wired `run_agent` → report.json/html via AnalysisRun assembler and trace `report_written` (D-038) | uv run pytest -q: 283 passed; ruff clean | b1afe13
+2026-11-17 | Cursor | M9 | Streamlit shell + hash-gated follow-up selection (D-039) | uv run pytest -q: 285 passed | 0235464
+2026-11-17 | Cursor | M8 | reader presenters + compact HTML for group_aggregate (D-042) | uv run pytest -q: 287 passed | 7abf512
+2026-11-17 | Cursor | M9 | demo presets, reader-first answer UI, real Ollama only (D-041) | uv run pytest -q: 287 passed | 5b27965
+2026-11-17 | Cursor | docs | REFERENCES audit, demo script, DECISIONS D-040–D-042 | uv run pytest -q: 287 passed | d294892
+2026-11-17 | Cursor | M9 | live trace progress in st.status, XLSX sheet hints, `list_excel_sheet_names` | uv run pytest -q: 290 passed | 1c9745c
+2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | 5acc4f1..9afc25d
+2026-11-17 | Cursor | M10 | freeze manifest, run_frozen_experiment, REPRODUCTION.md (D-044) | uv run pytest -q: 298 passed | 1b9853e
+2026-11-17 | Cursor | M10 | real Ollama 3×20 run m10-frozen-real-20261117, M10_RESULTS.md (D-045) | run_frozen_experiment ~48min; 13/20 agent | 438eeab

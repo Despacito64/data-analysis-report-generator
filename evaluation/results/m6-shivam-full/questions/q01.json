@@ -1,0 +1,97 @@
+{
+  "question_id": "q01",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 35.10063224902842,
+  "stage_timings": {
+    "question_resolution": 0.0032021680381149054,
+    "plan_generation": 28.250520642963238,
+    "plan_validation": 0.013600714039057493,
+    "tool_execution": 0.007024295045994222,
+    "result_inspection": 0.00012033199891448021,
+    "replanning": 6.808197494014166,
+    "graph_finalization": 0.00037349702324718237,
+    "answer_synthesis": 0.0008641830645501614,
+    "tool_executions": 0.004
+  },
+  "llm_call_count": 2,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.233598056947812,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 6.788814913015813,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.004
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": "no_score_shaped_answer",
+  "failure_stage": "graph_finalization",
+  "attempts": [
+    {
+      "question_id": "q01",
+      "attempt": 1,
+      "run_id": "agent_eval_m6-shivam-full_q01_r1_925797b4",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 35.10094219294842,
+      "total_time_s": 35.10063224902842,
+      "stage_timings": {
+        "question_resolution": 0.0032021680381149054,
+        "plan_generation": 28.250520642963238,
+        "plan_validation": 0.013600714039057493,
+        "tool_execution": 0.007024295045994222,
+        "result_inspection": 0.00012033199891448021,
+        "replanning": 6.808197494014166,
+        "graph_finalization": 0.00037349702324718237,
+        "answer_synthesis": 0.0008641830645501614,
+        "tool_executions": 0.004
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.004
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 28.233598056947812,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 6.788814913015813,
+          "completed": true,
+          "model": "qwen3:4b"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    }
+  ]
+}

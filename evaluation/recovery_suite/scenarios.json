@@ -1,0 +1,80 @@
+{
+  "version": "0.1.0",
+  "description": "Controlled failure scenarios for M7 recovery and claim validation. Not the frozen benchmark.",
+  "scenarios": [
+    {
+      "id": "rs01_classify_transient",
+      "handler": "classify_transient",
+      "failure_family": "transient_error",
+      "expected_retry_policy": "retryable_identical"
+    },
+    {
+      "id": "rs02_classify_empty_result",
+      "handler": "classify_empty_result",
+      "failure_family": "empty_result",
+      "expected_retry_policy": "repairable"
+    },
+    {
+      "id": "rs03_classify_invariant_terminal",
+      "handler": "classify_invariant_terminal",
+      "failure_family": "invariant_violation",
+      "expected_retry_policy": "terminal"
+    },
+    {
+      "id": "rs04_decide_transient_retry",
+      "handler": "decide_transient_retry",
+      "failure_family": "transient_error",
+      "expected_action": "retry_identical"
+    },
+    {
+      "id": "rs05_decide_transient_cap_stop",
+      "handler": "decide_transient_cap_stop",
+      "failure_family": "transient_error",
+      "expected_action": "stop"
+    },
+    {
+      "id": "rs06_detect_identical_fingerprint",
+      "handler": "detect_identical_fingerprint",
+      "failure_family": "no_progress",
+      "expected_pattern": "identical_fingerprint"
+    },
+    {
+      "id": "rs07_detect_cycle",
+      "handler": "detect_cycle",
+      "failure_family": "no_progress",
+      "expected_pattern": "cycling"
+    },
+    {
+      "id": "rs08_agent_transient_retry_cap",
+      "handler": "agent_transient_retry_cap",
+      "failure_family": "transient_error",
+      "expected_status": "complete",
+      "expected_identical_retry_count": 2
+    },
+    {
+      "id": "rs08b_agent_transient_cap_stop",
+      "handler": "agent_transient_cap_stop",
+      "failure_family": "transient_error",
+      "expected_status": "partial",
+      "expected_recovery_action": "stop"
+    },
+    {
+      "id": "rs09_agent_no_progress_fingerprint",
+      "handler": "agent_no_progress_fingerprint",
+      "failure_family": "no_progress",
+      "expected_status": "partial"
+    },
+    {
+      "id": "rs10_claim_tamper_dropped",
+      "handler": "claim_tamper_dropped",
+      "failure_family": "unsupported_claim",
+      "expected_dropped_contains": "999"
+    },
+    {
+      "id": "rs11_invalidation_cascade",
+      "handler": "invalidation_cascade",
+      "failure_family": "dependency_failure",
+      "expected_kept_evidence": ["ev_independent"]
+    }
+  ]
+}

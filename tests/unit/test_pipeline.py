@@ -46,8 +46,11 @@ def test_pipeline_run_agent_wires_graph_and_trace() -> None:
         )
         event_types = [event.event_type for event in writer.read_events()]
 
-    assert result.status == "answered"
-    assert isinstance(result, AgentResult)
-    assert result.evidence
-    assert result.final_answer
-    assert "status" in event_types
+        assert result.status == "answered"
+        assert isinstance(result, AgentResult)
+        assert result.evidence
+        assert result.final_answer
+        assert "status" in event_types
+        assert "report_written" in event_types
+        assert (writer.run_dir / "report.json").is_file()
+        assert (writer.run_dir / "report.html").is_file()

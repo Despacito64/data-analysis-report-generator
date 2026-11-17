@@ -1,0 +1,256 @@
+{
+  "question_id": "q13",
+  "status": "passed",
+  "accuracy": true,
+  "total_time_s": 55.7460972010158,
+  "stage_timings": {
+    "question_resolution": 0.003077229135669768,
+    "plan_generation": 33.26143827079795,
+    "plan_validation": 0.06228609511163086,
+    "tool_execution": 0.03437999787274748,
+    "result_inspection": 0.01143278507515788,
+    "replanning": 22.291396723128855,
+    "graph_finalization": 0.0016919090412557125,
+    "answer_synthesis": 0.008700839942321181,
+    "tool_executions": 0.0214
+  },
+  "llm_call_count": 6,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 27.605445704073645,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.383343901019543,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 2.7821666370145977,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.463999010971747,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 2.7889612319413573,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.365724743925966,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0065
+    },
+    {
+      "task_id": "t1",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0093
+    },
+    {
+      "task_id": "t1",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0056
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 3,
+  "failure_reason": null,
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q13",
+      "attempt": 1,
+      "run_id": "agent_eval_m10-frozen-real-20261117_q13_r1_dca3a5e1",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "total_value": 2297200.8603,
+        "shares": {
+          "Technology": 0.3639882116754926,
+          "Furniture": 0.32300170530281774,
+          "Office Supplies": 0.3130100830216897
+        }
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 35.1065617549466,
+      "stage_timings": {
+        "question_resolution": 0.0010412940755486488,
+        "plan_generation": 27.63937691692263,
+        "plan_validation": 0.017539051012136042,
+        "tool_execution": 0.010882387054152787,
+        "result_inspection": 0.00398945901542902,
+        "replanning": 7.4072004810441285,
+        "graph_finalization": 0.00034430401865392923,
+        "answer_synthesis": 0.001932643004693091,
+        "tool_executions": 0.0065
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0065
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 27.605445704073645,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.383343901019543,
+          "completed": true,
+          "model": "qwen3:4b"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q13",
+      "attempt": 2,
+      "run_id": "agent_eval_m10-frozen-real-20261117_q13_r2_9f797b1f",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "total_value": 2297200.8603,
+        "shares": {
+          "Technology": 0.3639882116754926,
+          "Furniture": 0.32300170530281774,
+          "Office Supplies": 0.3130100830216897
+        }
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 10.372884328011423,
+      "stage_timings": {
+        "question_resolution": 0.0007445489754900336,
+        "plan_generation": 2.8009331709472463,
+        "plan_validation": 0.026603470090776682,
+        "tool_execution": 0.014633487910032272,
+        "result_inspection": 0.0042577090207487345,
+        "replanning": 7.498950706096366,
+        "graph_finalization": 0.000841205008327961,
+        "answer_synthesis": 0.0038746449863538146,
+        "tool_executions": 0.0093
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0093
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 2.7821666370145977,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.463999010971747,
+          "completed": true,
+          "model": "qwen3:4b"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q13",
+      "attempt": 3,
+      "run_id": "agent_eval_m10-frozen-real-20261117_q13_r3_5271d774",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "total_value": 2297200.8603,
+        "shares": {
+          "Technology": 0.3639882116754926,
+          "Furniture": 0.32300170530281774,
+          "Office Supplies": 0.3130100830216897
+        }
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 10.26665111805778,
+      "stage_timings": {
+        "question_resolution": 0.0012913860846310854,
+        "plan_generation": 2.821128182928078,
+        "plan_validation": 0.018143574008718133,
+        "tool_execution": 0.008864122908562422,
+        "result_inspection": 0.0031856170389801264,
+        "replanning": 7.385245535988361,
+        "graph_finalization": 0.0005064000142738223,
+        "answer_synthesis": 0.0028935519512742758,
+        "tool_executions": 0.0056
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0056
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 2.7889612319413573,
+          "completed": true,
+          "model": "qwen3:4b"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.365724743925966,
+          "completed": true,
+          "model": "qwen3:4b"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    }
+  ]
+}

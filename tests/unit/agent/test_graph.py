@@ -10,9 +10,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from da_agent.agent.graph import run_agent
+from da_agent.agent.executor import PlanExecutionResult, TaskExecutionRecord, TaskStatus
+from da_agent.agent.graph import assess_recovery, execute_plan, run_agent
 from da_agent.agent.planner import MockLLMClient, Plan
-from da_agent.contracts.models import Task
+from da_agent.contracts.models import Failure, FailureClass, Task
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
@@ -597,3 +598,255 @@ def test_replan_on_failure_invalid_json():
         "budget_exhausted",
         "transient",
     )
+
+
+def _transient_failure_result() -> PlanExecutionResult:
+    return PlanExecutionResult(
+        status="failed",
+        records=[
+            TaskExecutionRecord(
+                task_id="t1",
+                tool="filter",
+                args={"conditions": [{"column": "Region", "operator": "eq", "value": "East"}]},
+                status=TaskStatus.FAILED,
+                error="temporary connection reset",
+            )
+        ],
+        failure=Failure(
+            failure_class=FailureClass.TRANSIENT,
+            recoverable=True,
+            message="temporary connection reset",
+            context={},
+            task_id="t1",
+        ),
+    )
+
+
+def test_graph_retries_transient_failure_until_it_succeeds(monkeypatch):
+    """Identical retries are used for a transient tool failure, then the run completes."""
+    df, profile = _get_dataset()
+    client = MockLLMClient(default_response=VALID_FILTER_PLAN)
+    calls = {"n": 0}
+
+    def flaky(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] <= 2:
+            return _transient_failure_result()
+        return execute_plan(*args, **kwargs)
+
+    monkeypatch.setattr("da_agent.agent.graph.execute_plan", flaky)
+    result = run_agent(
+        question="What rows are in the East region?",
+        df=df,
+        profile=profile,
+        llm_client=client,
+        max_replans=1,
+    )
+
+    assert calls["n"] == 3
+    assert result["identical_retry_count"] == 2
+    assert result["status"] == "complete"
+    assert result["evidence_ids"]
+
+
+def test_graph_stops_when_identical_retry_cap_is_reached(monkeypatch):
+    """A transient failure stops once the identical-retry cap is exhausted."""
+    df, profile = _get_dataset()
+    client = MockLLMClient(default_response=VALID_FILTER_PLAN)
+
+    def always_transient(*args, **kwargs):
+        return _transient_failure_result()
+
+    monkeypatch.setattr("da_agent.agent.graph.execute_plan", always_transient)
+    result = run_agent(
+        question="What rows are in the East region?",
+        df=df,
+        profile=profile,
+        llm_client=client,
+        max_replans=3,
+    )
+
+    assert result["identical_retry_count"] == 2
+    assert result["status"] == "partial"
+    assert result["recovery_action"] == "stop"
+    assert any(
+        failure.failure_class == FailureClass.BUDGET_EXHAUSTED for failure in result["failures"]
+    )
+
+
+def test_graph_stops_when_replanned_tasks_do_not_change():
+    """An execution failure whose replacement plan is identical stops as no progress."""
+    df, profile = _get_dataset()
+    client = MockLLMClient(default_response=EMPTY_RESULT_FILTER_PLAN)
+    result = run_agent(
+        question="What is the total sales for each category?",
+        df=df,
+        profile=profile,
+        llm_client=client,
+        max_replans=2,
+    )
+
+    assert result["status"] == "partial"
+    assert any(failure.failure_class == FailureClass.NO_PROGRESS for failure in result["failures"])
+
+
+def test_graph_stops_on_repeated_task_fingerprint():
+    """A renamed task with the same arguments is treated as no progress."""
+    df, profile = _get_dataset()
+    same_args = {"conditions": [{"column": "Region", "operator": "eq", "value": "NONEXISTENT"}]}
+    first = _make_plan_json(
+        [
+            {
+                "id": "t1",
+                "tool": "filter",
+                "args": same_args,
+                "depends_on": [],
+                "rationale": "First attempt",
+            }
+        ]
+    )
+    renamed = _make_plan_json(
+        [
+            {
+                "id": "t9",
+                "tool": "filter",
+                "args": same_args,
+                "depends_on": [],
+                "rationale": "Renamed attempt",
+            }
+        ]
+    )
+    client = MockLLMClient(responses=[first, renamed, renamed])
+    result = run_agent(
+        question="What rows are in a missing region?",
+        df=df,
+        profile=profile,
+        llm_client=client,
+        max_replans=2,
+    )
+
+    assert result["status"] == "partial"
+    assert result["recovery_action"] == "stop"
+    assert any(failure.failure_class == FailureClass.NO_PROGRESS for failure in result["failures"])
+    assert len(client.call_history) == 2
+
+
+def test_assess_recovery_stops_on_a_cycle_and_allows_a_real_change():
+    """Cycling fingerprints stop; a changed argument is still repairable."""
+    history = [
+        {"tool": "filter", "args": {"token": "a"}, "depends_on": []},
+        {"tool": "rank", "args": {"token": "b"}, "depends_on": []},
+        {"tool": "trend", "args": {"token": "c"}, "depends_on": []},
+        {"tool": "filter", "args": {"token": "a"}, "depends_on": []},
+        {"tool": "rank", "args": {"token": "b"}, "depends_on": []},
+    ]
+    cycling = assess_recovery(
+        {
+            "recovery_history": history,
+            "evidence_ids": ["e1"],
+            "failures": [],
+            "replan_count": 0,
+            "identical_retry_count": 0,
+            "repair_attempts": 0,
+            "last_exec_result": PlanExecutionResult(
+                status="failed",
+                records=[
+                    TaskExecutionRecord(
+                        task_id="t6",
+                        tool="trend",
+                        args={"token": "c"},
+                        status=TaskStatus.FAILED,
+                        error="empty result",
+                    )
+                ],
+                failure=Failure(
+                    failure_class=FailureClass.EMPTY_RESULT,
+                    recoverable=True,
+                    message="matched 0 rows",
+                    context={},
+                    task_id="t6",
+                ),
+            ),
+        }
+    )
+    assert cycling["recovery_action"] == "stop"
+    assert cycling["status"] == "partial"
+    without_evidence = assess_recovery(
+        {
+            "recovery_history": [
+                {"tool": "filter", "args": {"token": "same"}, "depends_on": []},
+            ],
+            "evidence_ids": [],
+            "failures": [],
+            "replan_count": 0,
+            "identical_retry_count": 0,
+            "repair_attempts": 0,
+            "last_exec_result": PlanExecutionResult(
+                status="failed",
+                records=[
+                    TaskExecutionRecord(
+                        task_id="t2",
+                        tool="filter",
+                        args={"token": "same"},
+                        status=TaskStatus.FAILED,
+                        error="matched 0 rows",
+                    )
+                ],
+                failure=Failure(
+                    failure_class=FailureClass.EMPTY_RESULT,
+                    recoverable=True,
+                    message="matched 0 rows",
+                    context={},
+                    task_id="t2",
+                ),
+            ),
+        }
+    )
+    assert without_evidence["status"] == "partial"
+    assert any(
+        failure.failure_class == FailureClass.NO_PROGRESS
+        for failure in without_evidence["failures"]
+    )
+    assert any(failure.failure_class == FailureClass.NO_PROGRESS for failure in cycling["failures"])
+
+    changed = assess_recovery(
+        {
+            "recovery_history": [
+                {
+                    "tool": "filter",
+                    "args": {
+                        "conditions": [{"column": "Region", "operator": "eq", "value": "East"}]
+                    },
+                    "depends_on": [],
+                }
+            ],
+            "evidence_ids": [],
+            "failures": [],
+            "replan_count": 0,
+            "identical_retry_count": 0,
+            "repair_attempts": 0,
+            "last_exec_result": PlanExecutionResult(
+                status="failed",
+                records=[
+                    TaskExecutionRecord(
+                        task_id="t2",
+                        tool="filter",
+                        args={
+                            "conditions": [{"column": "Region", "operator": "eq", "value": "West"}]
+                        },
+                        status=TaskStatus.FAILED,
+                        error="matched 0 rows",
+                    )
+                ],
+                failure=Failure(
+                    failure_class=FailureClass.EMPTY_RESULT,
+                    recoverable=True,
+                    message="matched 0 rows",
+                    context={},
+                    task_id="t2",
+                ),
+            ),
+        }
+    )
+    assert changed["recovery_action"] == "repair"
+    assert "status" not in changed
