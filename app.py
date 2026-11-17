@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 import tempfile
+import threading
+import time
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 import pandas as pd
@@ -19,10 +22,11 @@ from da_agent.core.follow_up import (
     select_reusable_evidence,
 )
 from da_agent.core.trace import RunTraceWriter
-from da_agent.data.loader import DataLoadError, load_data
+from da_agent.data.loader import DataLoadError, list_excel_sheet_names, load_data
 from da_agent.data.profiler import compute_profile
 from da_agent.pipeline import run_agent
 from da_agent.ui.demo import DEMO_QUESTION, load_demo_dataset
+from da_agent.ui.trace_progress import trace_progress_messages
 
 
 def _load_uploaded_file(
@@ -143,6 +147,20 @@ def main() -> None:
         except (DataLoadError, FileNotFoundError) as exc:
             st.error(str(exc))
     elif uploaded is not None:
+        if uploaded.name.lower().endswith(".xlsx"):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as handle:
+                handle.write(uploaded.getvalue())
+                peek_path = Path(handle.name)
+            try:
+                names = list_excel_sheet_names(peek_path)
+                st.caption(
+                    f"Workbook sheets: **{', '.join(names)}** "
+                    f"(loads **{sheet_name.strip() or names[0]}**)."
+                )
+            except DataLoadError as exc:
+                st.warning(str(exc))
+            finally:
+                peek_path.unlink(missing_ok=True)
         try:
             df = _load_uploaded_file(
                 uploaded.name,
@@ -209,15 +227,52 @@ def main() -> None:
                         ],
                     },
                 )
-            with st.spinner(f"Running agent with {config.model.name}…"):
-                result = run_agent(
-                    question.strip(),
-                    st.session_state["df"],
-                    config,
-                    client,
-                    profile=st.session_state["profile"],
-                    run_id=run_id,
-                    trace_writer=writer,
+            run_state: dict[str, Any] = {}
+            run_error: list[BaseException] = []
+
+            def _run_agent() -> None:
+                try:
+                    run_state["result"] = run_agent(
+                        question.strip(),
+                        st.session_state["df"],
+                        config,
+                        client,
+                        profile=st.session_state["profile"],
+                        run_id=run_id,
+                        trace_writer=writer,
+                    )
+                except BaseException as exc:  # noqa: BLE001 — propagate to main thread
+                    run_error.append(exc)
+
+            with st.status(
+                f"Running agent with {config.model.name}…",
+                expanded=True,
+            ) as status:
+                worker = threading.Thread(target=_run_agent, daemon=True)
+                worker.start()
+                progress_slot = st.empty()
+                seen = 0
+                while worker.is_alive():
+                    events = writer.read_events()
+                    if len(events) > seen:
+                        seen = len(events)
+                        lines = trace_progress_messages(events)
+                        progress_slot.markdown(
+                            "\n".join(f"- {line}" for line in lines[-12:])
+                        )
+                    time.sleep(0.35)
+                worker.join()
+                if run_error:
+                    raise run_error[0]
+                result = run_state["result"]
+                final_lines = trace_progress_messages(writer.read_events())
+                if final_lines:
+                    progress_slot.markdown(
+                        "\n".join(f"- {line}" for line in final_lines[-12:])
+                    )
+                status.update(
+                    label=f"Run finished — {result.status}",
+                    state="complete",
                 )
             st.session_state["last_result"] = result
             st.session_state["last_writer"] = writer
@@ -277,7 +332,12 @@ def main() -> None:
             with st.expander("Dropped claims (audit)"):
                 st.write(", ".join(result.dropped_claims))
 
-        with st.expander("Run trace"):
+        progress_lines = trace_progress_messages(writer.read_events())
+        if progress_lines:
+            with st.expander("Run progress (summary)"):
+                for line in progress_lines:
+                    st.markdown(f"- {line}")
+        with st.expander("Run trace (raw events)"):
             for event in writer.read_events():
                 st.text(f"{event.timestamp}  {event.event_type}")
 

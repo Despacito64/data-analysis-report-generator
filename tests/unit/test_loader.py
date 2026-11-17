@@ -14,6 +14,7 @@ from da_agent.data.loader import (
     FileLimitExceededError,
     InvalidExtensionError,
     InvalidSheetError,
+    list_excel_sheet_names,
     load_data,
 )
 
@@ -158,6 +159,12 @@ def test_configurable_date_format(tmp_path: Path) -> None:
     assert pd.api.types.is_datetime64_any_dtype(df["event_date"])
     assert df.iloc[0]["event_date"].year == 2023
     assert df.iloc[0]["event_date"].month == 5
+
+
+def test_list_excel_sheet_names() -> None:
+    """Workbook sheet names can be listed without loading rows."""
+    file_path = FIXTURES_DIR / "multi_sheet.xlsx"
+    assert list_excel_sheet_names(file_path) == ["Orders", "Returns"]
 
 
 def test_excel_sheet_selection() -> None:
