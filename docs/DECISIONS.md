@@ -385,3 +385,10 @@ Decision: A `no_progress` stop and a recovery-budget stop both end as `partial`,
 Reason: `CONTRACTS.md` says `no_progress` terminates as partial and `budget_exhausted` finalizes as partial. A number reaches the answer only through valid evidence. The first recovery wiring used `failed` whenever evidence was absent, which contradicted that table.
 Consequences: Tests cover a transient retry cap, a repeated fingerprint with no evidence, a tampered narrative, a dependent-evidence cascade, and a supported claim that stays. `evaluation/recovery_suite/` is still not built. M7 stays open. M8 still owns the report `RunStatus`.
 
+## D-037: Controlled-failure recovery suite separate from benchmark
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: Add `evaluation/recovery_suite/scenarios.json` with handlers in `runners.py` and runner `run_recovery_suite.py`. Scenarios exercise classification, recovery decisions, no-progress detection, mock-agent transient retry/stop, fingerprint stall, claim tampering, and evidence invalidation. They do not use frozen benchmark question IDs, question text from `evaluation/benchmark/questions.json`, or `evaluation/oracle.py`. Results export to `evaluation/results/recovery_suite/latest.json`. Pytest enforces handler coverage and isolation.
+Reason: M7 exit gate requires a recovery suite that is separate from the 20-question eval set. Keeps recovery regression tests runnable without a live LLM or oracle leakage.
+Consequences: `uv run python evaluation/recovery_suite/run_recovery_suite.py` and `tests/unit/evaluation/test_recovery_suite.py` must pass before claiming M7 complete. M8 is next.
+

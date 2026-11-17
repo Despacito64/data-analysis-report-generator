@@ -1,0 +1,98 @@
+{
+  "version": "0.1.0",
+  "scenario_count": 12,
+  "passed_count": 12,
+  "all_passed": true,
+  "results": [
+    {
+      "id": "rs01_classify_transient",
+      "handler": "classify_transient",
+      "failure_family": "transient_error",
+      "passed": true,
+      "retry_policy": "retryable_identical"
+    },
+    {
+      "id": "rs02_classify_empty_result",
+      "handler": "classify_empty_result",
+      "failure_family": "empty_result",
+      "passed": true,
+      "retry_policy": "repairable"
+    },
+    {
+      "id": "rs03_classify_invariant_terminal",
+      "handler": "classify_invariant_terminal",
+      "failure_family": "invariant_violation",
+      "passed": true,
+      "retry_policy": "terminal"
+    },
+    {
+      "id": "rs04_decide_transient_retry",
+      "handler": "decide_transient_retry",
+      "failure_family": "transient_error",
+      "passed": true,
+      "action": "retry_identical"
+    },
+    {
+      "id": "rs05_decide_transient_cap_stop",
+      "handler": "decide_transient_cap_stop",
+      "failure_family": "transient_error",
+      "passed": true,
+      "action": "stop"
+    },
+    {
+      "id": "rs06_detect_identical_fingerprint",
+      "handler": "detect_identical_fingerprint",
+      "failure_family": "no_progress",
+      "passed": true,
+      "pattern": "identical_fingerprint"
+    },
+    {
+      "id": "rs07_detect_cycle",
+      "handler": "detect_cycle",
+      "failure_family": "no_progress",
+      "passed": true,
+      "pattern": "cycling"
+    },
+    {
+      "id": "rs08_agent_transient_retry_cap",
+      "handler": "agent_transient_retry_cap",
+      "failure_family": "transient_error",
+      "passed": true,
+      "status": "complete",
+      "identical_retry_count": 2
+    },
+    {
+      "id": "rs08b_agent_transient_cap_stop",
+      "handler": "agent_transient_cap_stop",
+      "failure_family": "transient_error",
+      "passed": true,
+      "status": "partial",
+      "recovery_action": "stop"
+    },
+    {
+      "id": "rs09_agent_no_progress_fingerprint",
+      "handler": "agent_no_progress_fingerprint",
+      "failure_family": "no_progress",
+      "passed": true,
+      "status": "partial"
+    },
+    {
+      "id": "rs10_claim_tamper_dropped",
+      "handler": "claim_tamper_dropped",
+      "failure_family": "unsupported_claim",
+      "passed": true,
+      "dropped_claims": [
+        "999"
+      ]
+    },
+    {
+      "id": "rs11_invalidation_cascade",
+      "handler": "invalidation_cascade",
+      "failure_family": "dependency_failure",
+      "passed": true,
+      "kept_evidence": [
+        "ev_independent"
+      ]
+    }
+  ]
+}
