@@ -3,7 +3,7 @@
 Updated: 2026-11-17 by Cursor
 
 ## Current task
-M6 real-model scoring gate is closed by a complete GPU run (D-034). Do not reopen it unless a new model or budget is chosen. Next code task is the rest of M7: wire `detect_no_progress()` into the agent loop, wire `invalidate_evidence()` and `validate_findings()` into finalize, and add `evaluation/recovery_suite/`. Do not start M8 until that gate is met. Do not mark M7 closed.
+M7 Task 1 is done (D-035): recovery counters and no-progress stops are wired in `assess_recovery()`. Next is Task 2: call `invalidate_evidence()` when evidence is invalidated, then `validate_findings()` before the user-facing answer. Task 3 is `evaluation/recovery_suite/`. Do not start M8. Do not mark M7 closed.
 
 ## State
 - Branch: `shivam`, based on `main` at `be78cab` plus this session's evaluation artifacts and doc updates. Not committed.

@@ -371,3 +371,10 @@ Evidence:
 Reason: Earlier full runs (D-030) timed out at 60 seconds before this GPU was used. This run finished inside the existing budget, so a timeout increase was not required.
 Consequences: M6 can be marked complete. The 13/20 score is the measured result, not a claim that the agent matches the template baseline. M7 remains open. Do not retune prompts on the frozen questions to chase the seven misses.
 
+## D-035: Recovery counters and no-progress stops live in inspect
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: `node_inspect` calls `assess_recovery()`. That function passes `identical_retries`, `repair_attempts`, and `replan_count` into `decide_recovery()`, and it passes prior fingerprint history without the attempt currently being classified. Authorized identical retries are marked `allowed_identical`. `detect_no_progress()` stops the run on a repeated fingerprint, an empty revision, or a cycle. Status is `partial` when valid evidence remains and `failed` otherwise. The graph shape is unchanged.
+Reason: The previous route read `identical_retry_count` while `decide_recovery()` reads `identical_retries`, so the cap never applied. Passing the whole state as history also made the current attempt look like a repeated fingerprint.
+Consequences: Transient failures retry up to `recovery_limits.identical_retry_cap` and then stop. Repair still goes through replan. Claim validation and `evaluation/recovery_suite/` remain open.
+

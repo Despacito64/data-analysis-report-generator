@@ -40,6 +40,10 @@ class AgentState(TypedDict, total=False):
     replan_count: int
     max_replans: int
     max_repairs: int
+    identical_retry_count: int
+    repair_attempts: int
+    recovery_history: list[dict[str, Any]]
+    recovery_action: str | None
     status: str  # "complete" | "partial" | "failed"
     final_answer: Any | None
     run_id: str
