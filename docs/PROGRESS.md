@@ -99,4 +99,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M9 | live trace progress in st.status, XLSX sheet hints, `list_excel_sheet_names` | uv run pytest -q: 290 passed | 1c9745c
 2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | 5acc4f1..9afc25d
 2026-11-17 | Cursor | M10 | freeze manifest, run_frozen_experiment, REPRODUCTION.md (D-044) | uv run pytest -q: 298 passed | 1b9853e
-2026-11-17 | Cursor | M10 | real Ollama 3×20 run m10-frozen-real-20261117, M10_RESULTS.md (D-045) | run_frozen_experiment ~48min; 13/20 agent | pending
+2026-11-17 | Cursor | M10 | real Ollama 3×20 run m10-frozen-real-20261117, M10_RESULTS.md (D-045) | run_frozen_experiment ~48min; 13/20 agent | 438eeab
