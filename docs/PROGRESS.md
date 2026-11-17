@@ -54,7 +54,8 @@ M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17,
 | FR09 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR08 (feedback validation) | passed (invalidation & failure classification) | `src/da_agent/validation/invalidation.py`, `src/da_agent/validation/failures.py`, `tests/unit/validation/test_invalidation.py`, `tests/unit/validation/test_failures.py` |
 | FR10 (report artifact) | passed | `src/da_agent/pipeline.py`, `src/da_agent/reports/delivery.py`, `tests/integration/test_agent_report_e2e.py` |
-| FR12 | not started | M9 Streamlit |
+| FR12 (follow-up reuse policy) | in progress | `src/da_agent/core/follow_up.py`, `tests/unit/core/test_follow_up.py` |
+| FR12 (Streamlit UI) | in progress | `app.py` |
 | NFR1 to NFR3 | not started | |
 
 Update this table as modules pass their gates, naming the test or artifact.
@@ -90,4 +91,5 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M8 | validated findings, escaped HTML report, evidence links, chart values must match findings | uv run pytest tests/unit/reports -q: 3 passed | 3cca72e
 2026-11-17 | Cursor | M0 | restored Sample Superstore CSV to CRLF bytes matching D-007 registered hash | uv run pytest tests/unit/test_dataset_registry.py: 3 passed | 88451fc
 2026-11-17 | Cursor | M7 | gate closed after full pytest 281 passed | uv run pytest -q: 281 passed | (docs only)
-2026-11-17 | Cursor | M8 | wired `run_agent` → report.json/html via AnalysisRun assembler and trace `report_written` (D-038) | uv run pytest -q: 283 passed; ruff clean | (uncommitted)
+2026-11-17 | Cursor | M8 | wired `run_agent` → report.json/html via AnalysisRun assembler and trace `report_written` (D-038) | uv run pytest -q: 283 passed; ruff clean | b1afe13
+2026-11-17 | Cursor | M9 | Streamlit shell + hash-gated follow-up selection (D-039) | uv run pytest -q: 285 passed | (pending)

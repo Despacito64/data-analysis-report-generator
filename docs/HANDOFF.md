@@ -3,7 +3,7 @@
 Updated: 2026-11-17 by Cursor
 
 ## Current task
-M8 report delivery is wired: `run_agent()` (default `emit_report=True`) writes `runs/<run_id>/report.json` and `report.html` via `AnalysisRun` → `assembler` → `finalize_run_report`. Next module is **M9 Streamlit** (`app.py`: upload, question, trace progress, report download). Do not mark M10 closed.
+**M9 Streamlit** in progress: `app.py` (upload, question, Ollama run, trace, HTML download) and `core/follow_up.py` (hash-gated evidence reuse). M8 committed (`b1afe13`). Gate still open: full follow-up wiring into the agent executor if required beyond trace `follow_up_reuse` events.
 
 ## State
 - Branch: `shivam`. Recent work: M8 E2E finalize (uncommitted); prior commits through recovery suite and M8 renderer (`3cca72e`).
@@ -12,7 +12,8 @@ M8 report delivery is wired: `run_agent()` (default `emit_report=True`) writes `
 - M7 gate passed (D-035–D-037).
 - M8 gate passed: unit renderer + **pipeline E2E** (`tests/integration/test_agent_report_e2e.py`, D-038).
 - Dataset: registered SHA `dc81c957…` (D-007); commit `88451fc`.
-- Tests: `uv run pytest -q` — **283 passed** (this session).
+- Tests: run `uv run pytest -q` after each M9 change.
+- Run UI: `uv run streamlit run app.py`
 - Recovery CLI: `uv run python evaluation/recovery_suite/run_recovery_suite.py`.
 
 ## Next steps (M9)

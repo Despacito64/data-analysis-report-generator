@@ -399,3 +399,10 @@ Decision: After `build_agent_result()`, `pipeline.run_agent()` (default `emit_re
 Reason: M8 exit gate requires an end-to-end run with downloadable HTML whose numbers match validated evidence. The report library existed but was not wired from the public entry point.
 Consequences: M9 can download artifacts from the run directory. Eval harness may set `emit_report=False` if report I/O should be skipped. `CONTRACT_VERSION` unchanged.
 
+## D-039: Follow-up evidence reuse is hash-gated and explicit
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: `core/follow_up.py` holds session rules: `apply_new_dataset_hash()` clears prior context when the profile hash changes; `select_reusable_evidence()` returns items only when the prior and current hashes match and the user selected evidence IDs. Reuse is logged as `follow_up_reuse` on the new run trace (metadata only in this slice). The Streamlit app does not inject reused records into the LangGraph executor yet.
+Reason: M9 gate requires that a changed upload cannot silently reuse stale evidence. Keeping reuse policy in `core` avoids coupling tests to Streamlit.
+Consequences: M9 gate test covers hash mismatch; executor-level reuse remains optional follow-up work if the owner requires tool results to be pre-seeded.
+
