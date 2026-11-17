@@ -22,10 +22,11 @@ from da_agent.core.follow_up import (
     select_reusable_evidence,
 )
 from da_agent.core.trace import RunTraceWriter
-from da_agent.data.loader import DataLoadError, list_excel_sheet_names, load_data
+from da_agent.data.loader import DataLoadError, load_data
 from da_agent.data.profiler import compute_profile
 from da_agent.pipeline import run_agent
 from da_agent.ui.demo import DEMO_QUESTION, load_demo_dataset
+from da_agent.ui.sheets import list_excel_sheet_names
 from da_agent.ui.trace_progress import trace_progress_messages
 
 
@@ -227,19 +228,31 @@ def main() -> None:
                         ],
                     },
                 )
+            # Capture run inputs on the main thread; Streamlit session_state is not
+            # available from background threads.
+            df_for_run = st.session_state["df"]
+            profile_for_run = st.session_state["profile"]
+            question_for_run = question.strip()
+
+            prior_run_dir: Path | None = None
+            if reuse and prior is not None:
+                prior_run_dir = Path(config.run_trace.base_dir) / prior.run_id
+
             run_state: dict[str, Any] = {}
             run_error: list[BaseException] = []
 
             def _run_agent() -> None:
                 try:
                     run_state["result"] = run_agent(
-                        question.strip(),
-                        st.session_state["df"],
+                        question_for_run,
+                        df_for_run,
                         config,
                         client,
-                        profile=st.session_state["profile"],
+                        profile=profile_for_run,
                         run_id=run_id,
                         trace_writer=writer,
+                        reused_evidence=reuse or None,
+                        prior_run_dir=prior_run_dir,
                     )
                 except BaseException as exc:  # noqa: BLE001 — propagate to main thread
                     run_error.append(exc)

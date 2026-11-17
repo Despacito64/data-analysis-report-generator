@@ -39,6 +39,9 @@ def describe_trace_event(event: TraceEvent) -> str | None:
     if kind == "follow_up_reuse":
         count = len(payload.get("items") or [])
         return f"Reusing {count} prior evidence item(s)"
+    if kind == "evidence_reused":
+        eid = str(payload.get("evidence_id", ""))[:8]
+        return f"Carried forward evidence {eid}…"
     if kind == "report_written":
         return "Wrote report.json and report.html"
     if kind == "status":
