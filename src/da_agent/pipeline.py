@@ -13,14 +13,50 @@ from da_agent.agent.baseline import run_baseline as _run_baseline
 from da_agent.agent.graph import run_agent as _run_agent
 from da_agent.agent.planner import LLMClient, OllamaClient, Plan, generate_plan
 from da_agent.contracts.models import (
+    AnalysisRun,
     Budgets,
     DatasetProfile,
+    EvidenceRecord,
+    ExecutionStatus,
     Failure,
+    KeyNumberCitation,
 )
 from da_agent.core.config import AppConfig, load_config
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
+from da_agent.reports.delivery import finalize_run_report
+
+
+def _analysis_run_from_result(
+    result: AgentResult,
+    *,
+    dataset_hash: str,
+    graph_status: str,
+    evidence_records: dict[str, EvidenceRecord],
+) -> AnalysisRun:
+    try:
+        execution_status = ExecutionStatus(graph_status)
+    except ValueError:
+        execution_status = ExecutionStatus.FAILED
+    return AnalysisRun(
+        run_id=result.run_id,
+        question=result.question,
+        dataset_hash=dataset_hash,
+        execution_status=execution_status,
+        key_numbers=[
+            KeyNumberCitation(
+                label=item.label,
+                value=item.value,
+                task_id=item.task_id,
+                evidence_id=item.evidence_id,
+            )
+            for item in result.key_numbers
+        ],
+        dropped_claims=list(result.dropped_claims),
+        assumptions=list(result.assumptions),
+        evidence_records=dict(evidence_records),
+    )
 
 
 def run_baseline(
@@ -95,6 +131,7 @@ def run_agent(
     trace_writer: RunTraceWriter | None = None,
     max_replans: int | None = None,
     max_repairs: int = 1,
+    emit_report: bool = True,
 ) -> AgentResult:
     """Run a free-text question through the dynamic graph and return typed results."""
     config = config or load_config()
@@ -143,7 +180,7 @@ def run_agent(
         max_replans=max_replans,
         max_repairs=max_repairs,
     )
-    return build_agent_result(
+    result = build_agent_result(
         run_id=run_id,
         question=question,
         resolved=state.get("resolved"),
@@ -158,3 +195,17 @@ def run_agent(
         tasks=state["plan"].tasks if state.get("plan") is not None else None,
         claim_config=config.claim_validation,
     )
+    if emit_report:
+        evidence_records = state.get("evidence_records") or {}
+        analysis_run = _analysis_run_from_result(
+            result,
+            dataset_hash=profile.dataset_hash,
+            graph_status=state["status"],
+            evidence_records=evidence_records,
+        )
+        finalize_run_report(
+            analysis_run,
+            trace_writer,
+            claim_config=config.claim_validation,
+        )
+    return result

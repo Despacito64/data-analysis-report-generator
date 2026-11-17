@@ -392,3 +392,10 @@ Decision: Add `evaluation/recovery_suite/scenarios.json` with handlers in `runne
 Reason: M7 exit gate requires a recovery suite that is separate from the 20-question eval set. Keeps recovery regression tests runnable without a live LLM or oracle leakage.
 Consequences: `uv run python evaluation/recovery_suite/run_recovery_suite.py` and `tests/unit/evaluation/test_recovery_suite.py` must pass before claiming M7 complete. M8 is next.
 
+## D-038: Report finalize in pipeline via AnalysisRun contract
+Status: Accepted
+Date: 2026-11-17   Made by: Cursor
+Decision: After `build_agent_result()`, `pipeline.run_agent()` (default `emit_report=True`) maps the typed answer into contract `AnalysisRun` (key numbers as `KeyNumberCitation`, evidence records, execution status) and calls `reports.delivery.finalize_run_report()`. That path re-validates claims, saves `runs/<run_id>/report.json`, renders escaped HTML to `report.html`, and logs `report_written`. Reports never import `agent`; only `pipeline` bridges layers. Chart attachment from tool results remains optional and is not required for the M8 E2E gate.
+Reason: M8 exit gate requires an end-to-end run with downloadable HTML whose numbers match validated evidence. The report library existed but was not wired from the public entry point.
+Consequences: M9 can download artifacts from the run directory. Eval harness may set `emit_report=False` if report I/O should be skipped. `CONTRACT_VERSION` unchanged.
+

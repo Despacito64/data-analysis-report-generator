@@ -109,3 +109,6 @@ def test_trace_writer_roundtrip(tmp_path: Path) -> None:
     )
     saved_path = writer.save_report(report)
     assert saved_path.is_file()
+    html_path = writer.save_report_html("<html><body>ok</body></html>")
+    assert html_path.name == "report.html"
+    assert html_path.read_text(encoding="utf-8") == "<html><body>ok</body></html>"

@@ -121,6 +121,13 @@ class RunTraceWriter:
             json.dump(report.model_dump(mode="json"), f, indent=2, default=str)
         return report_path
 
+    def save_report_html(self, html: str) -> Path:
+        """Save rendered report HTML into the run directory."""
+        self._ensure_dir()
+        report_path = self.run_dir / "report.html"
+        report_path.write_text(html, encoding="utf-8")
+        return report_path
+
     def read_events(self) -> list[TraceEvent]:
         """Read all events from trace.jsonl in chronological order."""
         if not self.trace_file.is_file():

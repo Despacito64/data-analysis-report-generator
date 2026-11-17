@@ -386,6 +386,32 @@ class Finding(BaseModel):
     caveat: str | None = None
 
 
+class KeyNumberCitation(BaseModel):
+    """Evidence-grounded number produced by the agent pipeline for reporting."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    label: str
+    value: int | float
+    task_id: str
+    evidence_id: str
+
+
+class AnalysisRun(BaseModel):
+    """Report-input snapshot: no agent types, safe for the reports layer."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    question: str
+    dataset_hash: str
+    execution_status: ExecutionStatus
+    key_numbers: list[KeyNumberCitation] = Field(default_factory=list)
+    dropped_claims: list[str] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    evidence_records: dict[str, EvidenceRecord] = Field(default_factory=dict)
+
+
 class Report(BaseModel):
     """Final output artifact presenting findings, charts, methods and limitations."""
 

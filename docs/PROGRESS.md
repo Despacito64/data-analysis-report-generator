@@ -28,7 +28,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M4 Baseline, oracle, scorer, question files. GATE passed: [x]
 - [x] M6 Dynamic agent. GATE passed: [x] (real-model score complete: 13/20, D-034)
 - [x] M7 Feedback and evidence validation. GATE passed: [x] (D-035–D-037; full suite 281 passed with registered dataset hash)
-- [x] M8 Reports and rendering. GATE passed: [x] (HTML report; PDF deferred)
+- [x] M8 Reports and rendering. GATE passed: [x] (HTML + `run_agent` writes report.json/html; PDF deferred)
 - [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
 - [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
 
@@ -53,7 +53,8 @@ M6 owner-approved Steps 5-8 and the real-model gate are complete. On 2026-11-17,
 | FR07 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR09 (claim validation) | passed | `src/da_agent/validation/claims.py`, `tests/unit/validation/test_claims.py` |
 | FR08 (feedback validation) | passed (invalidation & failure classification) | `src/da_agent/validation/invalidation.py`, `src/da_agent/validation/failures.py`, `tests/unit/validation/test_invalidation.py`, `tests/unit/validation/test_failures.py` |
-| FR10, FR12 | not started | Deferred to M8 - M9 |
+| FR10 (report artifact) | passed | `src/da_agent/pipeline.py`, `src/da_agent/reports/delivery.py`, `tests/integration/test_agent_report_e2e.py` |
+| FR12 | not started | M9 Streamlit |
 | NFR1 to NFR3 | not started | |
 
 Update this table as modules pass their gates, naming the test or artifact.
@@ -89,3 +90,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M8 | validated findings, escaped HTML report, evidence links, chart values must match findings | uv run pytest tests/unit/reports -q: 3 passed | 3cca72e
 2026-11-17 | Cursor | M0 | restored Sample Superstore CSV to CRLF bytes matching D-007 registered hash | uv run pytest tests/unit/test_dataset_registry.py: 3 passed | 88451fc
 2026-11-17 | Cursor | M7 | gate closed after full pytest 281 passed | uv run pytest -q: 281 passed | (docs only)
+2026-11-17 | Cursor | M8 | wired `run_agent` → report.json/html via AnalysisRun assembler and trace `report_written` (D-038) | uv run pytest -q: 283 passed; ruff clean | (uncommitted)
