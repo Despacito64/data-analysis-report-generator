@@ -7,6 +7,7 @@ Never imports evaluation/oracle or da_agent.agent.baseline.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -26,6 +27,7 @@ from da_agent.agent.state import AgentState
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
+    EvidenceRecord,
     ExecutionStatus,
     Failure,
     FailureClass,
@@ -34,6 +36,7 @@ from da_agent.contracts.models import (
     RunStatus,
 )
 from da_agent.core.config import load_config
+from da_agent.core.follow_up import ReusedEvidence, seed_reused_evidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.tools.registry import DEFAULT_REGISTRY, export_tool_specs
 from da_agent.validation.plan_check import validate_plan
@@ -695,6 +698,8 @@ def run_agent(
     trace_writer: RunTraceWriter | None = None,
     max_replans: int | None = None,
     max_repairs: int = 1,
+    reused_evidence: list[ReusedEvidence] | None = None,
+    prior_run_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Run the full dynamic planning agent and return the final state."""
     if budgets is None:
@@ -705,6 +710,17 @@ def run_agent(
         config = load_config()
         trace_writer = RunTraceWriter(run_id=run_id, base_dir=config.run_trace.base_dir)
 
+    seeded_records: dict[str, EvidenceRecord] = {}
+    seeded_ids: list[str] = []
+    seeded_store: dict[str, Any] = {}
+    if reused_evidence:
+        seeded_records, seeded_ids, seeded_store = seed_reused_evidence(
+            reused_evidence,
+            current_dataset_hash=profile.dataset_hash,
+            trace_writer=trace_writer,
+            prior_run_dir=prior_run_dir,
+        )
+
     initial_state: AgentState = {
         "question": question,
         "df": df,
@@ -714,9 +730,9 @@ def run_agent(
         "plan_version": 1,
         "revisions": [],
         "executed_records": [],
-        "evidence_store": {},
-        "evidence_ids": [],
-        "evidence_records": {},
+        "evidence_store": seeded_store,
+        "evidence_ids": seeded_ids,
+        "evidence_records": seeded_records,
         "failures": [],
         "budgets": budgets,
         "replan_count": 0,

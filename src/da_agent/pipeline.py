@@ -22,6 +22,7 @@ from da_agent.contracts.models import (
     KeyNumberCitation,
 )
 from da_agent.core.config import AppConfig, load_config
+from da_agent.core.follow_up import ReusedEvidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
@@ -133,6 +134,8 @@ def run_agent(
     max_replans: int | None = None,
     max_repairs: int = 1,
     emit_report: bool = True,
+    reused_evidence: list[ReusedEvidence] | None = None,
+    prior_run_dir: Path | None = None,
 ) -> AgentResult:
     """Run a free-text question through the dynamic graph and return typed results."""
     config = config or load_config()
@@ -180,6 +183,8 @@ def run_agent(
         trace_writer=trace_writer,
         max_replans=max_replans,
         max_repairs=max_repairs,
+        reused_evidence=reused_evidence,
+        prior_run_dir=prior_run_dir,
     )
     result = build_agent_result(
         run_id=run_id,
