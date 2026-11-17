@@ -28,7 +28,7 @@ Build order: M0, M1, M2, M3, M5, M4, M6, M7, M8, M9, M10.
 - [x] M4 Baseline, oracle, scorer, question files. GATE passed: [x]
 - [x] M6 Dynamic agent. GATE passed: [x] (real-model score complete: 13/20, D-034)
 - [ ] M7 Feedback and evidence validation. GATE passed: [ ] (recovery wiring, answer claim checks, and recovery suite done; pending owner sign-off and full pytest with registered dataset hash)
-- [ ] M8 Reports and rendering. GATE passed: [ ]
+- [x] M8 Reports and rendering. GATE passed: [x] (HTML report; PDF deferred)
 - [ ] M9 Streamlit interface and follow-ups. GATE passed: [ ]
 - [ ] M10 Frozen experiments and documentation. GATE passed: [ ]
 
@@ -85,4 +85,5 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M6 | pulled qwen3:4b; full real eval on GTX 1650, default 60s timeout, score complete 13/20 (D-034); M7 remains open | no pytest this session; eval exit 0 | 180e1bd
 2026-11-17 | Cursor | M7 | wired recovery counters and no-progress stops in the agent inspect node (D-035) | uv run pytest -q: 269 passed, 1 failed (pre-existing Sample-Superstore hash mismatch); graph tests 19 passed | 9c48b2a
 2026-11-17 | Cursor | M7 | recovery stops as partial per CONTRACTS; answer drops invalidated and unsupported claims (D-036) | uv run pytest -q --ignore=tests/unit/test_dataset_registry.py: 270 passed; dataset hash test still fails on the registered file | 0dc2029
-2026-11-17 | Cursor | M7 | controlled-failure recovery suite (12 scenarios, mock-only, no benchmark/oracle) (D-037) | uv run pytest -q --ignore=tests/unit/test_dataset_registry.py: 275 passed; recovery CLI all_passed | pending
+2026-11-17 | Cursor | M7 | controlled-failure recovery suite (12 scenarios, mock-only, no benchmark/oracle) (D-037) | uv run pytest -q --ignore=tests/unit/test_dataset_registry.py: 275 passed; recovery CLI all_passed | 2e1000c
+2026-11-17 | Cursor | M8 | validated findings, escaped HTML report, evidence links, chart values must match findings | uv run pytest tests/unit/reports -q: 3 passed | pending

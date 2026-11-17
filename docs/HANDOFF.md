@@ -3,7 +3,7 @@
 Updated: 2026-11-17 by Cursor
 
 ## Current task
-M7 gate items are implemented on branch `shivam`: recovery wiring (D-035, D-036), claim checks on answers, and `evaluation/recovery_suite/` (D-037). Do not start M8 until the owner confirms M7 is closed. Next module is M8 report generation and HTML rendering.
+M8 HTML reports are in `src/da_agent/reports/` (validated findings, escaped HTML, evidence links, grounded Plotly charts). A dataset-hash fix is running separately. Next is M9 Streamlit follow-ups. Do not mark M10 closed.
 
 ## State
 - Branch: `shivam`. Recent commits: M6 eval artifacts, recovery/no-progress, answer claim validation, recovery suite.
