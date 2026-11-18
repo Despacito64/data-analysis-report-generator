@@ -84,7 +84,15 @@ class AgentResult(BaseModel):
 _NUMBER_PATTERN = re.compile(
     r"(?<![\w.])[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:[eE][-+]?\d+)?%?(?![\w]|\.\d)"
 )
-_NON_CLAIM_KEYS = {"matched_indices", "sample_matched_indices"}
+_NON_CLAIM_KEYS = {
+    "matched_indices",
+    "sample_matched_indices",
+    "output_row_count",
+    "input_row_count",
+    "valid_count",
+    "missing_count",
+    "total_groups",
+}
 
 
 def _numeric_values(value: Any, path: str = "") -> list[tuple[str, int | float]]:
