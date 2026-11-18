@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-CONTRACT_VERSION = "0.1.0"
+CONTRACT_VERSION = "0.2.0"
 
 
 class SemanticType(str, Enum):
@@ -126,6 +126,38 @@ class ResolvedQuestion(BaseModel):
         if not self.answerable and not (self.decline_reason and self.decline_reason.strip()):
             raise ValueError("decline_reason is required when answerable is False")
         return self
+
+
+class DialogueTurn(BaseModel):
+    """One prior analytical turn. Symbolic intent only: no tool results or amounts."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question_text: str
+    intent: str
+    metric: str | None = None
+    period: PeriodSpec | None = None
+    grouping: list[str] = Field(default_factory=list)
+    filters: list[FilterSpec] = Field(default_factory=list)
+    answerable: bool = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_result_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            banned = {"evidence_id", "result_summary", "amount", "value", "key_numbers"}
+            found = banned.intersection(data)
+            if found:
+                raise ValueError(f"Dialogue turns cannot carry result fields: {sorted(found)}")
+        return data
+
+
+class DialogueState(BaseModel):
+    """Conversation memory for one dataset. Turns never store computed numbers."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    turns: list[DialogueTurn] = Field(default_factory=list)
 
 
 class ToolSpec(BaseModel):
