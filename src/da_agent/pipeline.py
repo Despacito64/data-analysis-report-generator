@@ -8,6 +8,8 @@ from uuid import uuid4
 import pandas as pd
 
 from da_agent.agent.answer import AgentResult, build_agent_result
+from da_agent.agent.narrator import apply_llm_answer_narrative, conversation_context_for_narrator
+from da_agent.reports.assembler import assemble_report
 from da_agent.agent.baseline import BaselineRun
 from da_agent.agent.baseline import run_baseline as _run_baseline
 from da_agent.agent.graph import run_agent as _run_agent
@@ -16,12 +18,14 @@ from da_agent.contracts.models import (
     AnalysisRun,
     Budgets,
     DatasetProfile,
+    DialogueState,
     EvidenceRecord,
     ExecutionStatus,
     Failure,
     KeyNumberCitation,
 )
 from da_agent.core.config import AppConfig, load_config
+from da_agent.core.chat_thread import ChatThread
 from da_agent.core.follow_up import ReusedEvidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
@@ -136,6 +140,8 @@ def run_agent(
     emit_report: bool = True,
     reused_evidence: list[ReusedEvidence] | None = None,
     prior_run_dir: Path | None = None,
+    dialogue: DialogueState | None = None,
+    chat_thread: ChatThread | None = None,
 ) -> AgentResult:
     """Run a free-text question through the dynamic graph and return typed results."""
     config = config or load_config()
@@ -183,8 +189,10 @@ def run_agent(
         trace_writer=trace_writer,
         max_replans=max_replans,
         max_repairs=max_repairs,
-        reused_evidence=reused_evidence,
-        prior_run_dir=prior_run_dir,
+        reused_evidence=None if (dialogue is not None or chat_thread is not None) else reused_evidence,
+        prior_run_dir=None if (dialogue is not None or chat_thread is not None) else prior_run_dir,
+        dialogue=dialogue if chat_thread is None else None,
+        chat_thread=chat_thread,
     )
     result = build_agent_result(
         run_id=run_id,
@@ -201,8 +209,31 @@ def run_agent(
         tasks=state["plan"].tasks if state.get("plan") is not None else None,
         claim_config=config.claim_validation,
     )
+    evidence_records = state.get("evidence_records") or {}
+    if config.model.answer_narrative_enabled and client is not None and evidence_records:
+        draft_run = _analysis_run_from_result(
+            result,
+            dataset_hash=profile.dataset_hash,
+            graph_status=state["status"],
+            evidence_records=evidence_records,
+        )
+        report = assemble_report(draft_run, claim_config=config.claim_validation)
+        claim_lines = [
+            f"{claim.label}: {float(claim.value):,.2f}"
+            for finding in report.findings
+            for claim in finding.numeric_claims
+            if isinstance(claim.value, (int, float))
+        ]
+        if claim_lines:
+            result = apply_llm_answer_narrative(
+                result,
+                client=client,
+                headline=report.summary,
+                allowed_claim_lines=claim_lines,
+                conversation=conversation_context_for_narrator(chat_thread),
+                trace_writer=trace_writer,
+            )
     if emit_report:
-        evidence_records = state.get("evidence_records") or {}
         analysis_run = _analysis_run_from_result(
             result,
             dataset_hash=profile.dataset_hash,
