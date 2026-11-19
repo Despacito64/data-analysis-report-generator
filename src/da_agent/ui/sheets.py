@@ -14,9 +14,7 @@ def _list_excel_sheet_names_impl(path: Path) -> list[str]:
     path = Path(path)
     ext = path.suffix.lower()
     if ext != ".xlsx":
-        raise InvalidExtensionError(
-            f"Sheet listing applies to .xlsx files only, not '{ext}'."
-        )
+        raise InvalidExtensionError(f"Sheet listing applies to .xlsx files only, not '{ext}'.")
     try:
         wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
         names = list(wb.sheetnames)

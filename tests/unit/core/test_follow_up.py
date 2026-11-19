@@ -1,7 +1,11 @@
 """M9: follow-up runs must not reuse evidence across dataset identity changes."""
 
 from da_agent.contracts.models import EvidenceRecord
-from da_agent.core.follow_up import PriorRunSnapshot, apply_new_dataset_hash, select_reusable_evidence
+from da_agent.core.follow_up import (
+    PriorRunSnapshot,
+    apply_new_dataset_hash,
+    select_reusable_evidence,
+)
 
 
 def _record(evidence_id: str, dataset_hash: str) -> EvidenceRecord:

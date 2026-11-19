@@ -43,11 +43,7 @@ def build_report(
         dropped_claims.extend(
             reason for rejected in validation.rejected_findings for reason in rejected.reasons
         )
-        fallback_claims = [
-            claim
-            for claim in claims
-            if claim.evidence_id not in used_evidence
-        ]
+        fallback_claims = [claim for claim in claims if claim.evidence_id not in used_evidence]
     else:
         findings, dropped = findings_from_claims(
             claims,
@@ -79,7 +75,9 @@ def build_report(
         for record in evidence_records.values()
         if record.valid and record.invalidated_by is None
     ]
-    summary = executive_summary_from_findings(findings) if findings else _technical_summary(findings)
+    summary = (
+        executive_summary_from_findings(findings) if findings else _technical_summary(findings)
+    )
     if not highlights and findings:
         highlights = [
             f"{claim.label.split(' — ')[0]}: {float(claim.value):,.2f}"

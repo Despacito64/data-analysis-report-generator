@@ -1,7 +1,7 @@
 """Demo presets use the registered benchmark and a non-empty starter question."""
 
-from da_agent.ui.demo import BENCHMARK_CSV, DEMO_QUESTION, load_demo_dataset
 from da_agent.data.registry import BENCHMARK_SUPERSTORE
+from da_agent.ui.demo import BENCHMARK_CSV, DEMO_QUESTION, load_demo_dataset
 
 
 def test_demo_loads_registered_superstore() -> None:

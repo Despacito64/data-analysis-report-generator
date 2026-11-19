@@ -21,9 +21,7 @@ def assemble_report(
         status=run.execution_status,
         dropped_claims=list(run.dropped_claims),
     )
-    limitations = (
-        [f"Assumption: {item}" for item in run.assumptions] if run.assumptions else None
-    )
+    limitations = [f"Assumption: {item}" for item in run.assumptions] if run.assumptions else None
     return build_report(
         run_id=run.run_id,
         dataset_hash=run.dataset_hash,

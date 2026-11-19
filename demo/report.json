@@ -1,0 +1,128 @@
+{
+  "run_id": "demo-visual-real",
+  "dataset_hash": "dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c",
+  "question": "What are total sales by category?",
+  "summary": "Results: Category: Furniture: 741,999.80; Category: Office Supplies: 719,047.03; Category: Technology: 836,154.03. Highest: Category: Technology (836,154.03).",
+  "highlights": [
+    "Category: Furniture: 741,999.80",
+    "Category: Office Supplies: 719,047.03",
+    "Category: Technology: 836,154.03"
+  ],
+  "findings": [
+    {
+      "statement": "Category: Furniture \u2014 total Sales (sum): 741,999.80",
+      "numeric_claims": [
+        {
+          "value": 741999.7953,
+          "unit": null,
+          "label": "Category: Furniture \u2014 Sales (sum)",
+          "evidence_id": "ev_t1_2d88ff22"
+        }
+      ],
+      "evidence_ids": [
+        "ev_t1_2d88ff22"
+      ],
+      "caveat": null
+    },
+    {
+      "statement": "Category: Office Supplies \u2014 total Sales (sum): 719,047.03",
+      "numeric_claims": [
+        {
+          "value": 719047.032,
+          "unit": null,
+          "label": "Category: Office Supplies \u2014 Sales (sum)",
+          "evidence_id": "ev_t1_2d88ff22"
+        }
+      ],
+      "evidence_ids": [
+        "ev_t1_2d88ff22"
+      ],
+      "caveat": null
+    },
+    {
+      "statement": "Category: Technology \u2014 total Sales (sum): 836,154.03",
+      "numeric_claims": [
+        {
+          "value": 836154.033,
+          "unit": null,
+          "label": "Category: Technology \u2014 Sales (sum)",
+          "evidence_id": "ev_t1_2d88ff22"
+        }
+      ],
+      "evidence_ids": [
+        "ev_t1_2d88ff22"
+      ],
+      "caveat": null
+    }
+  ],
+  "charts": [],
+  "methods": [
+    "Numbers come from registered analytical tools."
+  ],
+  "limitations": [
+    "A number is shown only when it matches a valid evidence record."
+  ],
+  "recommendations": [],
+  "evidence_appendix": [
+    {
+      "evidence_id": "ev_t1_2d88ff22",
+      "task_id": "t1",
+      "tool": "group_aggregate",
+      "args_hash": "2d88ff226e3b6123acea2f95fe0d1439f12dbc8719ea4bcfac324539b0105953",
+      "dataset_hash": "dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c",
+      "input_row_count": 9994,
+      "result_summary": {
+        "total_groups": 3,
+        "metric_column": "Sales",
+        "aggregation": "sum",
+        "sample_groups": [
+          {
+            "group_keys": {
+              "Category": "Furniture"
+            },
+            "value": 741999.7953,
+            "valid_count": 2121,
+            "missing_count": 0
+          },
+          {
+            "group_keys": {
+              "Category": "Office Supplies"
+            },
+            "value": 719047.032,
+            "valid_count": 6026,
+            "missing_count": 0
+          },
+          {
+            "group_keys": {
+              "Category": "Technology"
+            },
+            "value": 836154.033,
+            "valid_count": 1847,
+            "missing_count": 0
+          }
+        ]
+      },
+      "result_schema_version": "0.1.0",
+      "invariants_checked": [
+        "group_aggregate_group_count",
+        "group_aggregate_reconciliation"
+      ],
+      "valid": true,
+      "invalidated_by": null,
+      "created_at": "2026-11-17T04:42:58.149976Z"
+    }
+  ],
+  "status": {
+    "status": "complete",
+    "reason_code": null,
+    "reason_text": null,
+    "dropped_claims": [
+      "Claim 0.0 (evidence ev_t1_2d88ff22): Ambiguous match: multiple distinct evidence paths matched ['total_groups', 'sample_groups[0].missing_count', 'sample_groups[1].missing_count', 'sample_groups[2].missing_count']",
+      "Claim 0.0 (evidence ev_t1_2d88ff22): Ambiguous match: multiple distinct evidence paths matched ['total_groups', 'sample_groups[0].missing_count', 'sample_groups[1].missing_count', 'sample_groups[2].missing_count']",
+      "Claim 0.0 (evidence ev_t1_2d88ff22): Ambiguous match: multiple distinct evidence paths matched ['total_groups', 'sample_groups[0].missing_count', 'sample_groups[1].missing_count', 'sample_groups[2].missing_count']",
+      "1",
+      "2"
+    ],
+    "unvalidated_claims": []
+  }
+}

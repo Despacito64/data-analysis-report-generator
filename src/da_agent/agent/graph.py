@@ -36,8 +36,8 @@ from da_agent.contracts.models import (
     RevisionChangeType,
     RunStatus,
 )
-from da_agent.core.config import load_config
 from da_agent.core.chat_thread import ChatThread, effective_planning_thread
+from da_agent.core.config import load_config
 from da_agent.core.follow_up import ReusedEvidence, seed_reused_evidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.tools.registry import DEFAULT_REGISTRY, export_tool_specs
@@ -268,7 +268,11 @@ def build_nodes(
                 "resolved": resolved,
             }
 
-        return {"plan": plan, "plan_version": plan.plan_version if plan else 1, "resolved": resolved}
+        return {
+            "plan": plan,
+            "plan_version": plan.plan_version if plan else 1,
+            "resolved": resolved,
+        }
 
     def node_execute(state: AgentState) -> dict[str, Any]:
         """Execute the current plan via the DAG executor."""

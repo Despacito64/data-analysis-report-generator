@@ -10,6 +10,7 @@ Rules tested:
 import pandas as pd
 import plotly.graph_objects as go
 import pytest
+
 from da_agent.tools.charts import (
     build_anomalies_chart,
     build_contribution_chart,
@@ -17,7 +18,6 @@ from da_agent.tools.charts import (
     build_rank_chart,
     build_trend_chart,
 )
-
 from da_agent.tools.models import (
     AnomaliesIQRResult,
     AnomalyPoint,

@@ -3,9 +3,9 @@
 ## Components
 
 ```
-                         Interface (M9, Streamlit)
+                         Interface (M9, Streamlit + React API)
                        /                          \
-         Data layer (M1)  ---profile--->  Question resolver (M5)
+         Data layer (M1)  ---profile--->  Planner (thread + LLM, M5/M6)
                                             |            |
                                    Fixed baseline (M4)  Dynamic agent (M6, M7)   <- only difference
                                             \            /

@@ -70,7 +70,9 @@ def run_frozen_experiment(
     questions = Path(manifest["benchmark"]["questions_path"])
 
     baseline = evaluate_baseline(dataset_path=dataset, oracle_path=oracle)
-    run_id = run_id or f"m10-frozen-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{uuid4().hex[:6]}"
+    run_id = (
+        run_id or f"m10-frozen-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}_{uuid4().hex[:6]}"
+    )
     agent = evaluate_agent(
         dataset_path=dataset,
         oracle_path=oracle,

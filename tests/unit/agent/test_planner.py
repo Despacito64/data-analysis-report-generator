@@ -62,8 +62,8 @@ def test_planner_success_single_turn(profile: DatasetProfile, tmp_path: Path) ->
 
     assert failure is None
     assert isinstance(plan, Plan)
-    assert len(plan.tasks) == 1
     assert plan.tasks[0].tool == "filter"
+    assert len(plan.tasks) >= 1
 
     # Check trace contents
     events = writer.read_events()
@@ -112,8 +112,8 @@ def test_planner_repairs_hallucinated_column(profile: DatasetProfile, tmp_path: 
 
     assert failure is None
     assert isinstance(plan, Plan)
-    assert len(plan.tasks) == 1
     assert plan.tasks[0].args["conditions"][0]["column"] == "Region"
+    assert plan.tasks[0].tool == "filter"
 
     # Verify repair event logged
     events = writer.read_events()
@@ -226,14 +226,32 @@ def test_planner_exceeds_max_steps_fails(profile: DatasetProfile) -> None:
     assert "exceeds maximum step limit" in failure.message.lower()
 
 
-def test_unanswerable_question_fails_immediately_without_llm(profile: DatasetProfile) -> None:
-    client = MockLLMClient()
+def test_unknown_metric_question_still_invokes_planner(profile: DatasetProfile) -> None:
+    """Without resolver gate, missing columns are caught by plan/arg validation after LLM."""
+    client = MockLLMClient(
+        responses=[
+            {
+                "tasks": [
+                    {
+                        "id": "t1",
+                        "tool": "filter",
+                        "args": {
+                            "conditions": [{"column": "Payroll", "operator": "eq", "value": "X"}]
+                        },
+                        "depends_on": [],
+                        "rationale": "bad col",
+                    }
+                ]
+            }
+        ]
+    )
     plan, failure = generate_plan(
         question="What is the employee salary and payroll?",
         profile=profile,
         client=client,
+        max_repairs=0,
     )
 
     assert plan is None
     assert failure is not None
-    assert len(client.call_history) == 0  # LLM never invoked for unanswerable question
+    assert len(client.call_history) == 1

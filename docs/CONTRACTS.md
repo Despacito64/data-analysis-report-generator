@@ -1,7 +1,7 @@
 # CONTRACTS.md: data shapes shared by all modules
 
 All models are Pydantic v2 classes in `src/da_agent/contracts/`. This file is the specification; the code must match it.
-Contract version: `CONTRACT_VERSION = "0.1.0"` (a constant in the contracts package). Any change needs a `DECISIONS.md` entry,
+Contract version: `CONTRACT_VERSION = "0.2.0"` (a constant in the contracts package). Any change needs a `DECISIONS.md` entry,
 a version bump and the owner's approval. Fields below are required unless marked optional.
 
 ## DatasetProfile
@@ -34,6 +34,23 @@ must be classified `identifier`, never `numeric_measure`.
 | ambiguity_decisions | list[AmbiguityDecision] | What was ambiguous and how it was resolved |
 | answerable | bool | |
 | decline_reason | str or None | Required when answerable is false |
+
+## DialogueTurn and DialogueState
+
+Symbolic memory for a later question on the same dataset. No evidence ids, tool JSON, or numeric results.
+`DialogueState.turns` is a list of `DialogueTurn`.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| question_text | str | The user utterance for that turn |
+| intent | str | Same vocabulary as `ResolvedQuestion.intent` |
+| metric | str or None | For example `sum(Sales)` |
+| period | PeriodSpec or None | |
+| grouping | list[str] | |
+| filters | list[FilterSpec] | Criteria only, not row counts |
+| answerable | bool | Unanswerable turns are not required in the list |
+
+A dataset hash change clears the state. The next run recomputes every number.
 
 ## ToolSpec
 

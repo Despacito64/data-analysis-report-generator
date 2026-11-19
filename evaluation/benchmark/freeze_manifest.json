@@ -15,8 +15,8 @@
     "per_call_timeout_s": 60.0
   },
   "config_path": "config.yaml",
-  "config_sha256": "b0cc95db844b7acb58e000bfbb23e4ee7e20ecf6b262a138a601089b8fce22de",
-  "contract_version": "0.1.0",
+  "config_sha256": "d6754e34640b2285057ca851f11cec69f67cca34b352edefbf4f887562296df2",
+  "contract_version": "0.2.0",
   "dataset": {
     "file": "Sample-Superstore.csv",
     "registered_sha256": "dc81c95712ec307e8a7f6252cbf344ac70a0a325ddc90e000ebae82e4ac02b8c",

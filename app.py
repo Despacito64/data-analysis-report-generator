@@ -169,7 +169,9 @@ def main() -> None:
                 sheet_name=sheet_name or None,
             )
             _apply_profile(df, file_label=uploaded.name)
-            st.success(f"Loaded {len(df):,} rows. Dataset hash: {st.session_state['dataset_hash'][:12]}…")
+            st.success(
+                f"Loaded {len(df):,} rows. Dataset hash: {st.session_state['dataset_hash'][:12]}…"
+            )
         except DataLoadError as exc:
             st.error(str(exc))
         except Exception as exc:  # noqa: BLE001 — surface loader failures to the user
@@ -197,7 +199,11 @@ def main() -> None:
                 current_dataset_hash=st.session_state["dataset_hash"],
                 selected_ids=selected_ids,
             )
-            if selected_ids and not preview and prior.dataset_hash != st.session_state["dataset_hash"]:
+            if (
+                selected_ids
+                and not preview
+                and prior.dataset_hash != st.session_state["dataset_hash"]
+            ):
                 st.warning("Dataset changed — prior evidence cannot be reused.")
 
     run_clicked = st.button("Run analysis", type="primary")
@@ -270,9 +276,7 @@ def main() -> None:
                     if len(events) > seen:
                         seen = len(events)
                         lines = trace_progress_messages(events)
-                        progress_slot.markdown(
-                            "\n".join(f"- {line}" for line in lines[-12:])
-                        )
+                        progress_slot.markdown("\n".join(f"- {line}" for line in lines[-12:]))
                     time.sleep(0.35)
                 worker.join()
                 if run_error:
@@ -280,9 +284,7 @@ def main() -> None:
                 result = run_state["result"]
                 final_lines = trace_progress_messages(writer.read_events())
                 if final_lines:
-                    progress_slot.markdown(
-                        "\n".join(f"- {line}" for line in final_lines[-12:])
-                    )
+                    progress_slot.markdown("\n".join(f"- {line}" for line in final_lines[-12:]))
                 status.update(
                     label=f"Run finished — {result.status}",
                     state="complete",
@@ -328,10 +330,8 @@ def main() -> None:
                 )
                 st.table(
                     {
-                        "Category": [
-                            str(c["label"]).split(" — ")[0] for c in rows
-                        ],
-                        "Amount": [f'{float(c["value"]):,.2f}' for c in rows],
+                        "Category": [str(c["label"]).split(" — ")[0] for c in rows],
+                        "Amount": [f"{float(c['value']):,.2f}" for c in rows],
                     }
                 )
             elif payload.get("highlights"):

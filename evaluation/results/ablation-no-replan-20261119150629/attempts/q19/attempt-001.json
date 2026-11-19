@@ -1,0 +1,66 @@
+{
+  "question_id": "q19",
+  "attempt": 1,
+  "run_id": "agent_eval_ablation-no-replan-20261119150629_q19_r1_8ba70887",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "Furniture": 3046.1658000000007,
+    "Office Supplies": 41014.5791,
+    "Technology": 47462.0351
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 62.446853952948004,
+  "stage_timings": {
+    "plan_generation": 31.178954166942276,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012686382979154587,
+    "tool_execution": 0.0578844400588423,
+    "result_inspection": 0.0027633330319076777,
+    "replanning": 9.09435651905369,
+    "graph_finalization": 0.0003197940532118082,
+    "answer_synthesis": 0.0021225569071248174,
+    "tool_executions": 0.0079
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0036
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0043
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 31.164259413955733,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 9.077116611995734,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "graph_finalization",
+      "duration_s": 22.056920671951957,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 3,
+  "repair_attempts": []
+}
