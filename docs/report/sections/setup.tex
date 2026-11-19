@@ -1,0 +1,24 @@
+\section{Experimental Setup}
+\subsection{Data and questions}
+The table is Sample Superstore, a retail sales file with 9{,}994 rows and 22 columns (one of them a row index). The file is identified by its SHA-256 hash. We wrote 20 questions in nine categories, listed with their counts in Table~\ref{tab:category}. Most need one tool. Two multi-step questions need a filter before an aggregation or a ranking. The question file and the expected answers were frozen on 17 November 2026 by recording their hashes in a manifest, and neither hash has changed since. The hash of the configuration file was refreshed on 19 November when a switch for the narration step was added.
+
+\subsection{Oracle and scoring}
+Expected answers are computed by a standalone script that reads the raw CSV and uses pandas and numpy. The answers are saved with a per-question tolerance, and an automated test checks that the oracle module imports nothing from the agent. The script uses the same libraries as the tools, so a defect inside pandas would not be caught by this design.
+
+Numbers are compared with a relative and absolute tolerance between 0 (counts and ranked lists) and 0.01. A list of labels must match exactly and in order, and a dictionary must have the same keys with matching values. The answer handed to the scorer is built from the recorded output of the last task that ran, shaped by tool: a group-to-value mapping for \texttt{group\_aggregate}, the row count for \texttt{filter} (only when the question asks ``how many''), the list of entity labels for \texttt{rank}, the four period values for \texttt{period\_compare}, the points, slope and direction for \texttt{trend}, and so on. The scorer never reads the narration. The score therefore measures the plan and the tools. It does not measure the prose of a report or the claim checker.
+
+\subsection{Baseline}
+The baseline is a table of fixed plans keyed by question identifier. It uses no model and never reads the question text. It runs its tasks through the same executor, with the same registry, argument checks, invariant checks and time limit as the agent, but it does not retry or replan. For several questions (the sum in q01, the four rankings and the trend direction label) its answer is assembled by code written for that question, outside the tools. We therefore treat it as a ceiling for the benchmark and not as a competitor.
+
+\subsection{Agent configuration and protocol}
+The planner is qwen3:4b~\cite{yang2025qwen3} (4.0 billion parameters, Q4\_K\_M quantisation) served by Ollama 0.23.3 on one NVIDIA GTX 1650 with 4~GB of memory. Decoding uses temperature 0, seed 42 and thinking mode off. The software was Python 3.14, pandas 3.0.6, Pydantic 2.14.1 and LangGraph 1.2.15. The limits per question are a 60~s timeout per model call, a 300~s time budget, at most two repair prompts, at most three replans and at most eight model calls, counting the narration call, which the evaluation harness enforces. Every question is run three times. A question counts as passed if any repeat matches the oracle, and we also report how many of the individual attempts matched.
+
+\subsection{Recovery suite}
+Separately from the benchmark we run twelve controlled failure scenarios with a scripted model in place of the real one. They cover failure classification, the retry and stop decisions, no-progress detection, end-to-end runs with a failing tool, a tampered claim that must be dropped, and the invalidation of dependent evidence. None of them uses a benchmark question or an expected answer.
+
+\subsection{Runs reported}
+\begin{itemize}
+\item \textbf{R1, final code:} the repository at commit \texttt{14b4a80} plus an option to set the replan limit, three repeats of all 20 questions.
+\item \textbf{R2, no replanning:} R1 with the replan limit set to zero and nothing else changed.
+\item \textbf{R0, earlier revision:} a run on 17 November with the code at commit \texttt{5acc4f1}, before the conversational changes. In that version a resolver node ran before planning and there was no narration step.
+\end{itemize}

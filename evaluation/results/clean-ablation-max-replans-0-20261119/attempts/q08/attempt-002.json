@@ -1,0 +1,54 @@
+{
+  "question_id": "q08",
+  "attempt": 2,
+  "run_id": "agent_eval_clean-ablation-max-replans-0-20261119_q08_r2_8ad223bf",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Machines",
+    "Machines",
+    "Binders",
+    "Machines",
+    "Binders"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 134.39637396705803,
+  "stage_timings": {
+    "plan_generation": 28.43298921000678,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01177169696893543,
+    "tool_execution": 0.5207979279803112,
+    "result_inspection": 0.002518825000151992,
+    "graph_finalization": 0.003420799970626831,
+    "answer_synthesis": 51.06784776295535,
+    "tool_executions": 0.518
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.518
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.418483582907356,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 54.15735899703577,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

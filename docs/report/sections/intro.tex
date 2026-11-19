@@ -1,0 +1,16 @@
+\section{Introduction}
+Someone who asks a table a question in plain language usually wants a number or a short list, and the number has to be right. Getting it takes several steps: find the relevant columns, restrict the rows or dates, aggregate, sometimes rank or compare, and then say what came out. A fixed pipeline handles the questions it was written for. It has nothing to offer when the first result changes what should be computed next, for example when a regional total points at one category that deserves a closer look.
+
+Language-model agents for data work try to close that gap by planning. Data Interpreter~\cite{hong2024datainterpreter} is a good example. It organises a data-science job as a graph of tasks, lets the model write Python for each task, and regenerates part of the graph when a task fails. Running model-written code has costs that are easy to underestimate. The code can be wrong without raising an error, it can do something unsafe if the data or the prompt is hostile, and the final text can still contain figures that no step produced. The authors of~\cite{hong2024datainterpreter} list the security risk among their limitations.
+
+We keep the planning idea and change what the model is allowed to do. In our system the model proposes a plan, which is a small directed acyclic graph of typed tasks, and a fixed set of eight registered functions computes every number. Each result is stored together with the arguments that produced it and a hash of the dataset. Before a number reaches a report it is matched against those records, and a number without support is dropped. The model never computes a value and never executes code. What we keep from Data Interpreter is a task graph that can change during a run. What we give up is the generality of free-form code.
+
+The system is built around one local model, qwen3:4b served through Ollama, so that the data stays on the machine. All runs reported here used a single NVIDIA GTX 1650 with 4~GB of memory. We evaluate on 20 frozen questions over the Sample Superstore retail table. Expected answers come from a separate script that computes them from the raw file with pandas and numpy and shares no code with the agent, and a fixed baseline that uses the same tools and budgets gives a reference point.
+
+The contributions of this paper are:
+\begin{itemize}
+\item a single-agent design in which a model plans typed tasks over a registry of eight deterministic tools, with an evidence record for every task and a claim check before anything is reported;
+\item an evaluation protocol with a separately computed oracle, a baseline that shares tools and budgets with the agent, and a separate suite of twelve controlled failure scenarios;
+\item measured results on the frozen questions, an ablation of result-driven replanning, and an account of every failure traced from the saved run logs.
+\end{itemize}
+Section~II reviews related work, Section~III describes the system, Section~IV the experimental setup, and Section~V the results. Section~VI discusses what the results do and do not show.

@@ -1,0 +1,55 @@
+{
+  "question_id": "q18",
+  "attempt": 2,
+  "run_id": "agent_eval_clean-ablation-max-replans-0-20261119_q18_r2_5b8663c5",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "q1": 1.72875,
+    "q3": 29.364,
+    "iqr": 27.63525,
+    "lower_fence": -39.724125,
+    "upper_fence": 70.816875,
+    "flagged_count": 1881
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 67.8975114079658,
+  "stage_timings": {
+    "plan_generation": 28.00466106494423,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01312986295670271,
+    "tool_execution": 0.014871515915729105,
+    "result_inspection": 0.0026592020876705647,
+    "graph_finalization": 0.000291369971819222,
+    "answer_synthesis": 0.010083402041345835,
+    "tool_executions": 0.012
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "detect_anomalies_iqr",
+      "status": "ok",
+      "duration_s": 0.012
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 27.990579920005985,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 39.81430079694837,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

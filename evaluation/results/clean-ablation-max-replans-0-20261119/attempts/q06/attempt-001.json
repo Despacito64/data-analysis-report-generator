@@ -1,0 +1,54 @@
+{
+  "question_id": "q06",
+  "attempt": 1,
+  "run_id": "agent_eval_clean-ablation-max-replans-0-20261119_q06_r1_b6bdf069",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Machines",
+    "Copiers",
+    "Copiers",
+    "Copiers",
+    "Copiers"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 145.3038093870273,
+  "stage_timings": {
+    "plan_generation": 28.502600860083476,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012290814076550305,
+    "tool_execution": 0.4993606769712642,
+    "result_inspection": 0.00422625697683543,
+    "graph_finalization": 0.005307998973876238,
+    "answer_synthesis": 85.98437873600051,
+    "tool_executions": 0.4964
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.4964
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.486796359997243,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 29.94472887995653,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

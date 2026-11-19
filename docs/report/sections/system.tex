@@ -1,0 +1,71 @@
+\section{System Design}
+\subsection{Overview}
+The system is a single agent. A LangGraph~\cite{langgraph} state machine fixes the order of the steps: plan, validate, execute, inspect, and then either replan or finalize (Fig.~\ref{fig:graph}). The control graph never changes. What changes during a run is the task graph that the state carries. In our usage ``dynamic'' means that after a result or a failure the model may add, change or cancel pending tasks while completed evidence stays valid. Retrying with identical arguments does not count as a revision. When a task or an argument does change, the system records a plan revision with the new plan version, the evidence or failure that triggered it, and the affected tasks.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  node distance=0.55cm and 0.6cm,
+  st/.style={draw, rounded corners=2pt, minimum width=1.35cm, minimum height=0.55cm, font=\footnotesize, inner sep=2pt},
+  ar/.style={-{Latex[length=1.6mm]}, thick}]
+  \node[st] (plan) {plan};
+  \node[st, right=of plan] (val) {validate};
+  \node[st, right=of val] (exe) {execute};
+  \node[st, below=0.9cm of exe] (ins) {inspect};
+  \node[st, below=0.9cm of val] (rep) {replan};
+  \node[st, below=0.9cm of plan] (fin) {finalize};
+  \draw[ar] (plan) -- (val);
+  \draw[ar] (val) -- (exe);
+  \draw[ar] (exe) -- (ins);
+  \draw[ar] (ins) -- (rep);
+  \draw[ar] (rep) -- (exe);
+  \draw[ar] (rep) -- (fin);
+  \draw[ar] (ins.south) -- ++(0,-0.35) -| (fin.south);
+\end{tikzpicture}
+\caption{Fixed control graph. Inspect also loops back to execute for identical retries, and validate goes straight to finalize when no valid plan exists.}
+\label{fig:graph}
+\end{figure}
+
+\subsection{Data layer}
+The loader accepts CSV and XLSX files up to 50~MB and 100{,}000 rows and reports empty, corrupt or unreadable input with a specific message. The profiler assigns each column a semantic type (identifier, numeric measure, category, date or text), counts missing and distinct values, records date coverage and computes descriptive statistics. Numeric postal codes, for instance, are labelled identifiers and not measures. The dataset is identified by the SHA-256 hash of the raw file bytes, and that hash is copied into every evidence record.
+
+\subsection{Planning}
+The planning prompt contains a role statement that restricts the model to the registered tools, each tool's description and JSON argument schema, the column names with their semantic types, the output schema, a few rules (for example that a task working on a filtered subset lists the filter task in \texttt{depends\_on}), and three worked examples: a mean per category, a filter followed by a ranking, and a share per segment. Column names and types are shown but cell values are not. A test checks that none of the frozen benchmark questions appears in the prompt. The reply is constrained with the JSON schema of a plan, sent to Ollama~\cite{ollama} through its \texttt{format} option. A plan is a list of tasks, each with an identifier, a tool name, arguments, dependencies and a one-sentence rationale. Decoding uses temperature 0 and a fixed seed.
+
+In the conversational interface a deterministic step can extend a plan that stops after filtering: it appends a \texttt{group\_aggregate} task that groups by the first filter column. This step is part of the system version evaluated in Section~V, and it matters for one result there.
+
+\subsection{Tool registry}
+All numbers come from eight registered tools (Table~\ref{tab:tools}). Each has a Pydantic argument model that rejects unknown fields, a typed result, and a set of numerical invariants that are checked after every call; for example the group counts of an aggregation must add up to the number of input rows, and contribution shares must sum to one within $10^{-9}$. A call that exceeds the per-call limit of 60~s is treated as a transient failure.
+
+\begin{table}[t]
+\caption{Registered tools}
+\label{tab:tools}
+\centering
+\footnotesize
+\begin{tabular}{p{2.9cm}p{4.9cm}}
+\hline
+Tool & What it computes \\
+\hline
+\texttt{filter} & rows matching conditions (eleven operators, e.g.\ \texttt{eq}, \texttt{between}); returns the count and matched indices \\
+\texttt{group\_\allowbreak aggregate} & sum, mean, count, min or max of a metric per group \\
+\texttt{rank} & competition ranking of the \emph{rows} of its input by a metric; ties flagged; no aggregation \\
+\texttt{period\_\allowbreak compare} & a metric over two date windows, with absolute change and growth; a zero or missing base gives an undefined result with a reason \\
+\texttt{trend} & a metric by day, month, quarter or year; least-squares slope over the period index; a direction label \\
+\texttt{segment\_\allowbreak contribution} & share of the total per segment, with a reconciliation flag \\
+\texttt{correlation} & Pearson $r$ of two columns (at least three valid pairs) \\
+\texttt{detect\_\allowbreak anomalies\_\allowbreak iqr} & Tukey fences at $k=1.5$; flagged values \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Validation and recovery}
+A plan is checked before anything runs: it must be non-empty and within the step limit, task identifiers must be unique, every dependency must exist, there must be no cycle, and at least one task must have no dependencies. Each task's arguments are then checked: the tool must exist, the arguments must fit the schema, every column must exist in the profile, metric columns must be numeric measures, date columns must be dates, and a comparison window must overlap the date coverage of the data. An invalid plan goes back to the model with the error messages, up to a fixed number of repair prompts.
+
+Failures during execution are classified by rules over the message and context. Timeouts and transient errors are retried with identical arguments, at most twice. Bad arguments, unknown columns and empty results are repairable: the planner is asked for a corrected plan, subject to a limit of three replans per question. Invariant violations, runtime errors and failures of a dependency are terminal. To stop loops, each task is reduced to a fingerprint (SHA-256 of the normalised tool, arguments and dependencies), and a run ends as partial when two consecutive fingerprints are identical, when a revision changes nothing, or when a sequence of states repeats.
+
+Replanning has two modes. After a failure, the model receives the failed task, the error and its class, and the column names. After a complete result, it receives bounded summaries of the finished tasks, marked as data and not as instructions, and must return only new or changed tasks, or an empty list to stop.
+
+\subsection{Evidence and claim checking}
+Each successful task produces an evidence record with the tool name, a hash of the canonical JSON of its arguments, the dataset hash, the input row count, a bounded summary of the result, the invariants that were checked, and a validity flag. The full result is saved in the run directory next to a line-by-line trace of the run.
+
+Findings in a report carry the evidence they rely on. Numbers are extracted from the finding text and compared with the numeric values in the cited evidence, using a relative tolerance of 0.001 and an absolute tolerance of 0.01, widened to half a unit in the last stated decimal place when a claim is rounded. If no value matches, the checker tries sums, differences, shares and percentage changes of two evidence values. A finding with an unsupported or ambiguous number is dropped by default, and the dropped claim is listed with the reason. An optional second model call turns the validated claims into two to four sentences of prose; the prose is kept only if every number in it occurs in the tool outputs, and otherwise a template sentence is used. Reports are rendered as escaped HTML and JSON and are served by a FastAPI backend to a React interface.

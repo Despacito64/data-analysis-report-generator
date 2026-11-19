@@ -1,0 +1,89 @@
+{
+  "question_id": "q01",
+  "attempt": 2,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q01_r2_a4217866",
+  "status": "failed",
+  "accuracy": false,
+  "answer": {
+    "First Class": 351428.4229
+  },
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 62.207166296080686,
+  "stage_timings": {
+    "plan_generation": 28.774347422993742,
+    "question_resolution": 0.0,
+    "plan_validation": 0.014013819978572428,
+    "tool_execution": 0.06516393192578107,
+    "result_inspection": 0.0031331320060417056,
+    "repair_attempt_1": 4.467525425949134,
+    "repair_attempt_2": 4.490826967987232,
+    "replanning": 17.330774216912687,
+    "graph_finalization": 0.0003268489381298423,
+    "answer_synthesis": 0.0015772510087117553,
+    "tool_executions": 0.0066
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0031
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0035
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.757567966007628,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 8.347876372979954,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 4.467525425949134,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.490826967987232,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 15.971617760020308,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 4.467525425949134
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.490826967987232
+    }
+  ]
+}

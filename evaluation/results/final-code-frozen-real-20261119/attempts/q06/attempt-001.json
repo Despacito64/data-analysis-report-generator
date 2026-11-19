@@ -1,0 +1,87 @@
+{
+  "question_id": "q06",
+  "attempt": 1,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q06_r1_2e099023",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Machines",
+    "Copiers",
+    "Copiers",
+    "Copiers",
+    "Copiers"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 233.90942367492244,
+  "stage_timings": {
+    "plan_generation": 28.556227055960335,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012552083004266024,
+    "tool_execution": 0.7063681400613859,
+    "result_inspection": 0.0031797150149941444,
+    "repair_attempt_1": 29.066695956978947,
+    "repair_attempt_2": 4.873400229029357,
+    "replanning": 71.88112852699123,
+    "graph_finalization": 0.006912556942552328,
+    "answer_synthesis": 102.33378695102874,
+    "tool_executions": 0.7033
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.7033
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.527864189003594,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 37.91640531900339,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 29.066695956978947,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.873400229029357,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 30.085002633044496,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 29.066695956978947
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.873400229029357
+    }
+  ]
+}

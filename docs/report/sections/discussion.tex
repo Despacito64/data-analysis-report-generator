@@ -1,0 +1,22 @@
+\section{Discussion}
+
+\subsection{What the results support}
+The design does what it was built to do on this task. A 4-billion-parameter model on a small GPU produced a valid plan, and the tools produced a correct answer, for every question the scoring path can accept, in every repeat. No timeouts occurred, the recovery suite passed, and each reported number is traceable to an evidence record. The cost is the cost of the model: nearly all of the time is spent in generation, and the tools take seconds in total.
+
+\subsection{What they do not support}
+The headline score of \FinalQ{} out of \FinalN{} understates the planner and, in a different way, overstates it. It understates it because eight questions cannot be passed through the scoring path, whatever the model plans. It overstates the system's range because the twelve that can be passed are the easy ones: one or two steps, with the tool named almost directly by the wording of the question. The result says little about longer chains or about questions where the first result should change what is asked next. This is also why the ablation found no benefit from replanning. A single null result on easy questions is not evidence about the mechanism.
+
+The baseline cannot be used as a competitor. It passes all twenty because its answers for several questions are assembled by question-specific code outside the tools, which the agent does not have. We kept the baseline as a ceiling, but a fairer baseline would use the same answer extraction as the agent and would then score the same twelve.
+
+\subsection{Threats to validity}
+\begin{itemize}
+\item \textbf{Benchmark.} Twenty questions on one table, written by the authors. Several categories have two questions, so a category percentage is coarse. The questions and the oracle were frozen, but the benchmark was written before the scoring path was examined, and its mismatches (Section~V-B) were found only afterwards. We did not change the frozen files to fix them.
+\item \textbf{Oracle.} The oracle imports no agent code, but it uses the same libraries as the tools. A defect in pandas that affected both would go unnoticed.
+\item \textbf{Repeats.} Decoding was deterministic (temperature 0, fixed seed), so the three repeats of a question are nearly identical and are not three independent samples. The 36 of 60 attempts should not be read as a variance estimate.
+\item \textbf{Single model and hardware.} All main results use one model on one GPU. The comparison with qwen2.5 3B and 7B is partial and not like for like.
+\item \textbf{Revisions.} R0 and R1 differ in several ways, so the q02 regression is attributed from the saved traces and not from a controlled experiment. We found the cause by reading the plan that was executed; we did not re-run R0's code with the augmentation switched on.
+\item \textbf{Claim checking and narration.} The scoring path never reads the report text. The claim checker and the narration step are tested by the recovery suite but are not measured on the 20 questions.
+\end{itemize}
+
+\subsection{Lessons}
+The most useful single step was to check, without a model, what the scorer can accept. Before that we had a list of failures and several plausible explanations, most of them about the model. The traces showed that the tools had run correctly in every failure, and the check showed that the explanation lay in the interface between tool output and expected answer. We also learned that a change made for one purpose (the chat interface) can alter an earlier result without any test noticing, which is a reason to re-run the frozen set after every change to the planning path.

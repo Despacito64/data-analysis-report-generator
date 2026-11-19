@@ -1,0 +1,45 @@
+{
+  "question_id": "q07",
+  "attempt": 3,
+  "run_id": "agent_eval_clean-ablation-max-replans-0-20261119_q07_r3_71c92fcc",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Indiana",
+    "Washington",
+    "Delaware"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 53.93760425108485,
+  "stage_timings": {
+    "plan_generation": 3.0899592540226877,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01225275092292577,
+    "tool_execution": 0.5145124590490013,
+    "result_inspection": 0.0022063639480620623,
+    "graph_finalization": 0.0030315150506794453,
+    "answer_synthesis": 50.1839284329908,
+    "tool_executions": 0.5117
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.5117
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 3.076073728967458,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 1,
+  "repair_attempts": []
+}

@@ -1,0 +1,87 @@
+{
+  "question_id": "q08",
+  "attempt": 2,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q08_r2_1a4dcfdf",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Machines",
+    "Machines",
+    "Binders",
+    "Machines",
+    "Binders"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 204.7353641629452,
+  "stage_timings": {
+    "plan_generation": 28.401207429007627,
+    "question_resolution": 0.0,
+    "plan_validation": 0.013114777975715697,
+    "tool_execution": 0.5526608629152179,
+    "result_inspection": 0.003668938996270299,
+    "repair_attempt_1": 28.440426610060968,
+    "repair_attempt_2": 4.21422098192852,
+    "replanning": 70.0709117280785,
+    "graph_finalization": 0.0037782409926876426,
+    "answer_synthesis": 51.34186139202211,
+    "tool_executions": 0.5496
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.5496
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.386561424005777,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 37.387205719947815,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 28.440426610060968,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.21422098192852,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 54.06115312001202,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 28.440426610060968
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.21422098192852
+    }
+  ]
+}

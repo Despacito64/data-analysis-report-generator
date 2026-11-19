@@ -440,3 +440,56 @@ def test_mock_evaluation_records_agent_stages_and_tool_times(tmp_path: Path) -> 
     assert any(event["event_type"] == "tool_execution_timing" for event in trace_events)
     assert any(event["event_type"] == "llm_call_timing" for event in trace_events)
     assert summary["score_complete"] is False
+
+
+def _mock_plan_client() -> MockLLMClient:
+    return MockLLMClient(
+        default_response={
+            "tasks": [
+                {
+                    "id": "t1",
+                    "tool": "group_aggregate",
+                    "args": {"by": ["Region"], "metric_column": "Sales", "aggregation": "sum"},
+                    "depends_on": [],
+                    "rationale": "Aggregate sales for each region.",
+                }
+            ]
+        }
+    )
+
+
+def _mock_eval(tmp_path: Path, run_id: str, **overrides) -> dict:
+    config = load_config()
+    config = config.model_copy(
+        update={"run_trace": config.run_trace.model_copy(update={"base_dir": str(tmp_path / "t")})}
+    )
+    return evaluate_agent(
+        dataset_path=Path("Sample-Superstore.csv"),
+        oracle_path=Path("evaluation/benchmark/oracle.json"),
+        questions_path=Path("evaluation/benchmark/questions.json"),
+        results_dir=tmp_path / "results",
+        run_id=run_id,
+        selected_question_ids=["q03"],
+        mode="mock",
+        client=_mock_plan_client(),
+        config=config,
+        **overrides,
+    )
+
+
+def test_max_replans_override_is_recorded_and_stops_result_replanning(tmp_path: Path) -> None:
+    default = _mock_eval(tmp_path, "default_replans")
+    no_replan = _mock_eval(tmp_path, "zero_replans", max_replans=0)
+
+    assert default["evaluation"]["max_replans"] == load_config().budgets.max_replans
+    assert no_replan["evaluation"]["max_replans"] == 0
+    default_calls = next(r for r in default["per_question"] if r["question_id"] == "q03")
+    zero_calls = next(r for r in no_replan["per_question"] if r["question_id"] == "q03")
+    assert default_calls["llm_call_count"] > zero_calls["llm_call_count"]
+
+
+def test_negative_max_replans_is_rejected(tmp_path: Path) -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="max_replans"):
+        _mock_eval(tmp_path, "bad", max_replans=-1)

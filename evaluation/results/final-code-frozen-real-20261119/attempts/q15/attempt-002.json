@@ -1,0 +1,81 @@
+{
+  "question_id": "q15",
+  "attempt": 2,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q15_r2_1d6f2edb",
+  "status": "passed",
+  "accuracy": true,
+  "answer": -0.21948745637176803,
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 47.56527386198286,
+  "stage_timings": {
+    "plan_generation": 27.75453864398878,
+    "question_resolution": 0.0,
+    "plan_validation": 0.013230850920081139,
+    "tool_execution": 0.005863778991624713,
+    "result_inspection": 0.002786169992759824,
+    "repair_attempt_1": 2.4711916279047728,
+    "repair_attempt_2": 2.6055497790221125,
+    "replanning": 10.29261525196489,
+    "graph_finalization": 0.00027363095432519913,
+    "answer_synthesis": 0.0008726420346647501,
+    "tool_executions": 0.0028
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "correlation",
+      "status": "ok",
+      "duration_s": 0.0028
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 27.739883350091986,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 5.194617477944121,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 2.4711916279047728,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 2.6055497790221125,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 9.482713593984954,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 2.4711916279047728
+    },
+    {
+      "attempt": 2,
+      "duration_s": 2.6055497790221125
+    }
+  ]
+}

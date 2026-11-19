@@ -1,0 +1,91 @@
+{
+  "question_id": "q19",
+  "attempt": 1,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q19_r1_66585f1c",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "Furniture": 3046.1658000000007,
+    "Office Supplies": 41014.5791,
+    "Technology": 47462.0351
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 71.23950276907999,
+  "stage_timings": {
+    "plan_generation": 31.210556042962708,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01647202402818948,
+    "tool_execution": 0.09639579895883799,
+    "result_inspection": 0.005806999979540706,
+    "repair_attempt_1": 4.252713766996749,
+    "repair_attempt_2": 4.243153113988228,
+    "replanning": 17.614852378959768,
+    "graph_finalization": 0.0002970959758386016,
+    "answer_synthesis": 0.0021339410450309515,
+    "tool_executions": 0.012299999999999998
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0039
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0084
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 31.19585137302056,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 9.088558667921461,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 4.252713766996749,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.243153113988228,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 22.252510383026674,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 4.252713766996749
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.243153113988228
+    }
+  ]
+}

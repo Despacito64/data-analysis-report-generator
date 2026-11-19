@@ -1,0 +1,87 @@
+{
+  "question_id": "q06",
+  "attempt": 2,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q06_r2_e97a856a",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Machines",
+    "Copiers",
+    "Copiers",
+    "Copiers",
+    "Copiers"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 229.08256716595497,
+  "stage_timings": {
+    "plan_generation": 28.56798967497889,
+    "question_resolution": 0.0,
+    "plan_validation": 0.018977858941070735,
+    "tool_execution": 0.6844771429896355,
+    "result_inspection": 0.0031202819664031267,
+    "repair_attempt_1": 28.993739702971652,
+    "repair_attempt_2": 4.72859872400295,
+    "replanning": 71.73924309294671,
+    "graph_finalization": 0.005239345948211849,
+    "answer_synthesis": 97.7053441060707,
+    "tool_executions": 0.6812
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.6812
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.551181585062295,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 37.9901863069972,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 28.993739702971652,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.72859872400295,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 30.05579743301496,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 28.993739702971652
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.72859872400295
+    }
+  ]
+}

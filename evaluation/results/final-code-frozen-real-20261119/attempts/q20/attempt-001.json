@@ -1,0 +1,91 @@
+{
+  "question_id": "q20",
+  "attempt": 1,
+  "run_id": "agent_eval_final-code-frozen-real-20261119_q20_r1_d63bc1d4",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Seattle",
+    "Newark",
+    "Detroit"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 147.0409199319547,
+  "stage_timings": {
+    "plan_generation": 30.943964531063102,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012475328985601664,
+    "tool_execution": 0.315854846034199,
+    "result_inspection": 0.0031369030475616455,
+    "repair_attempt_1": 28.5379764350364,
+    "repair_attempt_2": 4.357110779033974,
+    "replanning": 70.37732938001864,
+    "graph_finalization": 0.003073418978601694,
+    "answer_synthesis": 16.1582439430058,
+    "tool_executions": 0.26030000000000003
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0049
+    },
+    {
+      "task_id": "t2",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.2554
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.928999709081836,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 37.458012599963695,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 28.5379764350364,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 4.357110779033974,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 29.136184968985617,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 28.5379764350364
+    },
+    {
+      "attempt": 2,
+      "duration_s": 4.357110779033974
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "question_id": "q02",
+  "attempt": 2,
+  "run_id": "agent_eval_clean-ablation-max-replans-0-20261119_q02_r2_abb8f4db",
+  "status": "failed",
+  "accuracy": false,
+  "answer": {
+    "West": 251991.832
+  },
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 42.986603967961855,
+  "stage_timings": {
+    "plan_generation": 29.69479348906316,
+    "question_resolution": 0.0,
+    "plan_validation": 0.019360927981324494,
+    "tool_execution": 0.05155560001730919,
+    "result_inspection": 0.002891208976507187,
+    "graph_finalization": 0.0003017759881913662,
+    "answer_synthesis": 0.001327365986071527,
+    "tool_executions": 0.0064
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0032
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0032
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 29.668008640990593,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 13.175560825970024,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}
