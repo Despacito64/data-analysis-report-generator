@@ -1,30 +1,456 @@
-# Data Analysis Agent
+# 📊 Deterministic Dynamic Data Analysis Agent
 
-A single-agent system that answers natural-language questions about a tabular dataset (CSV or XLSX) by planning approved analytical operations,
-executing them with deterministic tools, and producing an HTML report in which every number links to recorded evidence. A fixed-workflow baseline
-is compared against the dynamic agent on frozen questions scored by an independent oracle.
+<p align="center">
+  <em>An evidence-grounded, dynamic data analysis agent that plans, verifies, and executes analytical operations with zero arbitrary code execution and strict auditability.</em>
+</p>
 
-Status: setup phase. See `docs/PROGRESS.md`.
+<p align="center">
+  <a href="https://github.com/Despacito64/data-analysis-report-generator/tree/shivam"><img src="https://img.shields.io/badge/branch-shivam-blueviolet?style=for-the-badge&logo=git" alt="Git Branch"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+"></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19"></a>
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
+  <a href="https://langchain-ai.github.io/langgraph/"><img src="https://img.shields.io/badge/LangGraph-0.2+-FF6F61?style=for-the-badge&logo=diagram-next&logoColor=white" alt="LangGraph"></a>
+  <a href="https://duckdb.org/"><img src="https://img.shields.io/badge/DuckDB-1.0+-FFF000?style=for-the-badge&logo=duckdb&logoColor=black" alt="DuckDB"></a>
+  <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Ollama-qwen3:4b-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama"></a>
+  <a href="https://docs.astral.sh/uv/"><img src="https://img.shields.io/badge/Managed%20with-uv-DE5FE9?style=for-the-badge" alt="uv package manager"></a>
+  <a href="#-testing--quality"><img src="https://img.shields.io/badge/tests-320%20passed-success?style=for-the-badge&logo=pytest&logoColor=white" alt="320 Tests Passing"></a>
+</p>
 
-## Setup and usage
+---
 
-To be filled in as modules are built (M0 adds installation, M9 adds running the app, M10 adds the evaluation reproduction command).
+## 📌 Table of Contents
+
+- [Overview](#-overview)
+- [Key Highlights](#-key-highlights)
+- [System Architecture](#-system-architecture)
+- [Screenshots & UI Walkthrough](#-screenshots--ui-walkthrough)
+- [Analytical Tool Suite](#-analytical-tool-suite)
+- [Quick Start](#-quick-start)
+  - [Prerequisites](#prerequisites)
+  - [1. Backend Setup](#1-backend-setup)
+  - [2. Modern React UI Setup](#2-modern-react-ui-setup)
+  - [3. Alternative: Streamlit App](#3-alternative-streamlit-app)
+- [Configuration Reference](#-configuration-reference)
+- [Benchmark & Evaluation](#-benchmark--evaluation)
+- [Repository Structure](#-repository-structure)
+- [Testing & Quality](#-testing--quality)
+- [Multi-Agent Collaboration Protocol](#-multi-agent-collaboration-protocol)
+- [License](#-license)
+
+---
+
+## 🌟 Overview
+
+The **Deterministic Dynamic Data Analysis Agent** (`da-agent`) is a production-grade analytical system that transforms natural-language queries into structured analytical workflows over tabular datasets (CSV and XLSX). 
+
+Unlike conventional LLM code-interpreters that execute unchecked Python or SQL in black-box sandboxes, this agent plans and executes analytical tasks exclusively through **pre-defined, deterministic, allowlisted tools**. Every insight, chart, and numerical finding produced links directly to an immutable cryptographic **Evidence Record**, with every reported number verified through strict automated claim validation before rendering.
 
 ```
-# install:      TBD (M0)
-# run tests:    TBD (M0)
-# run the app:  TBD (M9)
-# reproduce evaluation: TBD (M10)
+"What was the profit margin trend for Furniture in the West region during 2023?"
+                                    │
+                                    ▼
+       [ Profile Dataset ] ──► [ Plan DAG Tasks ] ──► [ Execute Deterministic Tools ]
+                                                              │
+                                                              ▼
+ [ Verified HTML Report ] ◄── [ Validate Claims ] ◄── [ Store Evidence Records ]
 ```
 
-## Working on this repository with AI tools
+---
 
-Several AI tools take turns on this code and share no memory. `AGENTS.md` and `docs/` are the shared memory.
+## ⚡ Key Highlights
 
-- Start every session with the start prompt in `docs/SESSION_PROMPTS.md`.
-- End every session (or switch tools) with the end prompt, so `docs/HANDOFF.md` is current and the work is committed.
-- Decisions go in `docs/DECISIONS.md`, progress in `docs/PROGRESS.md`.
+- **🔒 Zero Arbitrary Code Execution**: No unconstrained shell commands, Python `eval()`, or raw SQL injection vectors. Analytical primitives are strictly validated through Pydantic contracts and tool specs.
+- **🔗 100% Provenance & Claim Validation**: Every numerical claim in findings is cross-checked against recorded runtime evidence within strict tolerances (`rtol: 0.001`, `atol: 0.01`). Ungrounded claims are automatically rejected.
+- **🧠 Dynamic LangGraph Re-planning**: When intermediate calculations uncover anomalies, missing columns, or unexpected zero-denominators, the agent dynamically replans and repairs task arguments within budgeted limits.
+- **💬 Multi-Turn Conversational Dialogue**: Context-aware dialogue threads (`ChatThread`) maintain historical context and prior analytical steps for progressive drill-downs and iterative investigations.
+- **🎨 Modern Dual Interface**:
+  - **Modern React 19 + Vite SPA**: Fluid, interactive conversational interface with instant previews, status indicators, and report inspection.
+  - **FastAPI Async Backend**: High-performance REST API with session state, file ingestion, and live streaming execution traces.
+  - **Streamlit Exploration Console**: Single-command analytical interface for rapid prototyping.
+- **🧪 Scientifically Scored Benchmark**: Rigorously evaluated against an independent DuckDB/Python oracle on a 20-question frozen benchmark and a 12-scenario recovery test harness.
 
-## Layout
+---
 
-See `docs/ARCHITECTURE.md`.
+## 🏛️ System Architecture
+
+The pipeline follows a strict layered DAG structure where lower layers never depend on higher layers.
+
+```mermaid
+flowchart TD
+    subgraph Client ["Client Layer"]
+        ReactUI["React 19 + Vite SPA<br/>(localhost:5173)"]
+        StreamlitUI["Streamlit Console<br/>(app.py)"]
+    end
+
+    subgraph API ["Service Layer"]
+        FastAPI["FastAPI Backend<br/>(api_main.py)"]
+        Runner["Agent Runner & Session Manager"]
+    end
+
+    subgraph Core ["Agent & Planning Engine"]
+        Profile["Data Loader & Profiler<br/>(CSV / XLSX)"]
+        Planner["Dynamic LangGraph Planner<br/>(Ollama / Qwen3:4b)"]
+        Replan["Recovery & Replanning Policy<br/>(Finite Budgets)"]
+    end
+
+    subgraph Execution ["Deterministic Tool Registry"]
+        PandasTools["Pandas Analytics<br/>(Filter, Group, Aggregate, Rank)"]
+        StatsTools["Statistical Tools<br/>(Trend, Correlation, Contribution)"]
+        ChartTools["Plotly Chart Generator<br/>(Bar, Line, Scatter, Box)"]
+    end
+
+    subgraph Validation ["Audit & Verification Layer"]
+        EvidenceStore["Immutable Evidence Store<br/>(Hash & Transformation Version)"]
+        ClaimValidator["Claim & Numerical Validator<br/>(Tolerance & Recomputation)"]
+        Narrator["Grounded Narrative Generator"]
+    end
+
+    subgraph Output ["Report Generation"]
+        ReportHTML["Interactive HTML Report"]
+        ReportJSON["Machine-Readable Artifacts"]
+    end
+
+    ReactUI <-->|HTTP / JSON| FastAPI
+    FastAPI --> Runner
+    StreamlitUI --> Runner
+    Runner --> Profile
+    Profile --> Planner
+    Planner --> PandasTools & StatsTools & ChartTools
+    PandasTools & StatsTools & ChartTools --> EvidenceStore
+    EvidenceStore --> Replan
+    Replan -.->|Replanning Feedback| Planner
+    EvidenceStore --> ClaimValidator
+    ClaimValidator --> Narrator
+    Narrator --> ReportHTML & ReportJSON
+```
+
+### Architectural Layering & Import Boundaries
+
+To ensure absolute separation of concerns, the repository enforces unidirectional import boundaries checked by unit tests:
+
+| Layer | Package | Permitted Imports |
+| :---: | :--- | :--- |
+| **L1** | `contracts` | External standard libraries, Pydantic (never imports `da_agent`) |
+| **L2** | `core` | `contracts` |
+| **L3** | `data` | `contracts`, `core` |
+| **L4** | `validation` | `contracts`, `core` |
+| **L5** | `tools` | `contracts`, `core`, `data`, `validation` |
+| **L6** | `agent`, `reports` | Layers 1–5 (`agent` and `reports` never import each other) |
+| **L7** | `pipeline` | Orchestrates all layers (exclusive entry point) |
+| **L8** | `api`, `app.py`, `evaluation` | `pipeline`, `contracts`, `core` |
+
+---
+
+## 📸 Screenshots & UI Walkthrough
+
+> *Note: Placeholders below can be populated with exported screenshots from local UI runs.*
+
+### 1. Modern React Conversational Interface
+Natural language question answering with dataset preview, multi-turn drill-down, and live analytical progress:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  Data Analysis Agent                                            [ Sample-Superstore ▼ ] │
+├───────────────────────────────┬────────────────────────────────────────────────────────┤
+│  Dataset Overview             │  Chat & Analysis                                       │
+│  ───────────────────          │  ──────────────────────────────────────────            │
+│  Rows: 9,994 | Columns: 21    │  User: Which customer segment generates highest profit?│
+│  Hash: sha256:e3b0c44...      │                                                        │
+│                               │  Agent: Executed aggregation on [Segment] by sum(Profit)│
+│  [ Upload New CSV / XLSX ]    │  ┌──────────────────────────────────────────────────┐  │
+│                               │  │ Consumer: $134,119.21 (46.8% of total profit)    │  │
+│  Identified Measures:         │  │ Corporate: $91,979.11 (32.1%)                    │  │
+│  - Sales, Profit, Quantity    │  │ Home Office: $60,298.68 (21.0%)                  │  │
+│  Identified Dimensions:       │  └──────────────────────────────────────────────────┘  │
+│  - Category, Segment, Region  │  ✓ Verified against EvidenceRecord #ev-049             │
+│                               │                                                        │
+│                               │  [ Ask follow-up question...                ] [ Send ] │
+└───────────────────────────────┴────────────────────────────────────────────────────────┘
+```
+<p align="center">
+  <img src="docs/assets/screenshot-react-chat.png" alt="React Conversational Workspace" width="90%">
+  <br>
+  <em>Figure 1: React 19 multi-turn dialogue with real-time evidence validation and drill-down support.</em>
+</p>
+
+---
+
+### 2. Evidence-Linked HTML Audit Report
+Generated reports embed interactive Plotly charts, methodology records, caveats, and hyperlinked evidence logs:
+
+<p align="center">
+  <img src="docs/assets/screenshot-html-report.png" alt="Generated HTML Report" width="90%">
+  <br>
+  <em>Figure 2: Grounded HTML report with interactive data visualizations and verifiable evidence trails.</em>
+</p>
+
+---
+
+### 3. Dynamic Execution & Replanning Trace
+Detailed visibility into task DAG resolution, tool invocation parameters, and recovery attempts:
+
+<p align="center">
+  <img src="docs/assets/screenshot-task-trace.png" alt="Execution DAG and Task Trace" width="90%">
+  <br>
+  <em>Figure 3: Inspection of generated task dependencies, execution state, and recovery budgets.</em>
+</p>
+
+---
+
+## 🛠️ Analytical Tool Suite
+
+The agent plans workflows using an approved suite of deterministic primitives in `src/da_agent/tools/`:
+
+| Domain | Tool Name | Description |
+| :--- | :--- | :--- |
+| **Data Manipulation** | `filter_rows` | Multi-condition row filtering with comparison operators (`==`, `!=`, `>`, `<`, `in`, `between`). |
+| | `aggregate_group` | Group-by operations with sum, mean, median, min, max, std, count, and distinct count. |
+| | `rank_items` | Top-N and Bottom-N ordering with tie-breaking rules and percentile calculation. |
+| | `period_compare` | Time-series period-over-period variance (absolute and percentage delta). |
+| **Statistical Analysis** | `trend_analysis` | Linear regression slope, R² score, and moving average calculation. |
+| | `segment_contribution` | Percentage of total distribution and Pareto (80/20) analysis. |
+| | `correlation_matrix` | Pearson and Spearman rank correlation between quantitative metrics. |
+| | `detect_anomalies` | Z-score and IQR-based numerical outlier detection. |
+| **Data Visualization** | `generate_chart` | Interactive Plotly visual specs (bar, line, scatter, box plot, distribution). |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Python**: `>= 3.11`
+- **uv**: Modern, ultra-fast Python package manager ([installation instructions](https://github.com/astral-sh/uv))
+- **Node.js**: `>= 18.0` & **npm** (for the modern React frontend)
+- **Ollama**: Running locally with `qwen3:4b` (or another supported local LLM)
+
+```bash
+# Pull the default planner model
+ollama pull qwen3:4b
+```
+
+---
+
+### 1. Backend Setup
+
+Clone the repository and check out the `shivam` branch:
+
+```bash
+git clone https://github.com/Despacito64/data-analysis-report-generator.git
+cd data-analysis-report-generator
+git checkout shivam
+```
+
+Install backend dependencies and sync the virtual environment using `uv`:
+
+```bash
+uv sync --all-groups
+```
+
+Start the FastAPI backend service:
+
+```bash
+uv run uvicorn api_main:app --reload --host 127.0.0.1 --port 8000
+```
+
+The API will be available at `http://127.0.0.1:8000` with interactive Swagger docs at `http://127.0.0.1:8000/docs`.
+
+---
+
+### 2. Modern React UI Setup
+
+In a new terminal window:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open your browser to: **`http://127.0.0.1:5173`**
+
+- The application automatically connects to the FastAPI backend at `http://127.0.0.1:8000`.
+- Click **"Load Sample Superstore"** to test immediately with the bundled benchmark dataset.
+- Type any analytical query (e.g., *"Which sub-category in Technology has the highest profit margin?"*) and watch the dynamic execution unfold.
+
+---
+
+### 3. Alternative: Streamlit App
+
+To run the classic standalone Streamlit interface:
+
+```bash
+uv run streamlit run app.py
+```
+
+Streamlit will launch locally at `http://localhost:8501`.
+
+---
+
+## ⚙️ Configuration Reference
+
+All behavior is centrally managed via [`config.yaml`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/config.yaml):
+
+```yaml
+# LLM Provider Configuration
+model:
+  name: "qwen3:4b"                    # Local model via Ollama
+  provider: "ollama"                  # Provider backend (ollama, llama.cpp)
+  base_url: "http://localhost:11434/v1"
+  temperature: 0.0                    # Deterministic greedy decoding
+  seed: 42
+  answer_narrative_enabled: true     # Grounded natural-language prose synthesis
+
+# Execution and Replanning Budgets
+budgets:
+  max_llm_calls: 15                   # Maximum LLM planning steps per run
+  max_tool_calls: 25                  # Maximum total tool operations
+  max_replans: 3                      # Limit on replan cycles
+  max_identical_retries: 2            # Prevent retry loops on unrecoverable failures
+  per_call_timeout_s: 60.0            # Timeout per individual LLM request
+
+# Dataset Ingestion Constraints
+input_limits:
+  max_file_size_mb: 50.0
+  max_rows: 100000
+  allowed_extensions:
+    - ".csv"
+    - ".xlsx"
+
+# Claim Verification Tolerances
+claim_validation:
+  rtol: 0.001                         # 0.1% relative tolerance
+  atol: 0.01                          # 0.01 absolute tolerance
+  rounding_digits: 4
+  allow_recomputation: true           # Recompute values independently for audit
+  drop_policy: "drop_finding"         # Discard invalid claims rather than hallucinating
+```
+
+---
+
+## 📊 Benchmark & Evaluation
+
+The repository includes a scientific evaluation framework comparing the **Dynamic Agent** against a **Fixed-Workflow Baseline** on a frozen test suite scored by an independent DuckDB/Python oracle (`evaluation/oracle.py`).
+
+### Verify the Frozen Manifest
+
+Ensure benchmark integrity against the frozen manifest:
+
+```bash
+uv run python evaluation/run_frozen_experiment.py --verify-only
+```
+
+### Reproduce the Evaluation
+
+Run the reference frozen experiment (3 repeats per question, 20 questions):
+
+```bash
+uv run python evaluation/run_frozen_experiment.py --mode real --repeats 3 --run-id m10-frozen-real
+```
+
+### Benchmark Results (M10 Reference Run)
+
+| Metric | Fixed Baseline | Dynamic Agent (`qwen3:4b`) | Notes |
+| :--- | :---: | :---: | :--- |
+| **Questions Evaluated** | 20 | 20 | Frozen evaluation suite on Sample Superstore |
+| **Benchmark Accuracy** | 20 / 20 | **13 / 20** | 0 timeouts; strictly verified against oracle |
+| **Recovery Suite** | — | **12 / 12 passed** | Multi-scenario failure recovery & repair harness |
+| **Failure Breakdown** | 0 | 6 incorrect, 1 answer shape | Dominated by multi-step rank edge cases |
+| **Evaluation Cost** | — | ~47.6 min wall-clock | 168 total LLM invocations |
+
+---
+
+## 📁 Repository Structure
+
+```
+data-analysis-report-generator/
+├── config.yaml                    # System configuration, budgets & tolerances
+├── pyproject.toml                 # Package definition & dependency specifications
+├── api_main.py                    # Entry point for FastAPI backend
+├── app.py                         # Entry point for Streamlit application
+│
+├── frontend/                      # Modern React 19 + Vite frontend
+│   ├── src/
+│   │   ├── App.tsx                # Main conversational application component
+│   │   ├── api.ts                 # Typed API client for FastAPI backend
+│   │   └── styles.css             # Application styling and themes
+│   └── package.json
+│
+├── src/da_agent/                  # Core package
+│   ├── agent/                     # LangGraph planning, recovery & dialogue state
+│   │   ├── graph.py               # StateGraph definition and workflow transitions
+│   │   ├── chat_plan.py           # Conversational plan generation & augmentation
+│   │   ├── narrator.py            # Evidence-grounded narrative synthesis
+│   │   ├── recovery.py            # Automated error diagnosis and recovery
+│   │   └── state.py               # Immutable agent state definitions
+│   ├── api/                       # FastAPI router, schemas & runner orchestration
+│   ├── contracts/                 # Pydantic data schemas & contracts (v0.2.0)
+│   ├── core/                      # Budgets, config loaders, chat thread & trace writer
+│   ├── data/                      # File loaders, schema profiler & dataset registry
+│   ├── tools/                     # Deterministic analytical & statistical tools
+│   ├── validation/                # Argument, result, plan, and claim validators
+│   ├── reports/                   # HTML/JSON report generators & Plotly renderers
+│   └── pipeline.py                # Public API entry points (run_agent, run_baseline)
+│
+├── evaluation/                    # Rigorous benchmarking suite
+│   ├── benchmark/                 # Frozen questions & manifest
+│   ├── oracle.py                  # Independent DuckDB oracle
+│   ├── scorer.py                  # Equivalence verification and scoring
+│   └── run_frozen_experiment.py   # Benchmark reproduction runner
+│
+├── docs/                          # Architecture guides, contracts & decision records
+│   ├── ARCHITECTURE.md            # Detailed component design & import rules
+│   ├── CONTRACTS.md               # Contract model specifications
+│   ├── DECISIONS.md               # Architecture Decision Records (ADRs)
+│   ├── PROGRESS.md                # Milestone tracking & historical session log
+│   └── M10_RESULTS.md             # Benchmark evaluation reference data
+│
+└── tests/                         # Comprehensive test suite (320 tests)
+    ├── unit/                      # Fast unit tests covering all components
+    ├── integration/               # Multi-component pipeline tests
+    └── fixtures/                  # Synthetic test tables and fixtures
+```
+
+---
+
+## 🧪 Testing & Quality
+
+Run the full automated test suite (all 320 tests pass in ~18s):
+
+```bash
+uv run pytest
+```
+
+Execute code formatting and linting checks:
+
+```bash
+uv run ruff check .
+```
+
+To run only unit tests for the agent planning engine:
+
+```bash
+uv run pytest tests/unit/agent/
+```
+
+---
+
+## 🤖 Multi-Agent Collaboration Protocol
+
+This project utilizes a structured asynchronous handoff protocol for human developers and autonomous AI assistants (Claude, Cursor, Antigravity):
+
+- **Shared Context**: [`docs/`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/docs/) serves as the persistent memory store across sessions.
+- **Rules of Engagement**: See [`AGENTS.md`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/AGENTS.md) for strict rules regarding protected files, contract updates, and import hierarchy constraints.
+- **Handoffs**: Check [`docs/HANDOFF.md`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/docs/HANDOFF.md) at the beginning and end of each session to track open decisions and continuation tasks.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  Built with ❤️ for deterministic, transparent, and verifiable AI data analysis.
+</p>
