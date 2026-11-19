@@ -113,17 +113,39 @@ Key insight: tool execution is near-instant (<0.01 s per call). The LLM is the b
 
 ---
 
-## Charts generated
+## Charts & Visualizations
 
-All charts are in `scripts/charts/`:
+All charts are saved in both `docs/assets/` and `evaluation/results/charts/` (and generated via `scripts/charts/`).
+
+### 1. Accuracy by Category
+![Accuracy by Category](assets/chart_accuracy_by_category.png)
+
+### 2. Ablation Study: Full System vs No Replanning
+![Ablation Comparison](assets/chart_ablation_comparison.png)
+
+### 3. Model Family Comparison (3B vs 4B vs 7B)
+![Model Comparison](assets/chart_model_comparison.png)
+
+### 4. Stage Time Waterfall
+![Stage Time Waterfall](assets/chart_stage_time_waterfall.png)
+
+### 5. LLM Call Distribution
+![LLM Calls Distribution](assets/chart_llm_calls_distribution.png)
+
+### 6. Tool Distribution
+![Tool Distribution](assets/chart_tool_distribution.png)
+
+### 7. Repair Attempts vs Total Time
+![Repair Impact](assets/chart_repair_impact.png)
 
 | File | Content |
 |---|---|
-| `chart_accuracy_by_category.png` | Agent vs baseline by question category |
-| `chart_stage_time_waterfall.png` | Time per question broken down by pipeline stage |
-| `chart_llm_calls_distribution.png` | LLM calls per question (red = failed) |
-| `chart_tool_distribution.png` | Which tools were called and how often |
-| `chart_repair_impact.png` | Repair attempts vs total time scatter |
-| `chart_ablation_comparison.png` | With vs without replanning per question |
-| `chart_model_comparison.png` | 3B vs 4B vs 7B on 5 spike questions |
-| `summary_table.csv` | Full per-question data table |
+| `docs/assets/chart_accuracy_by_category.png` | Agent vs baseline by question category |
+| `docs/assets/chart_stage_time_waterfall.png` | Time per question broken down by pipeline stage |
+| `docs/assets/chart_llm_calls_distribution.png` | LLM calls per question (red = failed) |
+| `docs/assets/chart_tool_distribution.png` | Which tools were called and how often |
+| `docs/assets/chart_repair_impact.png` | Repair attempts vs total time scatter |
+| `docs/assets/chart_ablation_comparison.png` | With vs without replanning per question |
+| `docs/assets/chart_model_comparison.png` | 3B vs 4B vs 7B on 5 spike questions |
+| `docs/assets/summary_table.csv` | Full per-question data table |
+
