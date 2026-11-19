@@ -31,7 +31,7 @@ from da_agent.contracts import (
 
 
 def test_contract_version() -> None:
-    assert CONTRACT_VERSION == "0.1.0"
+    assert CONTRACT_VERSION == "0.2.0"
 
 
 def test_column_profile_valid() -> None:

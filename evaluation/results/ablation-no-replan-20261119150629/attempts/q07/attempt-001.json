@@ -1,0 +1,53 @@
+{
+  "question_id": "q07",
+  "attempt": 1,
+  "run_id": "agent_eval_ablation-no-replan-20261119150629_q07_r1_fadac53c",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Indiana",
+    "Washington",
+    "Delaware"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 118.99805242591538,
+  "stage_timings": {
+    "plan_generation": 28.37947399006225,
+    "question_resolution": 0.0,
+    "plan_validation": 0.015535129001364112,
+    "tool_execution": 0.46270829997956753,
+    "result_inspection": 0.0024878160329535604,
+    "replanning": 39.37440209009219,
+    "graph_finalization": 0.004078406956978142,
+    "answer_synthesis": 50.56415704707615,
+    "tool_executions": 0.4596
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.4596
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 28.36613572598435,
+      "completed": true,
+      "model": "qwen3:4b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 39.356644114945084,
+      "completed": true,
+      "model": "qwen3:4b"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

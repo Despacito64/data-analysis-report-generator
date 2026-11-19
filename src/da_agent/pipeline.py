@@ -8,11 +8,10 @@ from uuid import uuid4
 import pandas as pd
 
 from da_agent.agent.answer import AgentResult, build_agent_result
-from da_agent.agent.narrator import apply_llm_answer_narrative, conversation_context_for_narrator
-from da_agent.reports.assembler import assemble_report
 from da_agent.agent.baseline import BaselineRun
 from da_agent.agent.baseline import run_baseline as _run_baseline
 from da_agent.agent.graph import run_agent as _run_agent
+from da_agent.agent.narrator import apply_llm_answer_narrative, conversation_context_for_narrator
 from da_agent.agent.planner import LLMClient, OllamaClient, Plan, generate_plan
 from da_agent.contracts.models import (
     AnalysisRun,
@@ -24,12 +23,13 @@ from da_agent.contracts.models import (
     Failure,
     KeyNumberCitation,
 )
-from da_agent.core.config import AppConfig, load_config
 from da_agent.core.chat_thread import ChatThread
+from da_agent.core.config import AppConfig, load_config
 from da_agent.core.follow_up import ReusedEvidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.data.loader import load_data
 from da_agent.data.profiler import compute_profile
+from da_agent.reports.assembler import assemble_report
 from da_agent.reports.delivery import finalize_run_report
 
 
@@ -189,7 +189,9 @@ def run_agent(
         trace_writer=trace_writer,
         max_replans=max_replans,
         max_repairs=max_repairs,
-        reused_evidence=None if (dialogue is not None or chat_thread is not None) else reused_evidence,
+        reused_evidence=None
+        if (dialogue is not None or chat_thread is not None)
+        else reused_evidence,
         prior_run_dir=None if (dialogue is not None or chat_thread is not None) else prior_run_dir,
         dialogue=dialogue if chat_thread is None else None,
         chat_thread=chat_thread,

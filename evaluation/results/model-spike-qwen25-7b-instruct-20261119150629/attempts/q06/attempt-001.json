@@ -1,0 +1,50 @@
+{
+  "question_id": "q06",
+  "attempt": 1,
+  "run_id": "agent_eval_model-spike-qwen25-7b-instruct-20261119150629_q06_r1_db8728fa",
+  "status": "timeout",
+  "accuracy": null,
+  "answer": null,
+  "failure_reason": "question_timeout",
+  "failure_stage": "answer_synthesis",
+  "failure_elapsed_s": 202.96221272507682,
+  "total_time_s": 202.96973139804322,
+  "stage_timings": {
+    "plan_generation": 56.057002151035704,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012550196959637105,
+    "tool_execution": 0.5991077159997076,
+    "result_inspection": 0.0028030710527673364,
+    "replanning": 60.08036397700198,
+    "graph_finalization": 0.012049308978021145,
+    "answer_synthesis": 86.18403672694694,
+    "tool_executions": 0.596
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.596
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 56.041320635937154,
+      "completed": true,
+      "model": "qwen2.5:7b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 60.06168747402262,
+      "completed": false,
+      "error": "TimeoutError: timed out",
+      "model": "qwen2.5:7b-instruct"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

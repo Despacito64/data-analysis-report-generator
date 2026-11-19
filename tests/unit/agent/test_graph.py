@@ -149,7 +149,7 @@ def test_graph_complete_single_step():
         )
 
     assert result["status"] == "complete"
-    assert len(result["evidence_ids"]) == 1
+    assert len(result["evidence_ids"]) >= 1
     assert result["final_answer"]
     assert not result["failures"]
     assert not result["revisions"]
@@ -213,18 +213,18 @@ def test_graph_no_ready_task_plan_rejected():
         for event in events
         if event.event_type == "graph_node" and event.payload["phase"] == "start"
     ]
-    assert node_sequence == ["resolve", "plan", "validate_repair", "finalize"]
+    assert node_sequence == ["plan", "validate_repair", "finalize"]
     assert len(client.call_history) == 2
 
 
-def test_graph_declined_question_finalizes_without_llm_call():
-    """Out-of-scope questions take the decline branch without contacting the model."""
+def test_graph_forecast_question_uses_planner_not_resolver():
+    """Without a resolver gate, out-of-scope text still reaches the planner (D-049)."""
     df, profile = _get_dataset()
     client = MockLLMClient(default_response=VALID_FILTER_PLAN)
 
     with tempfile.TemporaryDirectory() as tmp:
         writer = RunTraceWriter(run_id="test_declined", base_dir=tmp)
-        result = run_agent(
+        run_agent(
             question="Forecast next year's sales",
             df=df,
             profile=profile,
@@ -233,16 +233,13 @@ def test_graph_declined_question_finalizes_without_llm_call():
         )
         events = writer.read_events()
 
-    assert result["status"] == "failed"
-    assert result["resolved"] is not None
-    assert not result["resolved"].answerable
-    assert client.call_history == []
+    assert client.call_history
     node_sequence = [
         event.payload["node"]
         for event in events
         if event.event_type == "graph_node" and event.payload["phase"] == "start"
     ]
-    assert node_sequence == ["resolve", "finalize"]
+    assert node_sequence[0] == "plan"
 
 
 def test_graph_replan_on_execution_failure():
@@ -276,7 +273,6 @@ def test_graph_replan_on_execution_failure():
         if event.event_type == "graph_node" and event.payload["phase"] == "start"
     ]
     assert node_sequence == [
-        "resolve",
         "plan",
         "validate_repair",
         "execute",
@@ -393,7 +389,7 @@ def test_graph_trace_events_written():
         events = writer.read_events()
         event_types = {e.event_type for e in events}
 
-    assert "resolved_question" in event_types
+    assert "planning_context" in event_types
     assert "plan" in event_types
     assert "tool_call" in event_types
     assert "evidence" in event_types

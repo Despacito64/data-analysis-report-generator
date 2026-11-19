@@ -448,3 +448,34 @@ Decision: Add `reports/presenters.py` to build human `Finding` rows from `group_
 Reason: M8 HTML was audit-only; users need category labels without weakening claim validation (D-003).
 Consequences: Extend presenters for `rank`, `period_compare` later. `CONTRACT_VERSION` stays `0.1.0` (additive `highlights`, `answer_text` on contracts).
 
+## D-046: Conversational follow-ups use symbolic dialogue, not reused evidence
+Status: Accepted
+Date: 2026-11-18   Made by: Cursor
+Decision: Add `DialogueTurn` and `DialogueState` to the shared contracts and set `CONTRACT_VERSION` to `0.2.0`. A follow-up may carry prior question text plus resolved metric, grouping, filters, and period. It must not copy `EvidenceRecord`s or tool numbers into the next run. The React API stops accepting `reuse_evidence_ids`. `seed_reused_evidence` remains for the Streamlit path and existing M9 tests. Frozen question files, oracle, and dataset hashes stay as in the M10 manifest; only the recorded `contract_version` in `evaluation/benchmark/freeze_manifest.json` moves to `0.2.0` so verification matches the new constant. Empty dialogue leaves one-shot `run_agent` behavior unchanged.
+Reason: The owner asked for a conversational analysis agent that recomputes each turn and approved this memory shape.
+Consequences: New evidence records stamp `result_schema_version` `0.2.0`. A later decision can remove Streamlit evidence pre-seeding once that UI follows the same dialogue rules.
+
+## D-047: Chat UI uses thread plus model-planned tools; eval keeps resolver-first path
+Status: Accepted
+Date: 2026-11-19   Made by: Cursor
+Decision: For the React conversational UI, stop using `resolve_question` as a hard gate on follow-up turns. Pass a bounded `ChatThread` (user/assistant text, optional label hints, no prior amounts) into the existing planner and `validate_plan` / `validate_task_args` stack. Frozen eval and baseline continue one-shot `resolve_question` → plan with no thread. Deterministic `suggest_filters_from_message` may appear only as planner hints, not as the sole interpreter.
+Reason: Live testing and industry patterns show regex resolvers cannot match competitor follow-up UX; project rules still forbid arbitrary code and require evidence-backed numbers.
+Consequences: New session state and tests per the design doc; no M10 rescore until owner reruns frozen experiment after chat path is stable. Streamlit unchanged until a follow-on decision.
+
+## D-048: Second LLM call for grounded answer prose
+Status: Accepted
+Date: 2026-11-19   Made by: Cursor
+Decision: After tools complete and presenter findings exist, `run_agent` may call the local model once more (`agent/narrator.py`) with only validated claim lines and optional chat thread context (no raw cells as instructions). `validate_narrative_grounding` must pass or the templated `answer_text` is kept. Toggle: `model.answer_narrative_enabled` in `config.yaml` (default true). Trace event: `answer_narrative_llm`.
+Reason: Owner asked for natural-language replies without inventing numbers.
+Consequences: +1 LLM call per successful answered run; eval LLM budgets should account for narrative when enabled.
+
+## D-050: Empirical ablation and model comparison experiments
+Status: Accepted
+Date: 2026-11-19   Made by: Antigravity
+Decision: Conducted two sets of empirical experiments beyond the M10 reference run:
+1. Dynamic replanning ablation: Ran all 20 frozen questions with `max_repair_attempts=0`. Dynamic replanning directly contributed +1 correct answer (13/20 vs 12/20, resolving question q02 via replanning).
+2. Model parameter and family comparison: Benchmarked `qwen3:4b` vs `qwen2.5:3b-instruct` and `qwen2.5:7b-instruct` across 5 representative task categories (`q03`, `q06`, `q09`, `q13`, `q17`). `qwen3:4b` achieved 4/5 (80%), `qwen2.5:7b-instruct` achieved 2/5 (40%), and `qwen2.5:3b-instruct` achieved 0/5 (0%, failing JSON repair limits).
+All charts generated and saved under `scripts/charts/` using matplotlib. Summary documented in `docs/EXPERIMENTS_SUMMARY.md`.
+Reason: Strengthen evaluation rigor for project review and isolate the contribution of dynamic replanning.
+Consequences: Evaluation artifacts and charts are reproducible via `scripts/generate_metrics_charts.py` and `scripts/run_experiments.sh`.
+

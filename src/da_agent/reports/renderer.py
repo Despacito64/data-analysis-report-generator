@@ -34,12 +34,12 @@ def _compact_table_html(finding: Finding) -> str:
         reverse=True,
     ):
         group = html.escape(claim.label.split(" — ")[0])
-        val = html.escape(f"{float(claim.value):,.2f}" if isinstance(claim.value, (int, float)) else str(claim.value))
-        link = (
-            '<a href="#evidence-'
-            + html.escape(claim.evidence_id)
-            + '">source</a>'
+        val = html.escape(
+            f"{float(claim.value):,.2f}"
+            if isinstance(claim.value, (int, float))
+            else str(claim.value)
         )
+        link = '<a href="#evidence-' + html.escape(claim.evidence_id) + '">source</a>'
         rows.append(f"<tr><td>{group}</td><td>{val}</td><td>{link}</td></tr>")
     return (
         "<h2>"
@@ -61,7 +61,11 @@ def render_report_html(report: Report, charts: list[tuple[str, Figure]] | None =
     }
 
     compact_finding = next(
-        (f for f in report.findings if len(f.numeric_claims) >= 2 and f.statement.endswith("by group")),
+        (
+            f
+            for f in report.findings
+            if len(f.numeric_claims) >= 2 and f.statement.endswith("by group")
+        ),
         None,
     )
 
@@ -110,9 +114,7 @@ def render_report_html(report: Report, charts: list[tuple[str, Figure]] | None =
         dropped += "<li>…</li>"
 
     audit_sections = (
-        "<details><summary>Technical evidence (audit)</summary><ul>"
-        + appendix
-        + "</ul></details>"
+        "<details><summary>Technical evidence (audit)</summary><ul>" + appendix + "</ul></details>"
     )
     if dropped:
         audit_sections += (

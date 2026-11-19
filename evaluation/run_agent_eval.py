@@ -171,6 +171,9 @@ class EvaluationTraceWriter(RunTraceWriter):
                 started = self.stage_started_at.pop(node, now)
                 duration = max(0.0, now - started)
                 self.stage_timings[stage] = self.stage_timings.get(stage, 0.0) + duration
+                if node == "plan" and "question_resolution" not in self.stage_timings:
+                    # D-049: resolver node removed; keep legacy timing key at zero.
+                    self.stage_timings["question_resolution"] = 0.0
                 event_payload["duration_s"] = duration
                 event_payload["elapsed_s"] = self.elapsed_s
                 if node == "finalize":

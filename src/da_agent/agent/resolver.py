@@ -1,7 +1,7 @@
 """Question resolution and ambiguity handling for natural-language queries.
 
-Layer 6 module: translates natural language and DatasetProfile into a typed ResolvedQuestion.
-Rejects unanswerable or out-of-scope questions deterministically without calling LLMs.
+Deprecated on the agent path (D-049): LangGraph no longer calls `resolve_question`.
+Kept for unit tests and documentation. Live runs plan via thread + LLM + validators.
 """
 
 from __future__ import annotations
@@ -11,6 +11,8 @@ import re
 from da_agent.contracts.models import (
     AmbiguityDecision,
     DatasetProfile,
+    DialogueState,
+    DialogueTurn,
     FilterSpec,
     PeriodSpec,
     ResolvedQuestion,
@@ -129,9 +131,62 @@ def _extract_dates(text: str) -> list[str]:
     return re.findall(r"\b(\d{4}-\d{2}-\d{2})\b", text)
 
 
-def resolve_question(question: str, profile: DatasetProfile) -> ResolvedQuestion:
+_REFINEMENT = re.compile(
+    r"\b(that|those|this|same|instead|break|breakdown|now by|what about|how about)\b",
+    re.IGNORECASE,
+)
+
+_CHITCHAT = re.compile(
+    r"^(thanks|thank you|hello|hi|hey|help|what can you do)\b",
+    re.IGNORECASE,
+)
+
+
+def _latest_answerable(dialogue: DialogueState | None) -> DialogueTurn | None:
+    if dialogue is None:
+        return None
+    for turn in reversed(dialogue.turns):
+        if turn.answerable:
+            return turn
+    return None
+
+
+def _looks_like_refinement(text: str, fresh: ResolvedQuestion) -> bool:
+    """True when the utterance edits the previous analysis instead of starting a new one."""
+    if _REFINEMENT.search(text):
+        return True
+    words = re.findall(r"\b\w+\b", text)
+    return fresh.metric is None and bool(fresh.grouping) and len(words) <= 8
+
+
+def _merge_with_prior(fresh: ResolvedQuestion, prior: DialogueTurn) -> ResolvedQuestion:
+    """Fill missing symbolic fields from the previous turn. Never copies tool results."""
+    return ResolvedQuestion(
+        question_text=fresh.question_text,
+        intent=fresh.intent if fresh.answerable else prior.intent,
+        metric=fresh.metric or prior.metric,
+        period=fresh.period or prior.period,
+        grouping=list(fresh.grouping) if fresh.grouping else list(prior.grouping),
+        filters=list(fresh.filters) if fresh.filters else list(prior.filters),
+        ambiguity_decisions=list(fresh.ambiguity_decisions),
+        answerable=True,
+    )
+
+
+def resolve_question(
+    question: str,
+    profile: DatasetProfile,
+    dialogue: DialogueState | None = None,
+) -> ResolvedQuestion:
     """Resolve natural-language question against a DatasetProfile into a ResolvedQuestion."""
     q_stripped = question.strip()
+    if _CHITCHAT.search(q_stripped):
+        return ResolvedQuestion(
+            question_text=q_stripped,
+            intent="unanswerable",
+            answerable=False,
+            decline_reason="This is not a data question. Ask for a metric, grouping, or time period.",
+        )
 
     # 1. Check out-of-scope analytical requests
     for pattern, reason in OUT_OF_SCOPE_PATTERNS:
@@ -174,12 +229,20 @@ def resolve_question(question: str, profile: DatasetProfile) -> ResolvedQuestion
     significant_words = [w for w in words if w not in stop_words]
     mapped_columns = map_columns(q_stripped, profile)
 
+    def _finish(fresh: ResolvedQuestion) -> ResolvedQuestion:
+        prior = _latest_answerable(dialogue)
+        if prior is None or not _looks_like_refinement(q_stripped, fresh):
+            return fresh
+        return _merge_with_prior(fresh, prior)
+
     if len(significant_words) < 2 and not mapped_columns:
-        return ResolvedQuestion(
-            question_text=q_stripped,
-            intent="unanswerable",
-            answerable=False,
-            decline_reason="The question is too ambiguous or vague to determine an analytical objective.",
+        return _finish(
+            ResolvedQuestion(
+                question_text=q_stripped,
+                intent="unanswerable",
+                answerable=False,
+                decline_reason="The question is too ambiguous or vague to determine an analytical objective.",
+            )
         )
 
     # 4. Detect Intent
@@ -256,11 +319,13 @@ def resolve_question(question: str, profile: DatasetProfile) -> ResolvedQuestion
         metric = "count()"
     else:
         if not mapped_columns:
-            return ResolvedQuestion(
-                question_text=q_stripped,
-                intent="unanswerable",
-                answerable=False,
-                decline_reason="Could not identify any valid dataset column or metric in the question.",
+            return _finish(
+                ResolvedQuestion(
+                    question_text=q_stripped,
+                    intent="unanswerable",
+                    answerable=False,
+                    decline_reason="Could not identify any valid dataset column or metric in the question.",
+                )
             )
 
     # 6. Extract Grouping
@@ -327,13 +392,15 @@ def resolve_question(question: str, profile: DatasetProfile) -> ResolvedQuestion
             grain="month" if "month" in q_lower else "year",
         )
 
-    return ResolvedQuestion(
-        question_text=q_stripped,
-        intent=intent,
-        metric=metric,
-        period=period,
-        grouping=grouping,
-        filters=filters,
-        ambiguity_decisions=ambiguity_decisions,
-        answerable=True,
+    return _finish(
+        ResolvedQuestion(
+            question_text=q_stripped,
+            intent=intent,
+            metric=metric,
+            period=period,
+            grouping=grouping,
+            filters=filters,
+            ambiguity_decisions=ambiguity_decisions,
+            answerable=True,
+        )
     )

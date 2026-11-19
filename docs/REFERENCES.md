@@ -92,6 +92,10 @@ Reviewed in Cursor session 2026-11-17 when shaping the **M8 E2E report pipeline*
 | **Leonxlnx/taste-skill** (`design-taste-frontend` 2.5.1) | Cursor Agent Skill | `.agents/skills/design-taste-frontend/` (untracked), `skills-lock.json`, **HANDOFF** M9 polish | Optional anti-slop UI guidance for Streamlit/marketing pages | **skills.sh** reported elevated third-party risk; not vendored in git until owner approves |
 | **skills CLI** (`skills@1.9.0` via npx) | Installer | `npx skills add` | Project-local skill install | No global `skills` binary |
 | **Plotly White** template | Visual default | `tools/charts.py` | Readable default charts | Brand-neutral demo only |
+| [shadcn AI Elements](https://ui.shadcn.com/docs/ai-elements) | UI pattern | `frontend/` header + activity list | Agent chats keep a **model badge** separate from the prompt, and show plan/tool steps as a trace | Pattern only; no component code copied |
+| [fal Agent shell](https://fal.ai/docs/documentation/agent/chats/interface) | UI pattern | Context rail vs main answer | Sidebar holds context; the center holds the task and the result | Layout idea only |
+| [Intuidy Agent Office](https://docs.intuidy.com/docs/agents/agent-office) | UI pattern | Activity list | Tool calls are a visible step list, not hidden until the answer | Docs only |
+| [Qark model bar](https://qarkai.app/docs/getting-started/interface-tour/) | UI pattern | Top model badge | The model stays visible above the composer in every mode | Docs only |
 
 ---
 
@@ -117,6 +121,21 @@ Reviewed in Cursor session 2026-11-17 when shaping the **M8 E2E report pipeline*
 | `https://github.com/Despacito64/data-analysis-report-generator.git` | **D-014** | Intended remote; push deferred |
 | `https://skills.sh/Leonxlnx/taste-skill` | **HANDOFF**, taste-skill install | Skill catalog and security summary |
 | `https://github.com/Leonxlnx/taste-skill.git` | `skills-lock.json` | Skill source commit `f6b76575…` |
+
+---
+
+## React demo UI (layout inspiration, not vendored)
+
+Patterns for `frontend/` shell (2026-11-18): full-width **top chrome** above a **two-column body**, bordered **side rail** for context, **segmented control** for data source, **model pill** in the header. Reviewed for agent-product UX only; no copied CSS or components.
+
+| Source | Pattern borrowed |
+| --- | --- |
+| [fal.ai](https://fal.ai) agent / workflow shells (public marketing & docs UI) | Persistent top bar; task canvas below |
+| Intuidy **Agent Office** (product screenshots) | Left context rail + bordered panels |
+| [shadcn/ui AI Elements](https://ui.shadcn.com/docs/components) (docs) | Compact model / status chips |
+| Qark-style **model bar** (internal review notes in Cursor session) | Labeled model readout separate from content |
+
+**Transcript anchor:** user request to move heading above sidebar and improve rail buttons/borders ([cursor chat](01b82234-284a-44ce-8f51-603e65eb7c17)).
 
 ---
 

@@ -18,7 +18,7 @@ def test_build_freeze_manifest_matches_registered_dataset() -> None:
     manifest = build_freeze_manifest()
     assert manifest["dataset"]["sha256"] == manifest["dataset"]["registered_sha256"]
     assert manifest["benchmark"]["question_count"] == 20
-    assert manifest["contract_version"] == "0.1.0"
+    assert manifest["contract_version"] == "0.2.0"
 
 
 def test_verify_detects_stale_manifest_hash(tmp_path: Path) -> None:

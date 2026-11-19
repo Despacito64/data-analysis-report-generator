@@ -82,7 +82,9 @@ def build_freeze_manifest(
     }
 
 
-def write_freeze_manifest(path: Path, manifest: dict[str, Any] | None = None, **build_kwargs: Any) -> Path:
+def write_freeze_manifest(
+    path: Path, manifest: dict[str, Any] | None = None, **build_kwargs: Any
+) -> Path:
     """Write manifest JSON to disk."""
     payload = manifest or build_freeze_manifest(**build_kwargs)
     path.parent.mkdir(parents=True, exist_ok=True)

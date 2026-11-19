@@ -41,9 +41,7 @@ _FILTER_PLAN = json.dumps(
             {
                 "id": "t1",
                 "tool": "filter",
-                "args": {
-                    "conditions": [{"column": "Region", "operator": "eq", "value": "East"}]
-                },
+                "args": {"conditions": [{"column": "Region", "operator": "eq", "value": "East"}]},
                 "depends_on": [],
                 "rationale": "Filter East region for recovery scenario",
             }
@@ -59,9 +57,7 @@ def _transient_failure_result() -> PlanExecutionResult:
             TaskExecutionRecord(
                 task_id="t1",
                 tool="filter",
-                args={
-                    "conditions": [{"column": "Region", "operator": "eq", "value": "East"}]
-                },
+                args={"conditions": [{"column": "Region", "operator": "eq", "value": "East"}]},
                 status=TaskStatus.FAILED,
                 error="temporary connection reset",
             )

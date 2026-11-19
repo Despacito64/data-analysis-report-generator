@@ -16,7 +16,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from da_agent.agent.chat_context import build_chat_user_prompt, filter_hints_for_turn
 from da_agent.agent.chat_plan import augment_chat_plan
-from da_agent.core.chat_thread import ChatThread, effective_planning_thread
 from da_agent.contracts.models import (
     DatasetProfile,
     DialogueState,
@@ -28,6 +27,7 @@ from da_agent.contracts.models import (
     Task,
     ToolSpec,
 )
+from da_agent.core.chat_thread import ChatThread, effective_planning_thread
 from da_agent.core.config import load_config
 from da_agent.core.trace import RunTraceWriter
 from da_agent.tools.registry import DEFAULT_REGISTRY, export_tool_specs
@@ -543,7 +543,12 @@ def generate_plan_for_chat(
         if trace_writer:
             trace_writer.log_event(
                 "planner_llm_call",
-                {"attempt": attempt, "raw_output": content, "payload": raw_payload, "chat_mode": True},
+                {
+                    "attempt": attempt,
+                    "raw_output": content,
+                    "payload": raw_payload,
+                    "chat_mode": True,
+                },
             )
         parsed_plan: Plan | None = None
         try:
@@ -587,7 +592,9 @@ def generate_plan_for_chat(
                         continue
                     parsed_plan = augmented
                     if trace_writer:
-                        trace_writer.log_event("chat_plan_augmented", {"task_count": len(parsed_plan.tasks)})
+                        trace_writer.log_event(
+                            "chat_plan_augmented", {"task_count": len(parsed_plan.tasks)}
+                        )
                 if trace_writer:
                     trace_writer.log_plan(plan_version=1, tasks=parsed_plan.tasks)
                 return parsed_plan, None

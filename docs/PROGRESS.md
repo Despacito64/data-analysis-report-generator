@@ -100,3 +100,7 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-17 | Cursor | M9 | Streamlit thread fix, sheets import shim, follow-up executor seed (D-043), rank/period/trend presenters | uv run pytest -q: 293 passed | 5acc4f1..9afc25d
 2026-11-17 | Cursor | M10 | freeze manifest, run_frozen_experiment, REPRODUCTION.md (D-044) | uv run pytest -q: 298 passed | 1b9853e
 2026-11-17 | Cursor | M10 | real Ollama 3×20 run m10-frozen-real-20261117, M10_RESULTS.md (D-045) | run_frozen_experiment ~48min; 13/20 agent | 438eeab
+2026-11-18 | Cursor | React API | symbolic dialogue follow-ups, no evidence forwarding (D-046, CONTRACT_VERSION 0.2.0) | uv run pytest -q: 307 passed | pending
+2026-11-19 | Cursor | React API | chat interpreter path ChatThread + generate_plan_for_chat (D-047); UI fixes | uv run pytest -q: 312 passed | pending
+2026-11-19 | Cursor | M6/M9 | D-048 second LLM narrative + filter drill-down augment; freeze config hash | uv run pytest -q: 318 passed | pending
+2026-11-19 | Antigravity | M10/Eval | No-replan ablation (12/20 vs 13/20), model spike (3b vs 4b vs 7b), metrics chart generator (D-050) | uv run pytest -q: 320 passed; ruff clean | pending
