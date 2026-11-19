@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Despacito64/data-analysis-report-generator/tree/shivam"><img src="https://img.shields.io/badge/branch-shivam-blueviolet?style=for-the-badge&logo=git" alt="Git Branch"></a>
+  <img src="https://img.shields.io/badge/version-0.1.0-blue?style=for-the-badge" alt="Version 0.1.0">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19"></a>
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
@@ -233,12 +233,11 @@ ollama pull qwen3:4b
 
 ### 1. Backend Setup
 
-Clone the repository and check out the `shivam` branch:
+Clone the repository:
 
 ```bash
 git clone https://github.com/Despacito64/data-analysis-report-generator.git
 cd data-analysis-report-generator
-git checkout shivam
 ```
 
 Install backend dependencies and sync the virtual environment using `uv`:
@@ -289,7 +288,7 @@ Streamlit will launch locally at `http://localhost:8501`.
 
 ## ⚙️ Configuration Reference
 
-All behavior is centrally managed via [`config.yaml`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/config.yaml):
+All behavior is centrally managed via [`config.yaml`](config.yaml):
 
 ```yaml
 # LLM Provider Configuration
@@ -439,9 +438,9 @@ uv run pytest tests/unit/agent/
 
 This project utilizes a structured asynchronous handoff protocol for human developers and autonomous AI assistants (Claude, Cursor, Antigravity):
 
-- **Shared Context**: [`docs/`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/docs/) serves as the persistent memory store across sessions.
-- **Rules of Engagement**: See [`AGENTS.md`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/AGENTS.md) for strict rules regarding protected files, contract updates, and import hierarchy constraints.
-- **Handoffs**: Check [`docs/HANDOFF.md`](file:///home/shivam/ubuntu-sandbox/gitclones/data-analysis-report-generator/docs/HANDOFF.md) at the beginning and end of each session to track open decisions and continuation tasks.
+- **Shared Context**: [`docs/`](docs/) serves as the persistent memory store across sessions.
+- **Rules of Engagement**: See [`AGENTS.md`](AGENTS.md) for strict rules regarding protected files, contract updates, and import hierarchy constraints.
+- **Handoffs**: Check [`docs/HANDOFF.md`](docs/HANDOFF.md) at the beginning and end of each session to track open decisions and continuation tasks.
 
 ---
 
