@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue?style=for-the-badge" alt="Version 0.1.0">
+  <img src="https://img.shields.io/badge/version-0.2.0-blue?style=for-the-badge" alt="Version 0.2.0">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19"></a>
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
@@ -347,15 +347,30 @@ Run the reference frozen experiment (3 repeats per question, 20 questions):
 uv run python evaluation/run_frozen_experiment.py --mode real --repeats 3 --run-id m10-frozen-real
 ```
 
-### Benchmark Results (M10 Reference Run)
+### Benchmark Results & Ablation Studies
 
-| Metric | Fixed Baseline | Dynamic Agent (`qwen3:4b`) | Notes |
+| Experiment Variant | Model | Accuracy | Key Takeaway |
 | :--- | :---: | :---: | :--- |
-| **Questions Evaluated** | 20 | 20 | Frozen evaluation suite on Sample Superstore |
-| **Benchmark Accuracy** | 20 / 20 | **13 / 20** | 0 timeouts; strictly verified against oracle |
-| **Recovery Suite** | — | **12 / 12 passed** | Multi-scenario failure recovery & repair harness |
-| **Failure Breakdown** | 0 | 6 incorrect, 1 answer shape | Dominated by multi-step rank edge cases |
-| **Evaluation Cost** | — | ~47.6 min wall-clock | 168 total LLM invocations |
+| **Dynamic Agent** | `qwen3:4b` | **13 / 20 (65%)** | Reference benchmark; 0 timeouts across 3× repeats |
+| **Ablation: No Replanning** | `qwen3:4b` | **12 / 20 (60%)** | Removing dynamic replanning degrades accuracy (q02 fails) |
+| **Model Spike: 7B** | `qwen2.5:7b-instruct` | **2 / 5 (40%)** | Tested on 5 category representative questions |
+| **Model Spike: 3B** | `qwen2.5:3b-instruct` | **0 / 5 (0%)** | Hits repair limits on nested JSON schema validation |
+| **Fixed Baseline** | Templates | 20 / 20 (100%) | Template ceiling (hand-matched to question shapes at design time) |
+| **Adversarial Recovery** | — | **12 / 12 passed** | Controlled-failure recovery suite passes completely |
+
+<p align="center">
+  <img src="docs/assets/chart_accuracy_by_category.png" alt="Accuracy by Category" width="85%">
+</p>
+
+> For complete stage-time waterfalls, repair distributions, and per-question logs, see [**`docs/EXPERIMENTS_SUMMARY.md`**](docs/EXPERIMENTS_SUMMARY.md).
+
+### Generate Metrics Charts
+
+To re-render all visual charts into `docs/assets/` and `scripts/charts/`:
+
+```bash
+uv run python scripts/generate_metrics_charts.py
+```
 
 ---
 
@@ -397,10 +412,16 @@ data-analysis-report-generator/
 │   ├── scorer.py                  # Equivalence verification and scoring
 │   └── run_frozen_experiment.py   # Benchmark reproduction runner
 │
+├── scripts/                       # Experiment scripts, presentation builder & chart tools
+│   ├── generate_metrics_charts.py # Matplotlib visual chart generator
+│   ├── run_experiments.sh         # Reproducible ablation and model spike runner
+│   └── build_review_ppt.py        # Technical slide deck generator
+│
 ├── docs/                          # Architecture guides, contracts & decision records
 │   ├── ARCHITECTURE.md            # Detailed component design & import rules
 │   ├── CONTRACTS.md               # Contract model specifications
 │   ├── DECISIONS.md               # Architecture Decision Records (ADRs)
+│   ├── EXPERIMENTS_SUMMARY.md     # Full empirical results, ablations & model spikes
 │   ├── PROGRESS.md                # Milestone tracking & historical session log
 │   └── M10_RESULTS.md             # Benchmark evaluation reference data
 │
