@@ -14,9 +14,12 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from da_agent.agent.resolver import resolve_question
+from da_agent.agent.chat_context import build_chat_user_prompt, filter_hints_for_turn
+from da_agent.agent.chat_plan import augment_chat_plan
+from da_agent.core.chat_thread import ChatThread, effective_planning_thread
 from da_agent.contracts.models import (
     DatasetProfile,
+    DialogueState,
     Failure,
     FailureClass,
     PlanRevision,
@@ -334,26 +337,35 @@ def generate_plan(
     trace_writer: RunTraceWriter | None = None,
     max_steps: int = 5,
     max_repairs: int = 1,
+    chat_thread: ChatThread | None = None,
+    dialogue: DialogueState | None = None,
 ) -> tuple[Plan | None, Failure | None]:
-    """Generate and validate an analytical execution plan with bounded repair."""
-    # 1. Question resolution
-    if isinstance(question, str):
-        resolved = resolve_question(question, profile)
-    else:
-        resolved = question
+    """Generate and validate a plan via the thread-based planner (no resolver gate)."""
+    q = question.question_text if isinstance(question, ResolvedQuestion) else question
+    thread = effective_planning_thread(q, chat_thread=chat_thread, dialogue=dialogue)
+    return generate_plan_for_chat(
+        q,
+        profile,
+        thread,
+        tool_specs=tool_specs,
+        client=client,
+        trace_writer=trace_writer,
+        max_steps=max_steps,
+        max_repairs=max_repairs,
+    )
 
-    if not resolved.answerable:
-        failure = Failure(
-            failure_class=FailureClass.INVALID_ARGS,
-            recoverable=False,
-            message=resolved.decline_reason or "Question is unanswerable",
-            context={"question": resolved.question_text},
-        )
-        if trace_writer:
-            trace_writer.log_failure(failure)
-        return None, failure
 
-    # 2. Setup tools and client
+def _generate_plan_from_resolved_legacy(
+    resolved: ResolvedQuestion,
+    profile: DatasetProfile,
+    *,
+    tool_specs: list[ToolSpec] | None = None,
+    client: LLMClient | None = None,
+    trace_writer: RunTraceWriter | None = None,
+    max_steps: int = 5,
+    max_repairs: int = 1,
+) -> tuple[Plan | None, Failure | None]:
+    """Legacy resolved-fields prompt path (replan helpers only)."""
     if tool_specs is None:
         tool_specs = export_tool_specs(DEFAULT_REGISTRY)
 
@@ -380,7 +392,6 @@ def generate_plan(
         {"role": "user", "content": user_prompt},
     ]
 
-    # 3. Planning & Repair Loop
     last_failure: Failure | None = None
 
     for attempt in range(max_repairs + 1):
@@ -475,6 +486,146 @@ def generate_plan(
     if trace_writer and last_failure:
         trace_writer.log_failure(last_failure)
 
+    return None, last_failure
+
+
+def generate_plan_for_chat(
+    question: str,
+    profile: DatasetProfile,
+    chat_thread: ChatThread,
+    *,
+    tool_specs: list[ToolSpec] | None = None,
+    client: LLMClient | None = None,
+    trace_writer: RunTraceWriter | None = None,
+    max_steps: int = 5,
+    max_repairs: int = 1,
+) -> tuple[Plan | None, Failure | None]:
+    """Plan from conversation thread without a resolver gate (chat path, D-047)."""
+    if tool_specs is None:
+        tool_specs = export_tool_specs(DEFAULT_REGISTRY)
+    tool_args_models = {
+        name: DEFAULT_REGISTRY.get(name).args_model
+        for name in DEFAULT_REGISTRY.list_tools()
+        if DEFAULT_REGISTRY.get(name) is not None
+    }
+    if client is None:
+        config = load_config()
+        client = OllamaClient(
+            base_url=config.model.base_url,
+            model=config.model.name,
+            temperature=config.model.temperature,
+            seed=config.model.seed,
+        )
+    hints = filter_hints_for_turn(question, profile, chat_thread)
+    system_prompt = build_system_prompt(profile, tool_specs, max_steps=max_steps)
+    user_prompt = build_chat_user_prompt(question, profile, chat_thread, hints)
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    last_failure: Failure | None = None
+    for attempt in range(max_repairs + 1):
+        try:
+            content, raw_payload = client.chat(
+                messages,
+                schema=PlanOutput.model_json_schema(),
+            )
+        except (urllib.error.URLError, TimeoutError, ConnectionError, RuntimeError, OSError) as exc:
+            last_failure = Failure(
+                failure_class=FailureClass.TRANSIENT,
+                recoverable=True,
+                message=f"LLM inference error: {exc}",
+                context={"attempt": attempt},
+            )
+            if trace_writer:
+                trace_writer.log_failure(last_failure)
+            return None, last_failure
+        if trace_writer:
+            trace_writer.log_event(
+                "planner_llm_call",
+                {"attempt": attempt, "raw_output": content, "payload": raw_payload, "chat_mode": True},
+            )
+        parsed_plan: Plan | None = None
+        try:
+            cleaned = _strip_json_fences(content)
+            output_obj = PlanOutput.model_validate_json(cleaned)
+            parsed_plan = Plan(plan_version=1, tasks=output_obj.tasks)
+        except (ValidationError, json.JSONDecodeError) as exc:
+            last_failure = Failure(
+                failure_class=FailureClass.SCHEMA_VIOLATION,
+                recoverable=True,
+                message=f"Plan schema or JSON validation failed: {exc}",
+                context={"attempt": attempt, "raw_content": content},
+            )
+        validation_errors: list[Failure] = []
+        if parsed_plan is not None:
+            validation_errors = validate_plan(
+                parsed_plan,
+                profile,
+                tool_specs=tool_specs,
+                tool_args_models=tool_args_models,
+                max_steps=max_steps,
+            )
+            if not validation_errors:
+                augmented = augment_chat_plan(
+                    parsed_plan,
+                    profile=profile,
+                    thread=chat_thread,
+                    question=question,
+                    filter_hints=hints,
+                )
+                if augmented is not parsed_plan:
+                    validation_errors = validate_plan(
+                        augmented,
+                        profile,
+                        tool_specs=tool_specs,
+                        tool_args_models=tool_args_models,
+                        max_steps=max_steps,
+                    )
+                    if validation_errors:
+                        last_failure = validation_errors[0]
+                        continue
+                    parsed_plan = augmented
+                    if trace_writer:
+                        trace_writer.log_event("chat_plan_augmented", {"task_count": len(parsed_plan.tasks)})
+                if trace_writer:
+                    trace_writer.log_plan(plan_version=1, tasks=parsed_plan.tasks)
+                return parsed_plan, None
+            last_failure = validation_errors[0]
+        if trace_writer:
+            trace_writer.log_event(
+                "planner_validation_failure",
+                {
+                    "attempt": attempt,
+                    "chat_mode": True,
+                    "errors": (
+                        [e.model_dump(mode="json") for e in validation_errors]
+                        if validation_errors
+                        else [last_failure.model_dump(mode="json")]
+                        if last_failure
+                        else []
+                    ),
+                },
+            )
+        if attempt < max_repairs:
+            error_bullets = "\n".join(
+                f"- {e.message}"
+                for e in (validation_errors or ([last_failure] if last_failure else []))
+            )
+            repair_prompt = (
+                f"The previous plan failed validation with the following errors:\n"
+                f"{error_bullets}\n\n"
+                "Please fix these errors and return a corrected plan following the exact JSON schema."
+            )
+            messages.append({"role": "assistant", "content": content})
+            messages.append({"role": "user", "content": repair_prompt})
+            if trace_writer:
+                trace_writer.log_event(
+                    "planner_repair_attempt",
+                    {"attempt": attempt + 1, "prompt": repair_prompt, "chat_mode": True},
+                )
+    if trace_writer and last_failure:
+        trace_writer.log_failure(last_failure)
     return None, last_failure
 
 

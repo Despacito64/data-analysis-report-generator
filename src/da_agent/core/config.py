@@ -49,6 +49,7 @@ class ModelConfig(BaseModel):
     temperature: float = 0.0
     top_p: float = 1.0
     seed: int = 42
+    answer_narrative_enabled: bool = True
 
 
 class SamplingConfig(BaseModel):

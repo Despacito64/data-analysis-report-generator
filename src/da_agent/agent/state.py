@@ -15,11 +15,13 @@ from da_agent.agent.planner import Plan
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
+    DialogueState,
     EvidenceRecord,
     Failure,
     PlanRevision,
     ResolvedQuestion,
 )
+from da_agent.core.chat_thread import ChatThread
 from da_agent.core.trace import RunTraceWriter
 
 
@@ -27,6 +29,8 @@ class AgentState(TypedDict, total=False):
     """Shared state carrying all analysis context, plan, evidence, and execution records."""
 
     question: str
+    dialogue: DialogueState | None
+    chat_thread: ChatThread | None
     df: pd.DataFrame
     profile: DatasetProfile
     resolved: ResolvedQuestion | None

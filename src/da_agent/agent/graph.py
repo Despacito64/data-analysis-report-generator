@@ -1,6 +1,6 @@
 """Fixed LangGraph control graph for the dynamic planning agent.
 
-Layer 6 module: wires resolve -> plan -> execute -> inspect -> replan-or-finalize.
+Layer 6 module: wires plan -> execute -> inspect -> replan-or-finalize.
 The control graph is fixed; only the analytical task graph in AgentState changes.
 Never imports evaluation/oracle or da_agent.agent.baseline.
 """
@@ -18,24 +18,26 @@ from da_agent.agent.planner import (
     LLMClient,
     Plan,
     failure_reference_id,
-    generate_plan,
+    generate_plan_for_chat,
     replan_on_failure,
     replan_on_result,
 )
-from da_agent.agent.resolver import resolve_question
 from da_agent.agent.state import AgentState
 from da_agent.contracts.models import (
     Budgets,
     DatasetProfile,
+    DialogueState,
     EvidenceRecord,
     ExecutionStatus,
     Failure,
     FailureClass,
     PlanRevision,
+    ResolvedQuestion,
     RevisionChangeType,
     RunStatus,
 )
 from da_agent.core.config import load_config
+from da_agent.core.chat_thread import ChatThread, effective_planning_thread
 from da_agent.core.follow_up import ReusedEvidence, seed_reused_evidence
 from da_agent.core.trace import RunTraceWriter
 from da_agent.tools.registry import DEFAULT_REGISTRY, export_tool_specs
@@ -47,11 +49,9 @@ from da_agent.validation.recovery import decide_recovery, detect_no_progress, fi
 # ---------------------------------------------------------------------------
 
 
-def route_after_resolve(state: AgentState) -> str:
-    resolved = state.get("resolved")
-    if resolved is None or not resolved.answerable:
-        return "finalize"
-    return "plan"
+def _planning_resolved(question: str) -> ResolvedQuestion:
+    """Stub for replan prompts and answer assumptions (D-049: no regex resolver)."""
+    return ResolvedQuestion(question_text=question, intent="llm_plan", answerable=True)
 
 
 def route_after_plan(state: AgentState) -> str:
@@ -228,58 +228,47 @@ def build_nodes(
 ) -> dict[str, Any]:
     """Return a dict of node callables capturing shared dependencies in closure."""
 
-    def node_resolve(state: AgentState) -> dict[str, Any]:
-        """Resolve the natural-language question against the dataset profile."""
-        profile = state["profile"]
-        question = state["question"]
-        resolved = resolve_question(question, profile)
-        if trace_writer:
-            trace_writer.log_event(
-                "resolved_question",
-                {"answerable": resolved.answerable, "intent": resolved.intent},
-            )
-        if not resolved.answerable:
-            failure = Failure(
-                failure_class=FailureClass.INVALID_ARGS,
-                recoverable=False,
-                message=resolved.decline_reason or "Question is unanswerable",
-                context={},
-            )
-            if trace_writer:
-                trace_writer.log_failure(failure)
-            return {"resolved": resolved, "status": "failed", "failures": [failure]}
-        return {"resolved": resolved}
-
     def node_plan(state: AgentState) -> dict[str, Any]:
         """Generate and validate the initial execution plan via the LLM."""
-        resolved = state.get("resolved")
         profile = state["profile"]
-
-        if resolved is None or not resolved.answerable:
-            decline = resolved.decline_reason if resolved else "No resolved question"
-            failure = Failure(
-                failure_class=FailureClass.INVALID_ARGS,
-                recoverable=False,
-                message=decline or "Question is unanswerable",
-                context={},
+        question = state["question"]
+        budgets = state.get("budgets", load_config().budgets)
+        max_repairs = state.get("max_repairs", 1)
+        thread = effective_planning_thread(
+            question,
+            chat_thread=state.get("chat_thread"),
+            dialogue=state.get("dialogue"),
+        )
+        if trace_writer:
+            trace_writer.log_event(
+                "planning_context",
+                {
+                    "mode": "thread",
+                    "turns": len(thread.messages),
+                    "has_dialogue": state.get("dialogue") is not None,
+                    "has_chat_thread": state.get("chat_thread") is not None,
+                },
             )
-            if trace_writer:
-                trace_writer.log_failure(failure)
-            return {"plan": None, "status": "failed", "failures": [failure]}
-
-        plan, failure = generate_plan(
-            resolved,
+        plan, failure = generate_plan_for_chat(
+            question,
             profile,
+            thread,
             client=llm_client,
             trace_writer=trace_writer,
-            max_steps=state.get("budgets", load_config().budgets).max_tool_calls,
-            max_repairs=state.get("max_repairs", 1),
+            max_steps=budgets.max_tool_calls,
+            max_repairs=max_repairs,
         )
+        resolved = state.get("resolved") or _planning_resolved(question)
 
         if failure:
-            return {"plan": None, "status": "failed", "failures": [failure]}
+            return {
+                "plan": None,
+                "status": "failed",
+                "failures": [failure],
+                "resolved": resolved,
+            }
 
-        return {"plan": plan, "plan_version": plan.plan_version if plan else 1}
+        return {"plan": plan, "plan_version": plan.plan_version if plan else 1, "resolved": resolved}
 
     def node_execute(state: AgentState) -> dict[str, Any]:
         """Execute the current plan via the DAG executor."""
@@ -630,7 +619,6 @@ def build_nodes(
         return run
 
     return {
-        "resolve": traced_node("resolve", node_resolve),
         "plan": traced_node("plan", node_plan),
         "validate_repair": traced_node("validate_repair", node_validate_repair),
         "execute": traced_node("execute", node_execute),
@@ -656,10 +644,7 @@ def build_agent_graph(
     for name, fn in nodes.items():
         graph.add_node(name, fn)
 
-    graph.set_entry_point("resolve")
-    graph.add_conditional_edges(
-        "resolve", route_after_resolve, {"plan": "plan", "finalize": "finalize"}
-    )
+    graph.set_entry_point("plan")
     graph.add_conditional_edges("plan", route_after_plan, {"validate_repair": "validate_repair"})
     graph.add_conditional_edges(
         "validate_repair",
@@ -700,6 +685,8 @@ def run_agent(
     max_repairs: int = 1,
     reused_evidence: list[ReusedEvidence] | None = None,
     prior_run_dir: Path | None = None,
+    dialogue: DialogueState | None = None,
+    chat_thread: ChatThread | None = None,
 ) -> dict[str, Any]:
     """Run the full dynamic planning agent and return the final state."""
     if budgets is None:
@@ -710,10 +697,47 @@ def run_agent(
         config = load_config()
         trace_writer = RunTraceWriter(run_id=run_id, base_dir=config.run_trace.base_dir)
 
+    initial_state = build_initial_state(
+        question=question,
+        df=df,
+        profile=profile,
+        run_id=run_id,
+        budgets=budgets,
+        trace_writer=trace_writer,
+        max_replans=max_replans,
+        max_repairs=max_repairs,
+        reused_evidence=reused_evidence,
+        prior_run_dir=prior_run_dir,
+        dialogue=dialogue if chat_thread is None else None,
+        chat_thread=chat_thread,
+    )
+
+    agent = build_agent_graph(llm_client=llm_client, trace_writer=trace_writer)
+    final_state = agent.invoke(initial_state)
+    return dict(final_state)
+
+
+def build_initial_state(
+    *,
+    question: str,
+    df: pd.DataFrame,
+    profile: DatasetProfile,
+    run_id: str,
+    budgets: Budgets,
+    trace_writer: RunTraceWriter,
+    max_replans: int,
+    max_repairs: int,
+    reused_evidence: list[ReusedEvidence] | None = None,
+    prior_run_dir: Path | None = None,
+    dialogue: DialogueState | None = None,
+    chat_thread: ChatThread | None = None,
+) -> AgentState:
+    """Start a run. Dialogue memory never copies another run's evidence."""
     seeded_records: dict[str, EvidenceRecord] = {}
     seeded_ids: list[str] = []
     seeded_store: dict[str, Any] = {}
-    if reused_evidence:
+    # A conversation turn recomputes. Prior evidence is only for the non-dialogue path.
+    if reused_evidence and dialogue is None and chat_thread is None:
         seeded_records, seeded_ids, seeded_store = seed_reused_evidence(
             reused_evidence,
             current_dataset_hash=profile.dataset_hash,
@@ -723,9 +747,11 @@ def run_agent(
 
     initial_state: AgentState = {
         "question": question,
+        "dialogue": dialogue,
+        "chat_thread": chat_thread,
         "df": df,
         "profile": profile,
-        "resolved": None,
+        "resolved": _planning_resolved(question),
         "plan": None,
         "plan_version": 1,
         "revisions": [],
@@ -749,7 +775,4 @@ def run_agent(
         "failed_task_id": None,
         "trace_writer": trace_writer,
     }
-
-    agent = build_agent_graph(llm_client=llm_client, trace_writer=trace_writer)
-    final_state = agent.invoke(initial_state)
-    return dict(final_state)
+    return initial_state

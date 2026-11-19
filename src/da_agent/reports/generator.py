@@ -79,7 +79,14 @@ def build_report(
         for record in evidence_records.values()
         if record.valid and record.invalidated_by is None
     ]
-    summary = executive_summary_from_findings(findings) if presented else _technical_summary(findings)
+    summary = executive_summary_from_findings(findings) if findings else _technical_summary(findings)
+    if not highlights and findings:
+        highlights = [
+            f"{claim.label.split(' — ')[0]}: {float(claim.value):,.2f}"
+            for finding in findings
+            for claim in finding.numeric_claims
+            if isinstance(claim.value, (int, float))
+        ]
     _ = answer_text  # reserved for a future grounded-narrative slot (pipeline validates first)
 
     return Report(
