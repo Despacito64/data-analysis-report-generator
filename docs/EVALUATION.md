@@ -21,7 +21,7 @@ Do not store the expected tool path where the agent could read it. Write the mul
 
 ## Oracle
 
-`evaluation/oracle.py` reads the raw file and computes expected answers with DuckDB SQL or plain Python. It imports nothing from the tools, agent,
+`evaluation/oracle.py` reads the raw file and computes expected answers with pandas and numpy. It imports nothing from the tools, agent,
 validation or report code, so a bug in a shared Pandas function cannot hide itself. Hand-check at least 5 oracle answers before relying on it.
 Expected answers are never shown to the agent, including in recovery prompts.
 

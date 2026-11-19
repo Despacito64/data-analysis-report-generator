@@ -77,7 +77,7 @@ Additional rules:
 
 - `validation` never imports `tools`. Tool metadata arrives as `ToolSpec` objects (a contract). Recomputation in the claim validator
   uses an injected callable.
-- `evaluation/oracle.py` imports no `da_agent` tool, agent, validation or report code. It reads the raw file and uses DuckDB SQL or plain Python.
+- `evaluation/oracle.py` imports no `da_agent` tool, agent, validation or report code. It reads the raw file and uses pandas and numpy.
 - Only `pipeline.py` wires modules together. No module reaches into another module's internals.
 - An import-check test enforces these rules (added in M0, extended as packages appear).
 

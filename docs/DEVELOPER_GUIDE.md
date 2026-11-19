@@ -10,7 +10,7 @@
 2. [Comparison with Base Paper: Data Interpreter](#2-comparison-with-base-paper-data-interpreter)
 3. [End-to-End System Architecture](#3-end-to-end-system-architecture)
 4. [LangGraph State Machine & Dynamic Planning Loop](#4-langgraph-state-machine--dynamic-planning-loop)
-5. [The Deterministic Tool Registry (10 Tools)](#5-the-deterministic-tool-registry-10-tools)
+5. [The Deterministic Tool Registry (8 Tools)](#5-the-deterministic-tool-registry-8-tools)
 6. [Five Layers of Verification & Claim Grounding](#6-five-layers-of-verification--claim-grounding)
 7. [Contracts, Provenance, & Evidence Records](#7-contracts-provenance--evidence-records)
 8. [Conversational Engine & Dialogue Memory](#8-conversational-engine--dialogue-memory)
@@ -31,7 +31,7 @@ Our system demonstrates an alternative paradigm: **Dynamic analytical task plann
 ### 1.2 Core Research Question
 > *Can an autonomous LLM agent dynamically formulate, execute, and revise multi-step analytical investigations on tabular data with zero code-execution safety risks and zero numerical hallucinations?*
 
-**Answer:** Yes. Evaluated on a 20-question frozen benchmark against an independent DuckDB oracle, our dynamic agent achieves **65% (13/20) end-to-end accuracy** using a small local model (`qwen3:4b` on consumer hardware), with **100% numerical verification**, zero ungrounded claims, and a proven **+1 question lift from dynamic replanning** over static execution.
+**Answer (as far as one dataset and 20 questions can show):** the agent reaches **13/20 (65%)** on a 20-question frozen benchmark scored by a separately computed (pandas/numpy) oracle, using a small local model (`qwen3:4b` on a GTX 1650). Every number in a report passes through claim validation against a recorded evidence record. In all 7 failures the tools ran correctly; the fault was in the plan the model wrote or in a tool-versus-oracle label mismatch (see 9.4). The effect of replanning has not been cleanly measured (see 10.1).
 
 ---
 
@@ -49,7 +49,7 @@ Our assigned base paper is:
 | **Claim Verification** | None (assumes code output is truthful if it doesn't crash) | 5-Layer claim validation (`rtol: 0.001`, `atol: 0.01`) | Model cannot claim a trend or number that contradicts evidence (`src/da_agent/validation/claims.py`). |
 | **Control Flow** | Dynamic DAG generated via hierarchical LLM prompts | **Fixed control graph** (LangGraph) + **dynamic task graph** in state | Predictable lifecycle with bounded execution budgets (`docs/DECISIONS.md:D-001`). |
 | **Model Requirements** | Frontier cloud LLMs (GPT-4 / Claude 3.5 Sonnet) | Small local open-weights LLMs (`qwen3:4b` via Ollama) | Runs entirely on consumer GPUs (GTX 1650), offline, privacy-preserving (`docs/DECISIONS.md:D-006`). |
-| **Evaluation Oracle** | Self-reported execution success or public benchmarks | Independent DuckDB/Python oracle completely isolated from agent code | Prevents data leakage and circular verification bugs (`evaluation/oracle.py`). |
+| **Evaluation Oracle** | Self-reported execution success or public benchmarks | Expected answers computed by a standalone pandas/numpy script that imports no agent code | Prevents data leakage and circular verification bugs (`evaluation/oracle.py`). |
 
 ### 2.2 How to Defend This Pivot in Viva
 * **Question**: *"Why did you not implement Data Interpreter's full Python code generation?"*
@@ -90,9 +90,9 @@ The codebase enforces strict unidirectional dependency layers (`docs/ARCHITECTUR
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Layer Rules (Enforced by automated tests in `tests/unit/test_architecture.py`):
-1. `tools/` imports only from `contracts/` and standard libraries/Pandas. It never imports `agent/` or `reports/`.
-2. `oracle.py` imports only DuckDB and Python standard libraries. It **never** imports `da_agent`.
+### Layer Rules (import rules are tested in `tests/test_import_rules.py`):
+1. Lower layers never import higher layers (see `docs/ARCHITECTURE.md`); `tools/` never imports `agent/` or `reports/`.
+2. `evaluation/oracle.py` loads expected answers that `evaluation/benchmark/build_oracle.py` computed with pandas and numpy, and neither must import `da_agent.tools`, `agent`, `validation` or `reports` (`test_oracle_independence`).
 3. Modules cross boundaries **only via Pydantic v2 models** (`docs/CONTRACTS.md:1`). Untyped dicts across boundaries are rejected.
 
 ---
@@ -109,16 +109,17 @@ stateDiagram-v2
     [*] --> plan: Receive User Question & Profile
     plan --> validate_repair: Generate Typed Plan DAG
     
-    validate_repair --> execute: Plan Valid (Dependencies, Tools, Columns OK)
-    validate_repair --> plan: Plan Invalid (Repair with Feedback)
-    validate_repair --> finalize: Repair Budget Exhausted
+    validate_repair --> execute: Plan valid
+    validate_repair --> finalize: No valid plan after repair attempts
     
-    execute --> inspect: Deterministic Tools Run & Emit Evidence
+    execute --> inspect: Deterministic tools run and emit evidence
     
-    inspect --> replan: Anomalies / Failures / Follow-ups Needed
-    inspect --> finalize: Analysis Complete or Budgets Reached
+    inspect --> execute: Retry a failed task
+    inspect --> replan: Failure to repair, or a complete result to follow up
+    inspect --> finalize: Analysis complete or budget reached
     
-    replan --> validate_repair: Revised Plan Formulated
+    replan --> execute: Revised pending tasks
+    replan --> finalize: Nothing to add or budget reached
     
     finalize --> [*]: Claim Verification & Report Synthesis
 ```
@@ -129,7 +130,7 @@ stateDiagram-v2
    - Are tool names in the allowlist?
    - Do referenced columns exist in the dataset profile?
    - Is the dependency graph an acyclic DAG?
-   - If invalid, loops back to `plan` with explicit feedback (up to `max_repair_attempts`).
+   - If invalid, the planner re-prompts the model with the validation errors inside the same call (`for attempt in range(max_repairs + 1)`, `planner.py:397`). This repair cap is separate from `max_replans`, which limits result-driven replanning.
 3. **`execute`**: Iterates through tasks whose dependencies are satisfied (`status == "ready"`). Calls the deterministic tool via `DEFAULT_REGISTRY.execute()`. Wraps results in an `EvidenceRecord`.
 4. **`inspect`**: Inspects tool results and classifies failures (`assess_recovery` in `graph.py:119`):
    - If all tasks succeed and goal is met: routes to `finalize`.
@@ -146,28 +147,26 @@ stateDiagram-v2
 
 ---
 
-## 5. The Deterministic Tool Registry (10 Tools)
+## 5. The Deterministic Tool Registry (8 Tools)
 
-All analytical computations are performed by pure functions in `src/da_agent/tools/pandas_tools.py` and `statistics.py`.
+The registry (`src/da_agent/tools/registry.py`, `DEFAULT_REGISTRY`) exposes **8 tools** to the planner. Computations live in `tools/pandas_tools.py` and `tools/statistics.py`. Plotly chart builders in `tools/charts.py` are not planner tools (`registry.py:5`).
 
 | # | Tool Name | Analytical Function | Mathematical Invariants Enforced |
 |---|---|---|---|
 | 1 | `filter` | Slices DataFrame based on typed operators (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`). | Output row count $\le$ input row count; output rows strictly meet predicate. |
 | 2 | `group_aggregate` | Multi-column grouping with aggregations (`sum`, `mean`, `count`, `min`, `max`). | Sum of group counts equals total non-null input rows. |
-| 3 | `rank` | Orders entities by aggregated metric (top-N or bottom-N). | Stable sorting with deterministic tie-breaking; ties explicitly flagged. |
+| 3 | `rank` | Ranks **individual rows** by a metric column (top-N or bottom-N). It has **no aggregation argument** (`RankArgs`: `entity_column`, `metric_column`, `ascending`, `top_n`, `tie_decimals`), so ranking per-entity totals needs `group_aggregate` first. | Deterministic tie-breaking by entity label; ties flagged. |
 | 4 | `period_compare` | Compares aggregate metric across two explicit date ranges. | Absolute change: $\Delta = V_{comp} - V_{base}$; Relative growth: $\frac{\Delta}{V_{base}}$ (undefined if $V_{base} = 0$). |
 | 5 | `trend` | Computes time-grain metrics (daily, monthly, quarterly) and linear trend. | Slope via least-squares: $m = \frac{\sum (t - \bar{t})(y - \bar{y})}{\sum (t - \bar{t})^2}$; direction: `increasing`, `decreasing`, `flat`. |
 | 6 | `segment_contribution`| Computes percentage contribution of each segment to the whole. | Shares sum to $1.0 \pm 0.001$; individual shares bounded in $[0, 1]$. |
 | 7 | `correlation` | Computes Pearson correlation coefficient between two numeric columns. | Coefficient $r \in [-1.0, 1.0]$; NaN if variance is zero. |
 | 8 | `detect_anomalies_iqr` | Detects outliers via Tukey's fence ($1.5 \times \text{IQR}$). | $\text{IQR} = Q_3 - Q_1$; Lower fence: $Q_1 - 1.5\text{IQR}$; Upper fence: $Q_3 + 1.5\text{IQR}$. |
-| 9 | `build_chart` | Builds Plotly JSON visual specification from tool evidence. | Visual marks cite only numbers present in the linked `EvidenceRecord`. |
-| 10| `build_table` | Formats multi-column findings into structured tables. | Exact string escaping and numerical formatting without mutation. |
 
 ### Edge Case Handling (`docs/MODULES.md:M2`):
-* **Ties in ranking**: Deterministic secondary ordering by entity name; `has_ties: bool` recorded.
-* **All-missing sum**: Reported as explicit `missing`, never coerced to zero.
-* **Zero denominator**: Growth calculation yields `undefined` with classified reason `zero_division`, never `inf` or silent crash.
-* **Contribution shares**: Enforces reconciliation invariant: $|\sum \text{share}_i - 1.0| \le 10^{-3}$.
+The required behaviours are listed in `docs/MODULES.md` (M2 table). Implementation facts I have verified:
+* **Ties in ranking**: sorted by rounded metric, then entity label; each `RankRow` carries `is_tied`.
+* **Undefined results** (for example a zero denominator in growth): results carry an `undefined_reason` field instead of a silent zero (`tools/executor.py`, `tools/charts.py:135`). I have not verified the exact reason strings, so check `tools/models.py` before quoting one.
+* **Contribution shares / all-missing sums**: required by the M2 table; numerical invariants are checked in `validation/results.py` (`TOLERANCE = 1e-9`). Read the test files before quoting a specific tolerance.
 
 ---
 
@@ -209,17 +208,17 @@ Data crosses module boundaries **exclusively as Pydantic v2 models** (`docs/CONT
 Every successful tool execution produces an immutable evidence artifact:
 ```python
 class EvidenceRecord(BaseModel):
-    evidence_id: str               # e.g. "ev_f83a1b09"
-    task_id: str                   # e.g. "t1"
-    tool: str                      # e.g. "group_aggregate"
-    args_hash: str                 # SHA-256 of canonical JSON arguments
-    dataset_hash: str              # SHA-256 of raw dataset (Sample Superstore)
-    input_row_count: int           # e.g. 9994
-    result_summary: dict[str, Any] # Structured output payload
-    result_schema_version: str     # "0.2.0"
+    evidence_id: str  # e.g. "ev_f83a1b09"
+    task_id: str  # e.g. "t1"
+    tool: str  # e.g. "group_aggregate"
+    args_hash: str  # SHA-256 of canonical JSON arguments
+    dataset_hash: str  # SHA-256 of raw dataset (Sample Superstore)
+    input_row_count: int  # e.g. 9994
+    result_summary: dict[str, Any]  # Structured output payload
+    result_schema_version: str  # "0.2.0"
     invariants_checked: list[str]  # e.g. ["non_negative_counts", "group_reconciliation"]
-    valid: bool                    # True
-    invalidated_by: str | None     # Evidence ID that caused cascade invalidation, if any
+    valid: bool  # True
+    invalidated_by: str | None  # Evidence ID that caused cascade invalidation, if any
     created_at: datetime
 ```
 
@@ -250,8 +249,8 @@ In conversational analytics (e.g., *"Filter to Furniture"* followed by *"Now sho
 
 ### 9.1 Independent Oracle Protocol (`docs/DECISIONS.md:D-005`, `evaluation/oracle.py`)
 To prevent circular evaluation bugs, the oracle:
-* Computes expected answers directly from the raw `Sample-Superstore.csv` using DuckDB SQL or independent Python code.
-* **Is forbidden from importing any agent, tool, or validation modules**. An automated test (`tests/unit/evaluation/test_oracle_isolation.py`) statically inspects AST imports and fails CI if cross-imports exist.
+* Computes expected answers directly from the raw `Sample-Superstore.csv` with a standalone pandas/numpy script (`evaluation/benchmark/build_oracle.py`). The design documents say DuckDB SQL or plain Python; the implemented oracle is plain pandas/numpy, and no code in the repository imports DuckDB.
+* **Is forbidden from importing any agent, tool, validation or report modules**. The automated test `test_oracle_independence` in `tests/test_import_rules.py` enforces it.
 * Oracle expected answers are **never** present in agent prompts, system context, or repair instructions.
 
 ### 9.2 The Benchmark Question Suite (`evaluation/benchmark/questions.json`)
@@ -274,46 +273,45 @@ To prevent circular evaluation bugs, the oracle:
 | Evaluation Metric | Fixed Baseline | Dynamic Agent (`da-agent`) | Analysis / Notes |
 |---|:---:|:---:|---|
 | **Accuracy** | 20 / 20 (100%) | **13 / 20 (65%)** | 0 timeouts; all completed within budget. |
-| **Baseline Reality** | 20 / 20 | — | **Cheating ceiling**: Baseline uses hardcoded templates matching the oracle question shapes. Fails on novel questions. |
+| **Baseline Reality** | 20 / 20 | — | **Ceiling, not a competitor**: `BASELINE_TASKS` is keyed by question id (`baseline.py:22`), never reads the question text, and assembles several answers (q01, q06-q08, q20) with hand-written per-question code (`baseline.py:186-225`). It cannot answer a question outside the 20. |
 | **Tool Execution Success** | 100% | **100%** | In every single failed question, the tools executed with status `ok`. |
-| **Adversarial Recovery** | — | **12 / 12 (100%)** | Controlled-failure recovery suite passes completely. |
+| **Recovery suite** | — | **12 / 12** | Mock-only controlled-failure scenarios (no real LLM, no benchmark questions). |
 | **Total Wall-Clock Time** | — | 2,858 s (~47.6 min) | Average ~143s per question across 3 repeats. |
 | **LLM Call Volume** | 0 | 168 calls | All retries cleanly bounded by budget caps. |
 
 ### 9.4 Root-Cause Failure Analysis (The 7 Failures):
-* **`q01` (Filter)**: Tool executed correctly; failed answer extraction regex due to missing scalar wrapping (`no_score_shaped_answer`).
-* **`q06, q07, q08` (Rank)**: The `rank` tool returned correct ordered entities. However, the final synthesis LLM prompt failed to serialize the top-K list into the exact oracle list format (`incorrect_answer`).
-* **`q11, q12` (Trend)**: Tool computed linear slope correctly; LLM misclassified slope threshold as flat vs. increasing.
-* **`q20` (Multistep Rank)**: Extraction failure on nested entity keys.
+Diagnosed from the saved attempt files and `runs/<id>/trace.jsonl` (all tool statuses were `ok`):
 
-**Core Scientific Finding**:
-> *Zero failures were caused by the deterministic analytical tools. 100% of failures occurred at the LLM semantic boundaries: JSON plan formulation or post-tool answer extraction.*
+* **`q01` (filter)**: the plan was a single `filter` task. `filter` returns matched rows and a row count, not a sum, so the scorer found no answer of the expected shape (`no_score_shaped_answer`). The question needed `filter` then `group_aggregate`.
+* **`q06`, `q07`, `q08`, `q20` (rank)**: the planner wrote a plausible single `rank` task (for q06: `entity_column=Sub-Category`, `metric_column=Sales`, `top_n=5`). Because `rank` has no aggregation argument, it ranked individual rows, so the result was top single transactions (for example Machines at 22,638.48, and "Copiers" four times) instead of per-entity totals. The question needs `group_aggregate` first. The baseline avoids this by hard-coding that two-step plan.
+* **`q11` (trend)**: the plan had no 2017 restriction (no `filter` and no period argument), so the trend covered 48 months from 2014 to 2017. The expected answer covers 2017 only.
+* **`q12` (trend)**: all 16 quarterly points and the slope (1194.744...) match the oracle. Only the direction label differs: the tool reports `volatile`, the oracle `increasing`. This is a disagreement between the tool's direction rule and the oracle's, not an LLM error.
+* **Replanning noise** (q06, q07, q11): the result-inspection LLM call returned invalid plans (unknown tool `text`; `trend` without required arguments), which validation rejected.
+
+**What this shows**: the deterministic tools executed correctly in every failure. q01 and q11 are incomplete plans; q06, q07, q08 and q20 combine a single-step plan with a `rank` tool that does not aggregate; q12 is a label mismatch. I had earlier attributed these to LLM answer extraction. That was wrong: `extract_score_answer` (`run_agent_eval.py:322`) reads tool evidence deterministically.
 
 ---
 
 ## 10. Ablation Study & Model Comparison Findings
 
-We conducted two formal empirical studies beyond the baseline (`docs/EXPERIMENTS_SUMMARY.md`, `D-050`):
+Two exploratory runs were made beyond the reference run (`docs/EXPERIMENTS_SUMMARY.md`, `D-050`). Neither is a controlled experiment, and the viva answer should say so.
 
-### 10.1 Ablation Study: Value of Dynamic Replanning
-* **Hypothesis**: Does the LangGraph replanning loop actually improve accuracy, or does it merely waste compute?
-* **Method**: Evaluated all 20 benchmark questions with `max_repair_attempts = 0` (no replanning allowed; initial plan is frozen).
-* **Result**:
-  - **With Dynamic Replanning**: **13 / 20 (65%)**
-  - **Without Replanning (Frozen Plan)**: **12 / 20 (60%)**
-  - **Delta**: **+1 correct answer directly attributable to replanning** (the agent detected an initial empty filter in question `q02`, replanned with relaxed criteria, and recovered).
+### 10.1 Reduced-budget run with the plan-repair cap set to 0
+* **What it was**: all 20 questions, 1 repeat, with `max_repair_attempts=0`, `max_llm_calls_per_question=4` and `per_question_budget_s=180`. The reference used 2, 8, 300 and 3 repeats.
+* **What it was not**: a no-replanning ablation. `max_repair_attempts` only limits re-prompting after an invalid plan (`planner.py:397`). Result-driven replanning is limited by `max_replans` (3), which was unchanged and still ran.
+* **Result**: 12/20 against 13/20. The only question that differs is q02. The reference passed it in 3 of 3 repeats. The cause is `augment_chat_plan` (D-048), which appends a `group_aggregate` to filter-only plans, so the scored answer becomes a region-sales mapping instead of the count 599. It is not caused by replanning.
+* **How to answer in the viva**: "A clean ablation would set `max_replans=0` and change nothing else, with 3 repeats. We ran a reduced-budget variant that changed four settings, so we don't claim an effect for replanning."
 
-### 10.2 Model Parameter & Architecture Spike
-Evaluated across 5 representative task categories (`q03` group, `q06` rank, `q09` period compare, `q13` contribution, `q17` anomalies):
+### 10.2 Partial model spike
+Five questions (`q03`, `q06`, `q09`, `q13`, `q17`), 1 repeat, 180 s budget. Both new runs stopped after these five. The qwen3:4b figure comes from the 3-repeat reference run, so the columns are not like-for-like.
 
-| Model | Parameters | Spike Accuracy | Avg Latency / Q | Failure Modes Observed |
-|---|:---:|:---:|:---:|---|
-| **`qwen2.5:3b-instruct`** | 3B | **0 / 5 (0%)** | ~85s | Insufficient capacity to follow strict JSON schema; repeatedly hit `repair_cap`. |
-| **`qwen3:4b`** *(Reference)* | 4B | **4 / 5 (80%)** | ~165s | High instruction adherence; only failed extraction on rank `q06`. |
-| **`qwen2.5:7b-instruct`** | 7B | **2 / 5 (40%)** | ~90s | Faster inference, but weaker JSON schema discipline than Qwen3 family. |
+| Model | Passed (of the 5) | Avg time/q | What was recorded |
+|---|:---:|:---:|---|
+| `qwen2.5:3b-instruct` | 0 | ~85 s | q03, q17 `no_score_shaped_answer`; q09, q13 `repair_cap`; q06 timeout |
+| `qwen3:4b` (reference run) | 4 | ~165 s | only q06 failed |
+| `qwen2.5:7b-instruct` | 2 | ~90 s | q03, q13 passed; q09, q17 `no_score_shaped_answer`; q06 timeout |
 
-**Key Research Takeaway**:
-> *Model family instruction-following discipline dominates raw parameter scale. A 4B Qwen3 model decisively outperformed a 7B Qwen2.5 model in multi-tool structured DAG planning.*
+**Takeaway you can defend**: with five questions and one repeat, no ranking of the models is justified. The failure types are the useful part (plans failing validation for the 3B model, answers the scorer could not shape for the 7B model). Why qwen3:4b did better was not investigated, so don't claim a reason.
 
 ---
 
@@ -332,10 +330,9 @@ Here are the most critical questions a professor or interviewer will ask, with b
 > 2. **Silent Hallucinations & Non-Determinism**: LLMs frequently introduce subtle statistical bugs in code (e.g., misusing `.dropna()`, dividing by zero, or fabricating synthetic data). 
 > Our approach delegates *intent and planning* to the LLM, but delegates *all computation* to allowlisted, unit-tested, deterministic Pandas tools. Every computation is reproducible and mathematically verifiable."*
 
-#### Q2: "Isn't a fixed set of 10 tools too restrictive compared to arbitrary code?"
+#### Q2: "Isn't a fixed set of 8 tools too restrictive compared to arbitrary code?"
 **Answer**:
-> *"In enterprise business intelligence, over 95% of analytical workflows decompose into standard relational and statistical operations: filters, groupings, aggregations, period-over-period comparisons, rankings, segment contributions, correlations, and anomaly detection. 
-> By formalizing these primitives into composable DAG tasks, the agent can chain them arbitrarily (e.g., filter ➔ aggregate ➔ rank ➔ compare). If a novel analytical tool is needed (such as Fourier analysis or ARIMA), it is added to the tool registry with unit tests and Pydantic schemas, maintaining full auditability."*
+> *"Yes, it is restrictive, on purpose. The 8 registered tools (filter, group_aggregate, rank, period_compare, trend, segment_contribution, correlation, detect_anomalies_iqr) cover the routine relational and statistical questions in our benchmark, and the planner can chain them as a DAG (for example filter, then group_aggregate). The cost shows up in our results: `rank` does not aggregate, so a question like 'top 5 sub-categories by total sales' needs group_aggregate first, and our 4B model did not plan that. A new analysis is added as a registered tool with tests and Pydantic schemas, which keeps every number auditable. We did not measure how much of real-world analysis these 8 tools cover."*
 
 #### Q3: "What exactly makes your planning 'dynamic'? Is LangGraph alone dynamic planning?"
 **Answer**:
@@ -366,33 +363,30 @@ Here are the most critical questions a professor or interviewer will ask, with b
 
 #### Q6: "Your dynamic agent scored 13/20, while the baseline scored 20/20. Doesn't that mean your baseline is better?"
 **Answer**:
-> *"No, and this is a central finding of our research. The baseline's 20/20 is an **artificial template ceiling, not a fair competitor** (`docs/M10_RESULTS.md:23`). 
-> The baseline was constructed with hand-written templates keyed directly to the known question types in the frozen benchmark. It executes the exact pre-determined tool sequence for each known question. However, on any novel, unexpected, or ambiguous question, the baseline achieves **0%** because it cannot plan. 
-> Our dynamic agent operates with zero knowledge of question templates—it reads the natural language, plans a multi-step DAG from scratch, validates arguments, and executes. Achieving 65% with a tiny 4B local model on an unconstrained task is a robust result."*
+> *"No. The baseline's 20/20 is a ceiling, not a fair competitor (`docs/M10_RESULTS.md`). Its plans are stored in `BASELINE_TASKS`, a dictionary keyed by question id (`baseline.py:22`); it never reads the question text, and several of its answers (q01, q06-q08, q20) are assembled by hand-written per-question code. It cannot answer a question outside those 20.
+> The dynamic agent reads the natural-language question and plans from scratch with a 4B local model, so 13/20 is a measurement of planning, while the baseline's 20/20 measures only that the hand-written plans are right. We make no claim about how the baseline would score on new questions; it simply has no way to attempt them."*
 
 #### Q7: "What caused the 7 failed questions in the benchmark? Did the analytical tools fail?"
 **Answer**:
-> *"In **100% of the failed runs, the analytical tools executed with status `ok`** (`docs/EXPERIMENTS_SUMMARY.md`). 
-> The failures were entirely caused by LLM semantic extraction issues:
-> - In questions `q06, q07, q08` (Rank), the tool correctly identified the top entities, but the LLM failed to format the output list to match the oracle's strict JSON structure.
-> - In `q11, q12` (Trend), the linear regression slope was calculated correctly, but the model misclassified the directional slope threshold.
-> - In `q01`, the scalar wrapper regex failed.
-> This proves that the deterministic calculation engine is rock-solid, and future performance gains will come from fine-tuning the answer-synthesis extraction prompt."*
+> *"No tool crashed: in every failed run the tool status was `ok`. We then read the traces to see why the answers were wrong.
+> - q06, q07, q08, q20 (rank): the model planned one `rank` task. Our `rank` tool ranks individual rows and has no aggregation argument, so it returned the top single transactions instead of per-entity totals. The question needs `group_aggregate` first. That is a planning gap combined with a limitation in our tool design.
+> - q01: the plan was `filter` only, which gives a row count, not a sum.
+> - q11: the plan did not restrict the trend to 2017.
+> - q12: numbers and slope match the oracle exactly; only the direction label differs (`volatile` from our tool, `increasing` from the oracle), a disagreement between two definitions.
+> So the failures come from incomplete plans, one tool-design limitation and one label mismatch, not from the arithmetic. The obvious next step is a `rank` that can aggregate, or planner guidance to chain group_aggregate then rank."*
 
 #### Q8: "What was the purpose and result of your Ablation Study?"
 **Answer**:
-> *"To prove that dynamic replanning is functional rather than cosmetic, we ran an ablation where `max_repair_attempts` was set to 0, freezing the initial plan (`docs/EXPERIMENTS_SUMMARY.md`). 
-> Accuracy dropped from **13/20 (65%) to 12/20 (60%)**. The delta proved that dynamic replanning directly rescued question `q02` by detecting an invalid filter and adjusting criteria at runtime. The study also proved why the other 7 failed questions didn't change: their failures occurred at post-execution answer synthesis, which replanning cannot influence."*
+> *"We tried a reduced-budget run with the plan-repair cap set to 0 and scored 12/20 against the reference 13/20. I want to be precise about what that is: it changed four settings at once (repair cap, LLM-call cap, per-question time budget and repeats), and it did not turn replanning off, because replanning is limited by `max_replans`, which we did not touch. The single difference was q02, where a replan step added an unnecessary `group_aggregate` task, so it does not show replanning helping. A proper ablation sets `max_replans=0` and changes nothing else, with 3 repeats; that is the first thing we would run next."*
 
 #### Q9: "Why did Qwen3-4B score 4/5 on the spike while Qwen2.5-7B scored only 2/5?"
 **Answer**:
-> *"Our multi-model spike (`docs/EXPERIMENTS_SUMMARY.md`) revealed that **instruction-following fidelity for nested JSON schemas is more important than raw parameter count**. 
-> While Qwen2.5-7B has nearly double the parameters, Qwen3-4B features updated training specifically optimized for multi-tool calling and JSON schema compliance. Qwen2.5-7B produced syntax errors in tool argument nesting that consumed its repair budget, while Qwen3-4B generated valid DAG tasks on its first attempt."*
+> *"Honestly, five questions with one repeat can't rank the models, and the qwen3:4b number comes from the 3-repeat reference run, so I don't claim a reason. What the traces record: the 7B model passed q03 and q13, returned answers the scorer could not shape on q09 and q17, and timed out on q06; the 3B model had plans fail validation on two questions (repair cap). To explain the gap we would run all 20 questions with 3 repeats per model under identical settings and compare plan validity separately from answer correctness."*
 
 #### Q10: "How do you guarantee that your evaluation benchmark did not leak into your agent?"
 **Answer**:
 > *"We enforce strict architectural and procedural isolation:
-> 1. `evaluation/oracle.py` computes answers via DuckDB SQL and does not import any agent code. An automated AST import test (`tests/unit/evaluation/test_oracle_isolation.py`) fails if imports are added.
+> 1. `evaluation/oracle.py` loads answers computed from the raw file by a standalone pandas/numpy script, and must not import the agent, tools, validation or report code. The automated test `test_oracle_independence` in `tests/test_import_rules.py` enforces this.
 > 2. The 20 evaluation questions were frozen into `freeze_manifest.json` with cryptographic SHA-256 hashes (`D-044`).
 > 3. Expected oracle answers are **never** provided in any prompt, few-shot example, or error recovery message provided to the agent."*
 
@@ -408,7 +402,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 
 #### Q12: "How does the agent protect against prompt injection from untrusted CSV data?"
 **Answer**:
-> *"Uploaded CSV/XLSX cell values are strictly classified as **untrusted data, never instructions** (`docs/AGENTS.md:Hard Rule 8`). 
+> *"Uploaded CSV/XLSX cell values are treated as **untrusted data, never instructions** (`AGENTS.md`, hard rule 8). 
 > 1. Raw cell text is never interpolated into LLM system prompts or instruction blocks. The LLM receives only schema metadata (column names, semantic data types, missing counts).
 > 2. Tool arguments are strictly typed with Pydantic models (e.g., filter values must match column types).
 > 3. All strings rendered into HTML reports or frontend components are strictly HTML-escaped to prevent Cross-Site Scripting (XSS)."*
@@ -416,17 +410,16 @@ Here are the most critical questions a professor or interviewer will ask, with b
 #### Q13: "What happens if a column contains numeric postal codes? Does the agent compute average postal code?"
 **Answer**:
 > *"No. Our data profiler (`src/da_agent/data/profiler.py`) classifies columns into semantic types: `identifier`, `numeric_measure`, `category`, `date`, and `text` (`docs/CONTRACTS.md:21`). 
-> Postal codes, customer IDs, and order numbers with high cardinality or specific digit formats are explicitly classified as `identifier`. Argument validation rules (`src/da_agent/validation/args.py`) forbid mathematical aggregation tools (e.g., `mean`, `sum`) on `identifier` columns."*
+> Numeric identifiers such as postal codes must be classified `identifier`, never `numeric_measure` (`docs/CONTRACTS.md:21`), and the planner prompt is given each column's semantic type. I have not found code in `validation/args.py` that rejects an aggregation on an identifier column, so I would not claim that it is blocked; I would say the profiler labels it and the planner sees the label."*
 
 #### Q14: "How does multi-turn conversational memory work in your React interface?"
 **Answer**:
 > *"Instead of passing prior tool evidence into subsequent turns, our conversational engine uses **symbolic dialogue state** (`DialogueTurn` and `ChatThread` in `src/da_agent/core/chat_thread.py`). 
 > It preserves user intent and active filter constraints across turns (e.g., 'Region = West'), but forces the agent to re-execute tool calculations afresh on the underlying dataset. This prevents stale context hallucinations while enabling natural conversational drill-downs."*
 
-#### Q15: "Why did you use DuckDB for the oracle rather than Pandas?"
+#### Q15: "Is your oracle really independent of your tools?"
 **Answer**:
-> *"Using the same library (Pandas) for both the agent's analytical tools and the evaluation oracle would create shared-mode failure risks (e.g., a bug in Pandas date parsing or floating-point rounding would be mirrored in both). 
-> DuckDB provides an entirely independent SQL execution engine. If DuckDB SQL and our Pandas tool agree on a calculation within tolerance, we have high mathematical confidence in correctness."*
+> *"Independent in code, not in libraries. The expected answers come from a standalone script (`evaluation/benchmark/build_oracle.py`) that reads the raw CSV and uses pandas and numpy, and a test (`test_oracle_independence`) checks that the oracle imports nothing from the agent. But the tools also use pandas, so a defect inside pandas itself would affect both and would not be caught. Our design documents describe a DuckDB oracle, which would have removed that shared dependency, but the implemented oracle does not use DuckDB. I would state this as a limitation."*
 
 ---
 
@@ -435,7 +428,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 #### Q16: "What is the average latency per query, and where is the bottleneck?"
 **Answer**:
 > *"On a standard GTX 1650 GPU, average latency is ~143 seconds per question across 3 repeats (~45 seconds per run). 
-> Our stage-time waterfall analysis (`chart_stage_time_waterfall.png`) proves that **tool execution represents less than 0.5% of total time (<0.1s per tool)**. The entire bottleneck is local LLM token generation: `replanning` accounts for 56% of latency, followed by `answer_synthesis` (28%) and `plan_generation` (15%). Running on a larger GPU or quantized model will reduce latency linearly."*
+> Our stage-time breakdown (`chart_stage_time_waterfall.png`, `agent_eval.md`) shows tool execution at about 0.3% of total time (10 s of 2858 s; single calls took 0.003 s to about 1 s). The bottleneck is local LLM inference: replanning is 56% of the total, answer synthesis 28% and plan generation 15% (these shares overlap with repair time, so they are not additive). We have not measured other hardware, so we don't claim how latency would scale."*
 
 #### Q17: "What are Tukey's fences and how does your anomaly tool work?"
 **Answer**:
@@ -447,8 +440,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 
 #### Q18: "What happens if a tool produces a division by zero?"
 **Answer**:
-> *"In tools like `period_compare` where percentage growth is computed as $\frac{V_{comp} - V_{base}}{V_{base}}$, a zero base value ($V_{base} = 0$) results in a typed `undefined` value with classified reason `zero_division` (`src/da_agent/tools/pandas_tools.py`). 
-> The system never emits `NaN`, `Inf`, or unhandled Python exceptions across module boundaries."*
+> *"The M2 requirement (`docs/MODULES.md`) is that a zero denominator gives an undefined result with a stated reason, not a silent zero. In the code, results carry an `undefined_reason` field (`tools/executor.py`, `tools/charts.py:135`). Before the viva, open `tools/models.py` and `tests/unit/tools/` to confirm the exact reason names and the period_compare behaviour; I did not verify them."*
 
 #### Q19: "Can your system handle multiple datasets or live databases?"
 **Answer**:
@@ -458,7 +450,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 #### Q20: "If you had 3 more months on this project, what would be your top priorities?"
 **Answer**:
 > *"Three specific technical enhancements:
-> 1. **Few-Shot Rank/Trend Fine-Tuning**: Fine-tuning our local 4B model on structured output formatting for ranked lists and trend directions, which would instantly lift our benchmark score from 13/20 to ~19/20.
+> 1. **Fix the rank gap**: let `rank` aggregate (or teach the planner to chain `group_aggregate` then `rank`), restrict trends to the requested period, and align the trend direction rule with the oracle. These address 6 of the 7 failures; we have not run them, so we don't promise a score.
 > 2. **DuckDB In-Process Analytical Tools**: Allowing the agent to plan SQL queries executed in an in-memory DuckDB sandbox for complex multi-table aggregations, retaining full argument validation.
 > 3. **Streaming Token Generation**: Adding server-sent events (SSE) to the FastAPI backend so the React UI visualizes the agent's thought chain in real-time."*
 
@@ -514,4 +506,4 @@ uv run python evaluation/recovery_suite/run_recovery_suite.py
 
 ---
 
-*Document compiled and verified against `da-agent` version `0.2.0`, commit `90596ab`.*
+*Corrected 2026-11-19 against the code, traces and run data (8 tools, baseline mechanism, failure causes, ablation and spike caveats). Items marked "not verified" should be checked before the viva.*

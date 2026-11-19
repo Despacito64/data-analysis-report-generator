@@ -46,7 +46,7 @@ Consequences: Any tool or budget change applies to both variants.
 ## D-005: Oracle is independent in code and in authorship
 Status: Accepted (default; owner has not objected)
 Date: 2026-10-14   Made by: owner and assistant
-Decision: `evaluation/oracle.py` uses DuckDB SQL (plain Python allowed) from the raw file, imports no tool, agent, validation or report code,
+Decision: `evaluation/oracle.py` computes expected answers with pandas and numpy from the raw file (amended by D-051; originally DuckDB SQL), imports no tool, agent, validation or report code,
 and is written in a separate AI session that has not read `tools/`.
 Reason: Shared bugs between tools and oracle would hide errors.
 Consequences: An import-check test enforces it. The oracle session prompt is in `SESSION_PROMPTS.md`.
@@ -469,13 +469,26 @@ Decision: After tools complete and presenter findings exist, `run_agent` may cal
 Reason: Owner asked for natural-language replies without inventing numbers.
 Consequences: +1 LLM call per successful answered run; eval LLM budgets should account for narrative when enabled.
 
-## D-050: Empirical ablation and model comparison experiments
+## D-049: Remove regex resolver from the dynamic agent graph
 Status: Accepted
-Date: 2026-11-19   Made by: Antigravity
-Decision: Conducted two sets of empirical experiments beyond the M10 reference run:
-1. Dynamic replanning ablation: Ran all 20 frozen questions with `max_repair_attempts=0`. Dynamic replanning directly contributed +1 correct answer (13/20 vs 12/20, resolving question q02 via replanning).
-2. Model parameter and family comparison: Benchmarked `qwen3:4b` vs `qwen2.5:3b-instruct` and `qwen2.5:7b-instruct` across 5 representative task categories (`q03`, `q06`, `q09`, `q13`, `q17`). `qwen3:4b` achieved 4/5 (80%), `qwen2.5:7b-instruct` achieved 2/5 (40%), and `qwen2.5:3b-instruct` achieved 0/5 (0%, failing JSON repair limits).
-All charts generated and saved under `scripts/charts/` using matplotlib. Summary documented in `docs/EXPERIMENTS_SUMMARY.md`.
-Reason: Strengthen evaluation rigor for project review and isolate the contribution of dynamic replanning.
-Consequences: Evaluation artifacts and charts are reproducible via `scripts/generate_metrics_charts.py` and `scripts/run_experiments.sh`.
+Date: 2026-11-19   Made by: Cursor
+Decision: Delete the LangGraph `resolve` node. All `run_agent` planning uses `generate_plan_for_chat` on an `effective_planning_thread` (one-shot, dialogue, or React `ChatThread`). `resolve_question` remains in the repo for unit tests and documentation only; it is not on the agent execution path. Replan prompts keep a stub `ResolvedQuestion` with the raw question text.
+Reason: Owner request; chat path already bypassed the resolver; one interpreter (model + validators) for live UX.
+Consequences: Out-of-scope questions are no longer declined before the first LLM call; scope limits rely on tools, plan validation, and claim checks. Frozen M10 comparison may shift; rerun when approving a new reference score. D-004 baseline comparison unchanged (baseline never used the resolver).
 
+## D-050: Exploratory experiments after M10 (repair-cap run, partial model spike) and corrections
+Status: Accepted
+Date: 2026-11-19   Made by: Claude Code (reviewed by owner)
+Decision: Two exploratory runs were added after the M10 reference run, with charts from `scripts/generate_metrics_charts.py` and a write-up in `docs/EXPERIMENTS_SUMMARY.md`.
+1. Reduced-budget run `ablation-no-replan-20261119150629`: 20 questions, 1 repeat, `max_repair_attempts=0`, `max_llm_calls_per_question=4`, `per_question_budget_s=180` (reference: 2, 8, 300, 3 repeats). Score 12/20 vs 13/20. This is NOT a no-replanning ablation: `max_repair_attempts` only caps the planner's re-prompt loop after an invalid plan (`planner.py:397`); result-driven replanning is limited by `max_replans` (3), unchanged, and still ran. The only differing question is q02, where a replan step added an unneeded `group_aggregate` task. A clean ablation (`max_replans=0`, one change, 3 repeats) has not been run.
+2. Partial model spike: `qwen2.5:3b-instruct` and `qwen2.5:7b-instruct` on q03, q06, q09, q13, q17, 1 repeat; both runs stopped after those 5 questions. Passed 0 and 2 of the 5; the qwen3:4b figure (4 of the same 5) is from the 3-repeat reference run. No model ranking is claimed.
+Failure diagnosis of the M10 reference run, from traces: tools returned `ok` in all 7 failures. q06-q08 and q20: single `rank` task, and `rank` ranks individual rows (no aggregation argument). q01: `filter`-only plan. q11: no 2017 restriction. q12: numbers match the oracle, only the direction label differs (`volatile` vs `increasing`).
+Reason: Add experiments for the project review and record what they do and do not show.
+Consequences: Earlier statements that replanning "directly contributed +1" and that rank failures were LLM answer-extraction errors were wrong and have been corrected in `DEVELOPER_GUIDE.md`, `EXPERIMENTS_SUMMARY.md`, the README and the charts. D-049 had been overwritten by an earlier edit of this entry and is restored above. The frozen benchmark is unchanged. `matplotlib` was added to the project dependencies for the chart script on the owner's verbal approval. The review deck is built by `scripts/build_technical_ppt.py` with python-pptx supplied through `uv run --with`, so no dependency was added for it.
+
+## D-051: Report findings that correct earlier statements (ceiling check, augmentation regression, clean ablation)
+Status: Accepted (pending owner review)
+Date: 2026-11-20   Made by: Claude Code
+Decision: (1) `evaluation/run_agent_eval.py` gained `--max-replans`; clean ablation R2 (replans 0, all else equal) passed 12/20 with 118 calls vs R1 12/20 with 258 calls. (2) `scripts/ceiling_check.py` shows only 12/20 questions are passable through the scoring path (rank has no aggregation; scalar/dict shape mismatch for q01; q02 changed by augmentation; q11 and q12 trend object/direction label). The baseline's 20/20 uses hand-assembled answers, so it is a ceiling, not a fair comparison. (3) q02 regressed from R0 (13/20) because `augment_chat_plan` (D-048) appends `group_aggregate` to filter-only plans; earlier docs blamed a replan. (4) The oracle is pandas/numpy, not DuckDB as D-005, EVALUATION.md and ARCHITECTURE.md say. (5) The earlier reduced-budget run changed four settings and the code, so it is not a clean ablation.
+Reason: Report requires accurate statements.
+Consequences: Frozen questions and oracle were not changed. D-005, EVALUATION.md and ARCHITECTURE.md were amended on 2026-11-20 with the owner's approval to say pandas and numpy. Fixing the rank/count/trend answer shapes and the augmentation guard is future work.

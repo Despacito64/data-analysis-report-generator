@@ -150,7 +150,7 @@ def chart_accuracy_by_category(eval_data: dict, out_dir: Path, cat_map: dict[str
     ax.set_ylabel("Accuracy (fraction correct)")
     ax.set_title(
         "Accuracy by Question Category\n"
-        "Baseline scores 20/20 only because templates match oracle question shapes at design time"
+        "Baseline is keyed by question id (a ceiling, not a competitor)"
     )
     ax.set_xticks(x)
     ax.set_xticklabels([c.replace("_", "\n") for c in categories], fontsize=9)
@@ -217,7 +217,7 @@ def chart_stage_time_waterfall(eval_data: dict, out_dir: Path) -> Path:
     ax.set_xlabel("Time (seconds)")
     ax.set_title(
         "Time per Question by Pipeline Stage\n"
-        "Tool execution < 0.1 s per call — LLM inference is the bottleneck"
+        "Tool execution is about 0.3% of total time — LLM inference dominates"
     )
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
@@ -283,7 +283,7 @@ def chart_tool_distribution(eval_data: dict, out_dir: Path) -> Path:
     for i, (t, c) in enumerate(zip(tools, counts)):
         ax.text(c + 0.3, i, str(c), va="center", fontsize=9)
     ax.set_xlabel("Total calls (across all questions and repeats)")
-    ax.set_title("Tool Calls by Type\nAll 10 analytical tools are exercised across the benchmark")
+    ax.set_title("Tool Calls by Type\nTools executed across the benchmark (8 registered tools)")
     ax.invert_yaxis()
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_tool_distribution.png")
@@ -340,7 +340,7 @@ def chart_ablation_comparison(
         x - w / 2,
         full_correct,
         w,
-        label=f"With replanning ({sum(full_correct)}/20)",
+        label=f"Reference run, 3 repeats ({sum(full_correct)}/20)",
         color=C_AGENT,
         alpha=0.9,
     )
@@ -348,7 +348,7 @@ def chart_ablation_comparison(
         x + w / 2,
         abla_correct,
         w,
-        label=f"No replanning ({sum(abla_correct)}/20)",
+        label=f"Reduced-budget run, repair cap 0 ({sum(abla_correct)}/20)",
         color=C_OTHER,
         alpha=0.9,
     )
@@ -358,10 +358,10 @@ def chart_ablation_comparison(
     ax.set_yticks([0, 1])
     ax.set_yticklabels(["Incorrect", "Correct"])
     ax.set_title(
-        f"Ablation: With Replanning ({sum(full_correct)}/20) vs No Replanning ({sum(abla_correct)}/20)\n"
-        f"Replanning contributed {sum(full_correct) - sum(abla_correct)} additional correct answers"
+        "Exploratory comparison (four settings differ; replanning stayed on)\n"
+        "Only q02 differs between the two runs"
     )
-    ax.legend()
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2, frameon=False)
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_ablation_comparison.png")
 
@@ -384,7 +384,11 @@ def chart_model_comparison(
     acc_3b = spike_accuracy(spike_3b)
     acc_7b = spike_accuracy(spike_7b)
 
-    models = ["qwen2.5:3b-instruct", "qwen3:4b\n(reference)", "qwen2.5:7b-instruct"]
+    models = [
+        "qwen2.5:3b-instruct\n(3B)",
+        "qwen3:4b\n(4B, reference run)",
+        "qwen2.5:7b-instruct\n(7B)",
+    ]
     scores = [
         sum(acc_3b.get(q, False) for q in SPIKE_QS),
         sum(ref_acc.values()),
@@ -407,25 +411,12 @@ def chart_model_comparison(
             fontweight="bold",
         )
 
-    ax.set_ylabel("Correct answers (out of 5 representative questions)")
+    ax.set_ylabel("Questions passed (of the same 5)")
     ax.set_ylim(0, 6)
     ax.set_title(
-        "Model Comparison on 5 Representative Questions\n"
-        "(q03=group_aggregate, q06=rank, q09=period_compare, q13=contribution, q17=anomalies)"
+        "Partial 5-question spike (not like-for-like: 1 repeat vs 3-repeat reference)\n"
+        "q03, q06, q09, q13, q17"
     )
-    # annotate model sizes
-    sizes = ["3B params", "4B params", "7B params"]
-    for bar, size in zip(bars, sizes):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            0.1,
-            size,
-            ha="center",
-            va="bottom",
-            fontsize=8,
-            color="white",
-            fontweight="bold",
-        )
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_model_comparison.png")
 
@@ -483,7 +474,7 @@ def main() -> None:
         "--ablation-json",
         type=Path,
         default=None,
-        help="agent_eval.json from the no-replan ablation run (enables ablation chart)",
+        help="agent_eval.json from the reduced-budget repair-cap-0 run (enables the comparison chart)",
     )
     parser.add_argument(
         "--spike-3b",

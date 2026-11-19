@@ -23,9 +23,9 @@ echo "[1/4] Generating base charts from M10 reference run..."
 uv run python scripts/generate_metrics_charts.py
 echo "  Done. Charts in $CHARTS_DIR/"
 
-# ── 2. Ablation: no replanning (all 20 questions, 1 repeat) ──────────────────
+# ── 2. Reduced-budget run with repair cap 0 (NOT a no-replan ablation; see D-050) ──────────────────
 echo ""
-echo "[2/4] Running no-replan ablation (all 20 questions, max-repair-attempts=0)..."
+echo "[2/4] Running reduced-budget repair-cap-0 run (replanning stays on; see D-050)..."
 echo "      This will take ~10-20 minutes on GPU..."
 ABLATION_ID="ablation-no-replan-${TS}"
 uv run python evaluation/run_agent_eval.py \
