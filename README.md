@@ -414,7 +414,6 @@ data-analysis-report-generator/
 ├── scripts/                       # Experiment scripts, presentation builder & chart tools
 │   ├── generate_metrics_charts.py # Matplotlib visual chart generator
 │   ├── run_experiments.sh         # Reproducible ablation and model spike runner
-│   └── build_review_ppt.py        # Technical slide deck generator
 │
 ├── docs/                          # Architecture guides, contracts & decision records
 │   ├── ARCHITECTURE.md            # Detailed component design & import rules

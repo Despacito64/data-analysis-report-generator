@@ -20,8 +20,8 @@ This file records **what we relied on outside the repo**, **where it appears in 
 | Source | Type | Where used | Justification | Risk / limitation |
 | --- | --- | --- | --- | --- |
 | **Ollama** API (`http://localhost:11434`, OpenAI-compatible `/v1`) | Runtime | `config.yaml`, `OllamaClient` in `agent/planner.py`, `app.py`, `evaluation/run_agent_eval.py` | Local LLM per scope (**D-006**); no cloud API keys in repo | Must be running; GPU/CPU latency affects M6 gate (**D-034**) |
-| **qwen3:4b** (Q4_K_M GGUF) | Model | `config.yaml` default; M6 real eval `m6-shivam-full` | Selected by empirical spike: valid JSON + tool-name accuracy bar (**D-023**, supersedes open **D-006**) | 13/20 on frozen eval; not baseline parity |
-| **qwen3:8b**, **llama3.1:8b** (spike only) | Model candidates | `evaluation/results/model_spike.csv` (historical), **D-023** | Compared during M0/M5 spike; not primary deploy | Documented in decisions only |
+| **qwen3:4b** (Q4_K_M GGUF) | Model | `config.yaml` default (see D-023) | Selected by empirical spike: valid JSON + tool-name accuracy bar (**D-023**, supersedes open **D-006**) | See `docs/EXPERIMENTS_SUMMARY.md` for current results |
+| **qwen3:8b**, **llama3.1:8b** (spike only) | Model candidates | **D-023** (the spike output files were removed) | Compared during M0/M5 spike; not primary deploy | Documented in decisions only |
 | **llama3.2:3b** | Installed on host | Not in `config.yaml` | Present on machine; **not** chosen for project | *Inferred — verify with owner if used anywhere* |
 
 ---

@@ -16,7 +16,7 @@ Updated: 2026-11-20 by Claude Code
 ## Next steps
 1. Owner review of the paper (`docs/report/`, 6 pages) and the deck (`docs/Technical-Review-Deck.pptx`, 22 slides). Both are local only: they are not tracked in git (an earlier version of the paper and a deck were pushed to GitHub before this was decided; they remain in history).
 2. Decide about the demo video, which was recorded with the previous model.
-3. Old result directories were removed on 2026-11-20 (M10 and M6 runs kept); recovery tag `pre-cleanup-20261120` is local.
+3. Old result directories, the M10 reference run, the M6 and M5 outputs and the earlier deck were removed on 2026-11-20; recovery tags `pre-cleanup-20261120` and `pre-cleanup2-20261120` are local.
 4. Decide whether to merge `post-freeze-fixes` into `shivam` and push. Nothing from this branch is pushed.
 
 ## Open questions
