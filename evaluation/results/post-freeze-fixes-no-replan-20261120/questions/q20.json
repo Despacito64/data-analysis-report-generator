@@ -1,0 +1,123 @@
+{
+  "question_id": "q20",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 56.51602529291995,
+  "stage_timings": {
+    "plan_generation": 35.69017638301011,
+    "question_resolution": 0.0,
+    "plan_validation": 0.011308244080282748,
+    "tool_execution": 0.38441778800915927,
+    "result_inspection": 0.0027293210150673985,
+    "graph_finalization": 0.001990840071812272,
+    "answer_synthesis": 14.84220453898888,
+    "tool_executions": 0.3295
+  },
+  "llm_call_count": 2,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 35.67322135006543,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 5.386098262039013,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0044
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0902
+    },
+    {
+      "task_id": "t3",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.2349
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q20",
+      "attempt": 1,
+      "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q20_r1_d782a063",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Seattle",
+        "Newark",
+        "Detroit"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 56.51602529291995,
+      "stage_timings": {
+        "plan_generation": 35.69017638301011,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011308244080282748,
+        "tool_execution": 0.38441778800915927,
+        "result_inspection": 0.0027293210150673985,
+        "graph_finalization": 0.001990840071812272,
+        "answer_synthesis": 14.84220453898888,
+        "tool_executions": 0.3295
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0044
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0902
+        },
+        {
+          "task_id": "t3",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.2349
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 35.67322135006543,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "graph_finalization",
+          "duration_s": 5.386098262039013,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    }
+  ]
+}

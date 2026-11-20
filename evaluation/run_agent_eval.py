@@ -571,6 +571,7 @@ def evaluate_agent(
     per_question_budget_s: float | None = None,
     overall_timeout_s: float | None = None,
     max_repair_attempts: int | None = None,
+    max_replans: int | None = None,
     max_llm_calls_per_question: int | None = None,
     thinking_enabled: bool | None = None,
     keep_alive: str | int | None = None,
@@ -584,6 +585,8 @@ def evaluate_agent(
     """Run/resume a bounded evaluation, persisting every question attempt immediately."""
     if repeats < 1:
         raise ValueError("repeats must be at least one")
+    if max_replans is not None and max_replans < 0:
+        raise ValueError("max_replans must be zero or greater")
     if mode not in {"real", "mock"}:
         raise ValueError("mode must be 'real' or 'mock'")
     if resume and not run_id:
@@ -668,6 +671,7 @@ def evaluate_agent(
         "per_question_budget_s": config.evaluation.per_question_budget_s,
         "overall_timeout_s": config.evaluation.overall_timeout_s,
         "max_repair_attempts": config.evaluation.max_repair_attempts,
+        "max_replans": config.budgets.max_replans if max_replans is None else max_replans,
         "max_llm_calls_per_question": config.evaluation.max_llm_calls_per_question,
     }
     run_trace.log_event("evaluation_run_started", diagnostics | {"resume": resume})
@@ -796,6 +800,7 @@ def evaluate_agent(
                     profile=profile,
                     trace_writer=writer,
                     max_repairs=config.evaluation.max_repair_attempts,
+                    max_replans=max_replans,
                 )
                 answer = extract_score_answer(result)
                 correct = answer is not None and answers_match(
@@ -1102,6 +1107,11 @@ def main() -> None:
     parser.add_argument("--per-question-budget-s", type=float)
     parser.add_argument("--overall-timeout-s", type=float)
     parser.add_argument("--max-repair-attempts", type=int)
+    parser.add_argument(
+        "--max-replans",
+        type=int,
+        help="Override budgets.max_replans for this run only (0 disables result-driven replanning).",
+    )
     parser.add_argument("--max-llm-calls-per-question", type=int)
     parser.add_argument(
         "--thinking",
@@ -1133,6 +1143,7 @@ def main() -> None:
         per_question_budget_s=args.per_question_budget_s,
         overall_timeout_s=args.overall_timeout_s,
         max_repair_attempts=args.max_repair_attempts,
+        max_replans=args.max_replans,
         max_llm_calls_per_question=args.max_llm_calls_per_question,
         thinking_enabled=args.thinking,
         keep_alive=args.keep_alive,

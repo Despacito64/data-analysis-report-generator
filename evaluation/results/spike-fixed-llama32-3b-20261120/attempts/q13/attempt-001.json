@@ -1,0 +1,103 @@
+{
+  "question_id": "q13",
+  "attempt": 1,
+  "run_id": "agent_eval_spike-fixed-llama32-3b-20261120_q13_r1_d325401d",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Consumer",
+    "Corporate"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 108.47860085999127,
+  "stage_timings": {
+    "plan_generation": 25.87908393703401,
+    "question_resolution": 0.0,
+    "plan_validation": 0.011349659063853323,
+    "tool_execution": 0.7381907069357112,
+    "result_inspection": 0.013244608999229968,
+    "replanning": 23.005303586949594,
+    "graph_finalization": 0.0052998969331383705,
+    "answer_synthesis": 56.16651934606489,
+    "tool_executions": 0.5829000000000001
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "failed",
+      "duration_s": 0.0017
+    },
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0058
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0041
+    },
+    {
+      "task_id": "t3",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0052
+    },
+    {
+      "task_id": "t4",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.5661
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "skipped",
+      "duration_s": 0.0
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 25.86530226294417,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.102661798009649,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 6.543597996002063,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 9.308722322923131,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 2.4983311200048774,
+      "completed": true,
+      "model": "llama3.2:3b"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": []
+}

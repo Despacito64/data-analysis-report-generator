@@ -584,3 +584,35 @@ def test_segment_contribution_negative_values() -> None:
     assert seg_dict["A"].share == -0.5
     assert seg_dict["B"].share == 1.5
     assert res.reconciles is True
+
+
+# ---------------------------------------------------------------------------
+# Post-freeze changes (D-052): grand total, rank by aggregate, trend direction
+# ---------------------------------------------------------------------------
+
+
+def test_group_aggregate_empty_by_returns_one_overall_total() -> None:
+    df = pd.DataFrame({"g": ["a", "b", "a"], "v": [1.0, 2.0, 3.0]})
+    env = group_aggregate(df, GroupAggregateArgs(by=[], metric_column="v", aggregation="sum"))
+    assert env.result.total_groups == 1
+    assert env.result.rows[0].group_keys == {}
+    assert env.result.rows[0].value == 6.0
+
+
+def test_rank_with_aggregation_ranks_entity_totals() -> None:
+    df = pd.DataFrame({"e": ["a", "b", "a", "c"], "v": [5.0, 6.0, 5.0, 1.0]})
+    env = rank(df, RankArgs(entity_column="e", metric_column="v", aggregation="sum", top_n=2))
+    assert [r.entity for r in env.result.rows] == ["a", "b"]
+    assert [r.value for r in env.result.rows] == [10.0, 6.0]
+    assert env.input_row_count == 4
+
+
+def test_trend_direction_follows_slope_sign() -> None:
+    df = pd.DataFrame(
+        {
+            "d": pd.to_datetime(["2023-01-15", "2023-02-15", "2023-03-15", "2023-04-15"]),
+            "v": [100.0, 50.0, 300.0, 400.0],
+        }
+    )
+    args = TrendArgs(date_column="d", metric_column="v", grain="monthly", aggregation="sum")
+    assert trend(df, args).result.direction == TrendDirection.INCREASING

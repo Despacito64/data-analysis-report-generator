@@ -1,0 +1,156 @@
+{
+  "question_id": "q20",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 63.48579514597077,
+  "stage_timings": {
+    "plan_generation": 27.682657983968966,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012928307056427002,
+    "tool_execution": 0.2753148640040308,
+    "result_inspection": 0.006463698926381767,
+    "replanning": 32.528054389869794,
+    "graph_finalization": 0.00034298107493668795,
+    "answer_synthesis": 0.014098115032538772,
+    "tool_executions": 0.10930000000000001
+  },
+  "llm_call_count": 4,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 27.6574386539869,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 8.15403131803032,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 24.338778865989298,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 4,
+      "stage": "graph_finalization",
+      "duration_s": 2.9136910809902474,
+      "completed": true,
+      "model": "llama3.2:3b"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0049
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.097
+    },
+    {
+      "task_id": "t3",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0074
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q20",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-llama32-3b-20261120_q20_r1_0152b887",
+      "status": "failed",
+      "accuracy": false,
+      "answer": {
+        "total_value": 286397.0217,
+        "shares": {
+          "Consumer": 0.46829819808841966,
+          "Corporate": 0.32115953390167534,
+          "Home Office": 0.21054226800990508
+        }
+      },
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 63.48579514597077,
+      "stage_timings": {
+        "plan_generation": 27.682657983968966,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012928307056427002,
+        "tool_execution": 0.2753148640040308,
+        "result_inspection": 0.006463698926381767,
+        "replanning": 32.528054389869794,
+        "graph_finalization": 0.00034298107493668795,
+        "answer_synthesis": 0.014098115032538772,
+        "tool_executions": 0.10930000000000001
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0049
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.097
+        },
+        {
+          "task_id": "t3",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0074
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 27.6574386539869,
+          "completed": true,
+          "model": "llama3.2:3b"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 8.15403131803032,
+          "completed": true,
+          "model": "llama3.2:3b"
+        },
+        {
+          "call_number": 3,
+          "stage": "replanning",
+          "duration_s": 24.338778865989298,
+          "completed": true,
+          "model": "llama3.2:3b"
+        },
+        {
+          "call_number": 4,
+          "stage": "graph_finalization",
+          "duration_s": 2.9136910809902474,
+          "completed": true,
+          "model": "llama3.2:3b"
+        }
+      ],
+      "llm_call_count": 4,
+      "repair_attempts": []
+    }
+  ]
+}

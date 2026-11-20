@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Generate presentation-ready charts from existing M10 eval results.
+"""Generate presentation-ready charts from saved evaluation runs.
 
-No Ollama required — reads only evaluation/results/m10-frozen-real-20261117/agent_eval.json
+No Ollama required — reads only the saved agent_eval.json files of the runs named by the options below
 and evaluation/benchmark/questions.json.
 
 Usage:
     uv run python scripts/generate_metrics_charts.py
     uv run python scripts/generate_metrics_charts.py --out scripts/charts
-    uv run python scripts/generate_metrics_charts.py --ablation-json evaluation/results/ablation-no-replan-XXX/agent_eval.json
-    uv run python scripts/generate_metrics_charts.py --spike-3b evaluation/results/model-spike-qwen25-3b-XXX/agent_eval.json --spike-7b evaluation/results/model-spike-qwen25-7b-XXX/agent_eval.json
+    uv run python scripts/generate_metrics_charts.py --ablation-json evaluation/results/<replanning-off run>/agent_eval.json
+    uv run python scripts/generate_metrics_charts.py --spike-3b <3b run>/agent_eval.json --spike-7b <7b run>/agent_eval.json --spike-llama <llama run>/agent_eval.json
 """
 
 from __future__ import annotations
@@ -93,8 +93,17 @@ def load_categories(questions_path: Path) -> dict[str, str]:
 
 
 # ── Chart 1: Accuracy by question category ───────────────────────────────────
-def chart_accuracy_by_category(eval_data: dict, out_dir: Path, cat_map: dict[str, str]) -> Path:
+def chart_accuracy_by_category(
+    eval_data: dict,
+    out_dir: Path,
+    cat_map: dict[str, str],
+    noreplan_data: dict | None = None,
+) -> Path:
     per_q = {row["question_id"]: row for row in eval_data["per_question"]}
+    per_q_r2 = (
+        {row["question_id"]: row for row in noreplan_data["per_question"]} if noreplan_data else {}
+    )
+    cat_r2: dict[str, list[bool]] = defaultdict(list)
 
     # aggregate per category
     cat_agent: dict[str, list[bool]] = defaultdict(list)
@@ -104,6 +113,8 @@ def chart_accuracy_by_category(eval_data: dict, out_dir: Path, cat_map: dict[str
             continue
         row = per_q[qid]
         cat_agent[cat].append(row["accuracy"] is True)
+        if per_q_r2:
+            cat_r2[cat].append(per_q_r2.get(qid, {}).get("accuracy") is True)
         cat_baseline[cat].append(row.get("baseline_accuracy", True))
 
     categories = sorted(cat_agent.keys())
@@ -113,15 +124,35 @@ def chart_accuracy_by_category(eval_data: dict, out_dir: Path, cat_map: dict[str
     base_frac = [f"{sum(cat_baseline[c])}/{len(cat_baseline[c])}" for c in categories]
 
     x = np.arange(len(categories))
-    w = 0.35
+    w = 0.27 if per_q_r2 else 0.35
 
     fig, ax = plt.subplots(figsize=(12, 5))
     plt.style.use("seaborn-v0_8-whitegrid")
 
-    b1 = ax.bar(x - w / 2, agent_acc, w, label="Dynamic agent (qwen3:4b)", color=C_AGENT, alpha=0.9)
-    b2 = ax.bar(
-        x + w / 2, base_acc, w, label="Baseline (template ceiling)", color=C_BASE, alpha=0.9
+    offs = (-w, 0, w) if per_q_r2 else (-w / 2, None, w / 2)
+    b1 = ax.bar(
+        x + offs[0],
+        agent_acc,
+        w,
+        label="R1: replanning on (qwen3:4b-instruct)",
+        color=C_AGENT,
+        alpha=0.9,
     )
+    if per_q_r2:
+        r2_acc = [sum(cat_r2[c]) / len(cat_r2[c]) for c in categories]
+        ax.bar(x + offs[1], r2_acc, w, label="R2: replanning off", color=C_OTHER, alpha=0.9)
+        for xi, c, acc in zip(x, categories, r2_acc):
+            ax.text(
+                xi + offs[1],
+                acc + 0.02,
+                f"{sum(cat_r2[c])}/{len(cat_r2[c])}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+                color="#475569",
+                fontweight="bold",
+            )
+    b2 = ax.bar(x + offs[2], base_acc, w, label="Baseline (keyed ceiling)", color=C_BASE, alpha=0.9)
 
     for bar, frac in zip(b1, agent_frac):
         ax.text(
@@ -149,13 +180,13 @@ def chart_accuracy_by_category(eval_data: dict, out_dir: Path, cat_map: dict[str
     ax.set_xlabel("Question category")
     ax.set_ylabel("Accuracy (fraction correct)")
     ax.set_title(
-        "Accuracy by Question Category\n"
-        "Baseline scores 20/20 only because templates match oracle question shapes at design time"
+        "Questions passed by category, one run per question\n"
+        "Baseline is keyed by question id (a ceiling, not a competitor)"
     )
     ax.set_xticks(x)
     ax.set_xticklabels([c.replace("_", "\n") for c in categories], fontsize=9)
-    ax.set_ylim(0, 1.25)
-    ax.legend()
+    ax.set_ylim(0, 1.4)
+    ax.legend(loc="upper center", ncol=3, frameon=False)
     ax.axhline(1.0, color=C_BASE, linestyle="--", linewidth=0.8, alpha=0.5)
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_accuracy_by_category.png")
@@ -217,7 +248,7 @@ def chart_stage_time_waterfall(eval_data: dict, out_dir: Path) -> Path:
     ax.set_xlabel("Time (seconds)")
     ax.set_title(
         "Time per Question by Pipeline Stage\n"
-        "Tool execution < 0.1 s per call — LLM inference is the bottleneck"
+        "Tool execution is about 0.2% of total time (R1); LLM inference dominates"
     )
     ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
@@ -283,7 +314,7 @@ def chart_tool_distribution(eval_data: dict, out_dir: Path) -> Path:
     for i, (t, c) in enumerate(zip(tools, counts)):
         ax.text(c + 0.3, i, str(c), va="center", fontsize=9)
     ax.set_xlabel("Total calls (across all questions and repeats)")
-    ax.set_title("Tool Calls by Type\nAll 10 analytical tools are exercised across the benchmark")
+    ax.set_title("Tool Calls by Type\nTools executed across the benchmark (8 registered tools)")
     ax.invert_yaxis()
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_tool_distribution.png")
@@ -340,7 +371,7 @@ def chart_ablation_comparison(
         x - w / 2,
         full_correct,
         w,
-        label=f"With replanning ({sum(full_correct)}/20)",
+        label=f"R1: replanning on ({sum(full_correct)}/20)",
         color=C_AGENT,
         alpha=0.9,
     )
@@ -348,7 +379,7 @@ def chart_ablation_comparison(
         x + w / 2,
         abla_correct,
         w,
-        label=f"No replanning ({sum(abla_correct)}/20)",
+        label=f"R2: replanning off ({sum(abla_correct)}/20)",
         color=C_OTHER,
         alpha=0.9,
     )
@@ -358,74 +389,41 @@ def chart_ablation_comparison(
     ax.set_yticks([0, 1])
     ax.set_yticklabels(["Incorrect", "Correct"])
     ax.set_title(
-        f"Ablation: With Replanning ({sum(full_correct)}/20) vs No Replanning ({sum(abla_correct)}/20)\n"
-        f"Replanning contributed {sum(full_correct) - sum(abla_correct)} additional correct answers"
+        "Replanning on versus off, per question (same code, model and settings)\n"
+        "One run per question"
     )
-    ax.legend()
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2, frameon=False)
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_ablation_comparison.png")
 
 
-# ── Chart 7: Model comparison bar chart (requires spike JSONs) ────────────────
-def chart_model_comparison(
-    spike_3b: dict | None,
-    spike_7b: dict | None,
-    out_dir: Path,
-) -> Path:
-    # qwen3:4b reference from M10 on same 5 questions: q03=pass,q06=fail,q09=pass,q13=pass,q17=pass
-    SPIKE_QS = ["q03", "q06", "q09", "q13", "q17"]
-    ref_acc = {q: q != "q06" for q in SPIKE_QS}  # 4/5
-
-    def spike_accuracy(data: dict | None) -> dict[str, bool]:
-        if data is None:
-            return {}
-        return {r["question_id"]: (r["accuracy"] is True) for r in data["per_question"]}
-
-    acc_3b = spike_accuracy(spike_3b)
-    acc_7b = spike_accuracy(spike_7b)
-
-    models = ["qwen2.5:3b-instruct", "qwen3:4b\n(reference)", "qwen2.5:7b-instruct"]
-    scores = [
-        sum(acc_3b.get(q, False) for q in SPIKE_QS),
-        sum(ref_acc.values()),
-        sum(acc_7b.get(q, False) for q in SPIKE_QS),
-    ]
-    colours = [C_OTHER, C_AGENT, C_OTHER]
+# ── Chart 7: Model comparison bar chart ──────────────────────────────────────
+def chart_model_comparison(runs: list[tuple[str, dict]], out_dir: Path) -> Path:
+    """Questions passed out of all questions, one run per question, for each (label, eval) pair."""
+    models = [label for label, _ in runs]
+    scores = [sum(1 for r in data["per_question"] if r["accuracy"] is True) for _, data in runs]
+    totals = [len(data["per_question"]) for _, data in runs]
+    colours = [C_AGENT] + [C_OTHER] * (len(runs) - 1)
 
     fig, ax = plt.subplots(figsize=(8, 5))
     plt.style.use("seaborn-v0_8-whitegrid")
-
-    bars = ax.bar(models, scores, color=colours, alpha=0.9, edgecolor="white", width=0.5)
-    for bar, score in zip(bars, scores):
+    bars = ax.bar(models, scores, color=colours, alpha=0.9, edgecolor="white", width=0.55)
+    for bar, score, total in zip(bars, scores, totals):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.05,
-            f"{score}/5",
+            bar.get_height() + 0.2,
+            f"{score}/{total}",
             ha="center",
             va="bottom",
             fontsize=12,
             fontweight="bold",
         )
-
-    ax.set_ylabel("Correct answers (out of 5 representative questions)")
-    ax.set_ylim(0, 6)
+    ax.set_ylabel("Questions passed")
+    ax.set_ylim(0, max(totals) + 2)
     ax.set_title(
-        "Model Comparison on 5 Representative Questions\n"
-        "(q03=group_aggregate, q06=rank, q09=period_compare, q13=contribution, q17=anomalies)"
+        "Four local models, one run per question, replanning on\n"
+        "The 7B model does not fit in 4 GB, so timings are not comparable"
     )
-    # annotate model sizes
-    sizes = ["3B params", "4B params", "7B params"]
-    for bar, size in zip(bars, sizes):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            0.1,
-            size,
-            ha="center",
-            va="bottom",
-            fontsize=8,
-            color="white",
-            fontweight="bold",
-        )
     fig.tight_layout()
     return savefig(fig, out_dir, "chart_model_comparison.png")
 
@@ -465,8 +463,8 @@ def main() -> None:
     parser.add_argument(
         "--eval-json",
         type=Path,
-        default=ROOT / "evaluation/results/m10-frozen-real-20261117/agent_eval.json",
-        help="Path to the M10 agent_eval.json (default: m10 reference run)",
+        default=ROOT / "evaluation/results/post-freeze-fixes-frozen-real-20261120/agent_eval.json",
+        help="agent_eval.json of the main run (replanning on)",
     )
     parser.add_argument(
         "--questions-json",
@@ -482,20 +480,26 @@ def main() -> None:
     parser.add_argument(
         "--ablation-json",
         type=Path,
-        default=None,
-        help="agent_eval.json from the no-replan ablation run (enables ablation chart)",
+        default=ROOT / "evaluation/results/post-freeze-fixes-no-replan-20261120/agent_eval.json",
+        help="agent_eval.json of the same run with replanning off",
     )
     parser.add_argument(
         "--spike-3b",
         type=Path,
-        default=None,
-        help="agent_eval.json from qwen2.5:3b-instruct spike",
+        default=ROOT / "evaluation/results/spike-fixed-qwen25-3b-20261120/agent_eval.json",
+        help="agent_eval.json from the qwen2.5:3b-instruct run",
     )
     parser.add_argument(
         "--spike-7b",
         type=Path,
-        default=None,
-        help="agent_eval.json from qwen2.5:7b-instruct spike",
+        default=ROOT / "evaluation/results/spike-fixed-qwen25-7b-20261120/agent_eval.json",
+        help="agent_eval.json from the qwen2.5:7b-instruct run",
+    )
+    parser.add_argument(
+        "--spike-llama",
+        type=Path,
+        default=ROOT / "evaluation/results/spike-fixed-llama32-3b-20261120/agent_eval.json",
+        help="agent_eval.json from the llama3.2:3b run",
     )
     args = parser.parse_args()
 
@@ -504,23 +508,33 @@ def main() -> None:
     cat_map = load_categories(args.questions_json)
     out_dir = args.out
 
+    noreplan_data = (
+        load_eval(args.ablation_json)
+        if args.ablation_json and args.ablation_json.exists()
+        else None
+    )
+
     print("Generating charts ...")
-    chart_accuracy_by_category(eval_data, out_dir, cat_map)
+    chart_accuracy_by_category(eval_data, out_dir, cat_map, noreplan_data)
     chart_stage_time_waterfall(eval_data, out_dir)
     chart_llm_calls_distribution(eval_data, out_dir)
     chart_tool_distribution(eval_data, out_dir)
     chart_repair_impact(eval_data, out_dir)
 
-    if args.ablation_json and args.ablation_json.exists():
-        print(f"Loading ablation data from {args.ablation_json} ...")
-        ablation_data = load_eval(args.ablation_json)
-        chart_ablation_comparison(eval_data, ablation_data, out_dir, cat_map)
+    if noreplan_data is not None:
+        chart_ablation_comparison(eval_data, noreplan_data, out_dir, cat_map)
     else:
-        print("  (skip) ablation chart — pass --ablation-json <path> after ablation run completes")
+        print("  (skip) ablation chart: the replanning-off run was not found")
 
-    spike_3b = load_eval(args.spike_3b) if args.spike_3b and args.spike_3b.exists() else None
-    spike_7b = load_eval(args.spike_7b) if args.spike_7b and args.spike_7b.exists() else None
-    chart_model_comparison(spike_3b, spike_7b, out_dir)
+    runs = [("qwen3:4b-instruct", eval_data)]
+    for label, path in (
+        ("qwen2.5:7b-instruct", args.spike_7b),
+        ("llama3.2:3b", args.spike_llama),
+        ("qwen2.5:3b-instruct", args.spike_3b),
+    ):
+        if path and path.exists():
+            runs.append((label, load_eval(path)))
+    chart_model_comparison(runs, out_dir)
 
     write_summary_csv(eval_data, out_dir, cat_map)
     print(f"\nDone. All artifacts in {out_dir}/")

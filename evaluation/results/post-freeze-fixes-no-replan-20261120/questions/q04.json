@@ -1,0 +1,99 @@
+{
+  "question_id": "q04",
+  "status": "passed",
+  "accuracy": true,
+  "total_time_s": 33.274809424066916,
+  "stage_timings": {
+    "plan_generation": 30.057080171070993,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012700769933871925,
+    "tool_execution": 0.007246737950481474,
+    "result_inspection": 0.0029304579365998507,
+    "graph_finalization": 0.0002595229307189584,
+    "answer_synthesis": 0.001777899102307856,
+    "tool_executions": 0.0045
+  },
+  "llm_call_count": 2,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.040516937035136,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 3.1570216279942542,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0045
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": null,
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q04",
+      "attempt": 1,
+      "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q04_r1_3dc75b41",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "Consumer": 134119.2092,
+        "Corporate": 91979.13399999999,
+        "Home Office": 60298.678499999995
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 33.274809424066916,
+      "stage_timings": {
+        "plan_generation": 30.057080171070993,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012700769933871925,
+        "tool_execution": 0.007246737950481474,
+        "result_inspection": 0.0029304579365998507,
+        "graph_finalization": 0.0002595229307189584,
+        "answer_synthesis": 0.001777899102307856,
+        "tool_executions": 0.0045
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0045
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 30.040516937035136,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "graph_finalization",
+          "duration_s": 3.1570216279942542,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    }
+  ]
+}

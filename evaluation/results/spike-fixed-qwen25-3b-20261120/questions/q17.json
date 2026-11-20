@@ -1,0 +1,205 @@
+{
+  "question_id": "q17",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 179.89153751300182,
+  "stage_timings": {
+    "plan_generation": 7.406279535964131,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012110487907193601,
+    "tool_execution": 0.5304457419551909,
+    "result_inspection": 0.005005245096981525,
+    "replanning": 86.08655555511359,
+    "repair_attempt_1": 22.919684413005598,
+    "repair_attempt_2": 7.528686921927147,
+    "graph_finalization": 0.0060706440126523376,
+    "answer_synthesis": 82.26021059090272,
+    "tool_executions": 0.5245000000000001
+  },
+  "llm_call_count": 6,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 7.3928646590793505,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 27.272745140013285,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 28.32677819195669,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 22.919684413005598,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 5,
+      "stage": "replanning",
+      "duration_s": 7.528686921927147,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 6,
+      "stage": "graph_finalization",
+      "duration_s": 3.236895955982618,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "detect_anomalies_iqr",
+      "status": "ok",
+      "duration_s": 0.0086
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0011
+    },
+    {
+      "task_id": "t3",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.5148
+    }
+  ],
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 22.919684413005598
+    },
+    {
+      "attempt": 2,
+      "duration_s": 7.528686921927147
+    }
+  ],
+  "attempt_count": 1,
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q17",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-3b-20261120_q17_r1_9cb823f9",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Cisco TelePresence System EX90 Videoconferencing Unit",
+        "Canon imageCLASS 2200 Advanced Copier",
+        "Canon imageCLASS 2200 Advanced Copier",
+        "Canon imageCLASS 2200 Advanced Copier",
+        "Canon imageCLASS 2200 Advanced Copier"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 179.89153751300182,
+      "stage_timings": {
+        "plan_generation": 7.406279535964131,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012110487907193601,
+        "tool_execution": 0.5304457419551909,
+        "result_inspection": 0.005005245096981525,
+        "replanning": 86.08655555511359,
+        "repair_attempt_1": 22.919684413005598,
+        "repair_attempt_2": 7.528686921927147,
+        "graph_finalization": 0.0060706440126523376,
+        "answer_synthesis": 82.26021059090272,
+        "tool_executions": 0.5245000000000001
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "detect_anomalies_iqr",
+          "status": "ok",
+          "duration_s": 0.0086
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0011
+        },
+        {
+          "task_id": "t3",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.5148
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 7.3928646590793505,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 27.272745140013285,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "replanning",
+          "duration_s": 28.32677819195669,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 4,
+          "stage": "replanning",
+          "duration_s": 22.919684413005598,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 5,
+          "stage": "replanning",
+          "duration_s": 7.528686921927147,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 6,
+          "stage": "graph_finalization",
+          "duration_s": 3.236895955982618,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        }
+      ],
+      "llm_call_count": 6,
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 22.919684413005598
+        },
+        {
+          "attempt": 2,
+          "duration_s": 7.528686921927147
+        }
+      ]
+    }
+  ]
+}

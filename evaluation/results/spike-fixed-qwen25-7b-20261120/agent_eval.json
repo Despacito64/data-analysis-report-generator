@@ -1,0 +1,2550 @@
+{
+  "score_complete": true,
+  "agent": {
+    "correct": 8,
+    "total": 20,
+    "accuracy_over_all_questions": 0.4,
+    "accuracy_over_completed_questions": 0.4,
+    "completed_questions": 20,
+    "timeouts": 0,
+    "not_run": 0
+  },
+  "baseline": {
+    "correct": 20,
+    "total": 20,
+    "accuracy": 1.0,
+    "note": "The baseline's 20/20 is a template-keyed ceiling, not a fair competitor."
+  },
+  "question_status_counts": {
+    "failed": 12,
+    "passed": 8
+  },
+  "baseline_comparison": {
+    "loss": 12,
+    "tie": 8
+  },
+  "failure_reasons": {
+    "no_score_shaped_answer": 8,
+    "incorrect_answer": 4
+  },
+  "aggregate": {
+    "status": "complete",
+    "accuracy_over_all_questions": 0.4,
+    "accuracy_over_completed_questions": 0.4,
+    "completed_questions": 20,
+    "total_time_s": 1593.3720107333502,
+    "stage_timings": {
+      "plan_generation": 1025.200647513033,
+      "question_resolution": 0.0,
+      "plan_validation": 0.14621421718038619,
+      "graph_finalization": 0.03272078791633248,
+      "answer_synthesis": 139.79205866588745,
+      "tool_executions": 1.3406000000000002,
+      "repair_attempt_1": 36.36122461000923,
+      "repair_attempt_2": 34.47620163799729,
+      "tool_execution": 1.4229511067969725,
+      "result_inspection": 0.030356616945937276,
+      "replanning": 304.9554169711191
+    },
+    "llm_call_count": 46,
+    "warmup_llm_call_count": 1,
+    "total_llm_call_count": 47,
+    "llm_calls": [
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.101598693057895,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 35.2540458580479,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "plan_generation",
+        "duration_s": 36.36122461000923,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "plan_generation",
+        "duration_s": 34.47620163799729,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 55.61894111800939,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 7.85558927198872,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 10.823444728041068,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 55.67340377194341,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 7.73924522602465,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 9.365550443064421,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 55.743225847953,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 7.747141120955348,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 7.605883541982621,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 57.44925013999455,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 60.101167713990435,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 11.064951382926665,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.099728534929454,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 17.33583072409965,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 60.09341617801692,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 13.469711425015703,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.016967747942545,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 36.341133861918934,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 9.67961230291985,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 14.152683180989698,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.02374390803743,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 18.39250544901006,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 11.412209203001112,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 8.767049280926585,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 54.939564333995804,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 7.735272275982425,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 10.782125022029504,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.100017181946896,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 15.227169658057392,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 6.0837167910067365,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 7.897801446961239,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 54.71745132596698,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 6.116236479021609,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 7.196910043014213,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.023410586989485,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 29.077295348979533,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 60.10027328308206,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 7.335836728918366,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 60.10007940803189,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 1,
+        "stage": "plan_generation",
+        "duration_s": 47.66282536298968,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 2,
+        "stage": "replanning",
+        "duration_s": 60.10103676607832,
+        "completed": false,
+        "error": "TimeoutError: timed out",
+        "model": "qwen2.5:7b-instruct"
+      },
+      {
+        "call_number": 3,
+        "stage": "graph_finalization",
+        "duration_s": 12.089427455910482,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      }
+    ],
+    "tool_executions": [
+      {
+        "task_id": "t1",
+        "tool": "group_aggregate",
+        "status": "ok",
+        "duration_s": 0.0359
+      },
+      {
+        "task_id": "t1",
+        "tool": "group_aggregate",
+        "status": "ok",
+        "duration_s": 0.0057
+      },
+      {
+        "task_id": "t1",
+        "tool": "group_aggregate",
+        "status": "ok",
+        "duration_s": 0.0041
+      },
+      {
+        "task_id": "t1",
+        "tool": "rank",
+        "status": "ok",
+        "duration_s": 0.4823
+      },
+      {
+        "task_id": "t1",
+        "tool": "rank",
+        "status": "ok",
+        "duration_s": 0.4171
+      },
+      {
+        "task_id": "t1",
+        "tool": "period_compare",
+        "status": "ok",
+        "duration_s": 0.0153
+      },
+      {
+        "task_id": "t1",
+        "tool": "trend",
+        "status": "ok",
+        "duration_s": 0.0261
+      },
+      {
+        "task_id": "t1",
+        "tool": "segment_contribution",
+        "status": "ok",
+        "duration_s": 0.0044
+      },
+      {
+        "task_id": "t1",
+        "tool": "correlation",
+        "status": "ok",
+        "duration_s": 0.0026
+      },
+      {
+        "task_id": "t1",
+        "tool": "correlation",
+        "status": "ok",
+        "duration_s": 0.0026
+      },
+      {
+        "task_id": "t1",
+        "tool": "detect_anomalies_iqr",
+        "status": "ok",
+        "duration_s": 0.0176
+      },
+      {
+        "task_id": "t2",
+        "tool": "group_aggregate",
+        "status": "ok",
+        "duration_s": 0.0011
+      },
+      {
+        "task_id": "t1",
+        "tool": "filter",
+        "status": "ok",
+        "duration_s": 0.0121
+      },
+      {
+        "task_id": "t2",
+        "tool": "group_aggregate",
+        "status": "ok",
+        "duration_s": 0.0802
+      },
+      {
+        "task_id": "t3",
+        "tool": "rank",
+        "status": "ok",
+        "duration_s": 0.2335
+      }
+    ],
+    "repair_attempts": [
+      {
+        "attempt": 1,
+        "duration_s": 36.36122461000923
+      },
+      {
+        "attempt": 2,
+        "duration_s": 34.47620163799729
+      }
+    ]
+  },
+  "per_question": [
+    {
+      "question_id": "q01",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.13391425705049,
+      "stage_timings": {
+        "plan_generation": 60.117978947935626,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00015106296632438898,
+        "graph_finalization": 0.0002482089912518859,
+        "answer_synthesis": 0.000524912029504776,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.101598693057895,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q02",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 106.1346599070821,
+      "stage_timings": {
+        "repair_attempt_1": 36.36122461000923,
+        "repair_attempt_2": 34.47620163799729,
+        "plan_generation": 106.12065740104299,
+        "question_resolution": 0.0,
+        "plan_validation": 8.736900053918362e-05,
+        "graph_finalization": 0.00022928300313651562,
+        "answer_synthesis": 0.0004575869534164667,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 35.2540458580479,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "plan_generation",
+          "duration_s": 36.36122461000923,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "plan_generation",
+          "duration_s": 34.47620163799729,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 36.36122461000923
+        },
+        {
+          "attempt": 2,
+          "duration_s": 34.47620163799729
+        }
+      ],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q03",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 74.54714966798201,
+      "stage_timings": {
+        "plan_generation": 55.6323054759996,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011625816929154098,
+        "tool_execution": 0.038425176055170596,
+        "result_inspection": 0.0020362050272524357,
+        "replanning": 7.869184424984269,
+        "graph_finalization": 0.00031883595511317253,
+        "answer_synthesis": 0.0038537740474566817,
+        "tool_executions": 0.0359
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 55.61894111800939,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.85558927198872,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 10.823444728041068,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0359
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q04",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 72.88147893396672,
+      "stage_timings": {
+        "plan_generation": 55.68722325901035,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011751863057725132,
+        "tool_execution": 0.00892141496296972,
+        "result_inspection": 0.002937022945843637,
+        "replanning": 7.756896278006025,
+        "graph_finalization": 0.00029011303558945656,
+        "answer_synthesis": 0.0017625349573791027,
+        "tool_executions": 0.0057
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 55.67340377194341,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.73924522602465,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 9.365550443064421,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0057
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q05",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 71.18348003702704,
+      "stage_timings": {
+        "plan_generation": 55.75599296495784,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011776515981182456,
+        "tool_execution": 0.006616716971620917,
+        "result_inspection": 0.0025836359709501266,
+        "replanning": 7.762188491993584,
+        "graph_finalization": 0.00032992102205753326,
+        "answer_synthesis": 0.0017514999490231276,
+        "tool_executions": 0.0041
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 55.743225847953,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.747141120955348,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.605883541982621,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0041
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q06",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 207.43250638106838,
+      "stage_timings": {
+        "plan_generation": 57.53548187308479,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012087719980627298,
+        "tool_execution": 0.4849743340164423,
+        "result_inspection": 0.002543198992498219,
+        "replanning": 60.11882107099518,
+        "graph_finalization": 0.014247293001972139,
+        "answer_synthesis": 77.88620400300715,
+        "tool_executions": 0.4823
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 57.44925013999455,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.101167713990435,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 11.064951382926665,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.4823
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q07",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.124723401037045,
+      "stage_timings": {
+        "plan_generation": 60.113629495026544,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00024709105491638184,
+        "graph_finalization": 0.0005114329978823662,
+        "answer_synthesis": 0.0009209009585902095,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.099728534929454,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q08",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 139.24672358797397,
+      "stage_timings": {
+        "plan_generation": 17.371098187053576,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012060831999406219,
+        "tool_execution": 0.4197194720618427,
+        "result_inspection": 0.0023551220074295998,
+        "replanning": 60.10978910000995,
+        "graph_finalization": 0.0068911859998479486,
+        "answer_synthesis": 47.66389879304916,
+        "tool_executions": 0.4171
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 17.33583072409965,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.09341617801692,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 13.469711425015703,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.4171
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q09",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.044900544919074,
+      "stage_timings": {
+        "plan_generation": 60.03036649199203,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00031350902281701565,
+        "graph_finalization": 0.0005931459600105882,
+        "answer_synthesis": 0.0012545930221676826,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.016967747942545,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q10",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 60.27900119603146,
+      "stage_timings": {
+        "plan_generation": 36.36605267296545,
+        "question_resolution": 0.0,
+        "plan_validation": 0.013373113004490733,
+        "tool_execution": 0.018185672000981867,
+        "result_inspection": 0.0026147840544581413,
+        "replanning": 9.69520742399618,
+        "graph_finalization": 0.00023738399613648653,
+        "answer_synthesis": 0.0012118519516661763,
+        "tool_executions": 0.0153
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 36.341133861918934,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 9.67961230291985,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 14.152683180989698,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "period_compare",
+          "status": "ok",
+          "duration_s": 0.0153
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q11",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.05390262405854,
+      "stage_timings": {
+        "plan_generation": 60.0397371139843,
+        "question_resolution": 0.0,
+        "plan_validation": 0.0002874589990824461,
+        "graph_finalization": 0.0005410459125414491,
+        "answer_synthesis": 0.0011112830834463239,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.02374390803743,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q12",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 38.707726432941854,
+      "stage_timings": {
+        "plan_generation": 18.438526211073622,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011763526010327041,
+        "tool_execution": 0.028477264917455614,
+        "result_inspection": 0.0030786580173298717,
+        "replanning": 11.427314680069685,
+        "graph_finalization": 0.00038886594120413065,
+        "answer_synthesis": 0.005479732993990183,
+        "tool_executions": 0.0261
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 18.39250544901006,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 11.412209203001112,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 8.767049280926585,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "trend",
+          "status": "ok",
+          "duration_s": 0.0261
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q13",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 73.52543050108943,
+      "stage_timings": {
+        "plan_generation": 54.953776984941214,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012311066035181284,
+        "tool_execution": 0.007046718033961952,
+        "result_inspection": 0.002561426954343915,
+        "replanning": 7.751134883030318,
+        "graph_finalization": 0.00029444205574691296,
+        "answer_synthesis": 0.0015469419304281473,
+        "tool_executions": 0.0044
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 54.939564333995804,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.735272275982425,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 10.782125022029504,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0044
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q14",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.12532527698204,
+      "stage_timings": {
+        "plan_generation": 60.114464283920825,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00019261694978922606,
+        "graph_finalization": 0.0003771319752559066,
+        "answer_synthesis": 0.000739320064894855,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.100017181946896,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q15",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 29.280073604080826,
+      "stage_timings": {
+        "plan_generation": 15.249032301013358,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012712014024145901,
+        "tool_execution": 0.005182217922993004,
+        "result_inspection": 0.002445004996843636,
+        "replanning": 6.0996863909531385,
+        "graph_finalization": 0.0002746779937297106,
+        "answer_synthesis": 0.0007631339831277728,
+        "tool_executions": 0.0026
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 15.227169658057392,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 6.0837167910067365,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.897801446961239,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "correlation",
+          "status": "ok",
+          "duration_s": 0.0026
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q16",
+      "status": "passed",
+      "accuracy": true,
+      "baseline_accuracy": true,
+      "total_time_s": 68.0925865980098,
+      "stage_timings": {
+        "plan_generation": 54.731539651053026,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011691987048834562,
+        "tool_execution": 0.005291086970828474,
+        "result_inspection": 0.002389139961451292,
+        "replanning": 6.1313868230208755,
+        "graph_finalization": 0.00030667800456285477,
+        "answer_synthesis": 0.0007910470012575388,
+        "tool_executions": 0.0026
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 54.71745132596698,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 6.116236479021609,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.196910043014213,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "correlation",
+          "status": "ok",
+          "duration_s": 0.0026
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": null,
+      "failure_stage": null,
+      "outcome": "tie"
+    },
+    {
+      "question_id": "q17",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.04809240705799,
+      "stage_timings": {
+        "plan_generation": 60.037754651973955,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00017007405404001474,
+        "graph_finalization": 0.0003815829986706376,
+        "answer_synthesis": 0.000688122003339231,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.023410586989485,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q18",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 96.68908838997595,
+      "stage_timings": {
+        "plan_generation": 29.103466822067276,
+        "question_resolution": 0.0,
+        "plan_validation": 0.01162824803031981,
+        "tool_execution": 0.021366502973251045,
+        "result_inspection": 0.002289123018272221,
+        "replanning": 60.11559994099662,
+        "graph_finalization": 0.0024239830672740936,
+        "answer_synthesis": 0.04026097489986569,
+        "tool_executions": 0.0187
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 29.077295348979533,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.10027328308206,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.335836728918366,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "detect_anomalies_iqr",
+          "status": "ok",
+          "duration_s": 0.0176
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0011
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q19",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 60.16760160506237,
+      "stage_timings": {
+        "plan_generation": 60.11624351097271,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00018402701243758202,
+        "graph_finalization": 0.00040604593232274055,
+        "answer_synthesis": 0.0008748770924285054,
+        "tool_executions": 0.0
+      },
+      "llm_call_count": 1,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.10007940803189,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "outcome": "loss"
+    },
+    {
+      "question_id": "q20",
+      "status": "failed",
+      "accuracy": false,
+      "baseline_accuracy": true,
+      "total_time_s": 134.6736453799531,
+      "stage_timings": {
+        "plan_generation": 47.685319212963805,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011798306019045413,
+        "tool_execution": 0.3787445299094543,
+        "result_inspection": 0.0025232949992641807,
+        "replanning": 60.1182074630633,
+        "graph_finalization": 0.0034295300720259547,
+        "answer_synthesis": 14.177962782909162,
+        "tool_executions": 0.3258
+      },
+      "llm_call_count": 3,
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 47.66282536298968,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.10103676607832,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 12.089427455910482,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0121
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0802
+        },
+        {
+          "task_id": "t3",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.2335
+        }
+      ],
+      "repair_attempts": [],
+      "attempt_count": 1,
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "outcome": "loss"
+    }
+  ],
+  "evaluation": {
+    "run_id": "spike-fixed-qwen25-7b-20261120",
+    "mode": "real",
+    "model": "qwen2.5:7b-instruct",
+    "ollama_base_url": "http://localhost:11434",
+    "thinking_enabled": false,
+    "temperature": 0.0,
+    "seed": 42,
+    "keep_alive": "10m",
+    "per_call_timeout_s": 60.0,
+    "per_question_budget_s": 300.0,
+    "overall_timeout_s": 7200.0,
+    "max_repair_attempts": 2,
+    "max_replans": 3,
+    "max_llm_calls_per_question": 8,
+    "total_time_s": 1593.4441929239547,
+    "warmup_time_s": 32.638624918065034,
+    "warmup_llm_calls": [
+      {
+        "call_number": 1,
+        "stage": "initialization",
+        "duration_s": 32.63283048802987,
+        "completed": true,
+        "model": "qwen2.5:7b-instruct"
+      }
+    ]
+  },
+  "run_id": "spike-fixed-qwen25-7b-20261120",
+  "selected_question_ids": [
+    "q01",
+    "q02",
+    "q03",
+    "q04",
+    "q05",
+    "q06",
+    "q07",
+    "q08",
+    "q09",
+    "q10",
+    "q11",
+    "q12",
+    "q13",
+    "q14",
+    "q15",
+    "q16",
+    "q17",
+    "q18",
+    "q19",
+    "q20"
+  ],
+  "runs": [
+    {
+      "question_id": "q01",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q01_r1_83162750",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.134114137035795,
+      "total_time_s": 60.13391425705049,
+      "stage_timings": {
+        "plan_generation": 60.117978947935626,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00015106296632438898,
+        "graph_finalization": 0.0002482089912518859,
+        "answer_synthesis": 0.000524912029504776,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.101598693057895,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q02",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q02_r1_ce5f965b",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 106.13498424005229,
+      "total_time_s": 106.1346599070821,
+      "stage_timings": {
+        "repair_attempt_1": 36.36122461000923,
+        "repair_attempt_2": 34.47620163799729,
+        "plan_generation": 106.12065740104299,
+        "question_resolution": 0.0,
+        "plan_validation": 8.736900053918362e-05,
+        "graph_finalization": 0.00022928300313651562,
+        "answer_synthesis": 0.0004575869534164667,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 35.2540458580479,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "plan_generation",
+          "duration_s": 36.36122461000923,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "plan_generation",
+          "duration_s": 34.47620163799729,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 36.36122461000923
+        },
+        {
+          "attempt": 2,
+          "duration_s": 34.47620163799729
+        }
+      ]
+    },
+    {
+      "question_id": "q03",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q03_r1_82771e8d",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "Central": 501239.8908,
+        "East": 678781.24,
+        "South": 391721.905,
+        "West": 725457.8245
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 74.54714966798201,
+      "stage_timings": {
+        "plan_generation": 55.6323054759996,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011625816929154098,
+        "tool_execution": 0.038425176055170596,
+        "result_inspection": 0.0020362050272524357,
+        "replanning": 7.869184424984269,
+        "graph_finalization": 0.00031883595511317253,
+        "answer_synthesis": 0.0038537740474566817,
+        "tool_executions": 0.0359
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0359
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 55.61894111800939,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.85558927198872,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 10.823444728041068,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q04",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q04_r1_335b517a",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "Consumer": 134119.2092,
+        "Corporate": 91979.13399999999,
+        "Home Office": 60298.678499999995
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 72.88147893396672,
+      "stage_timings": {
+        "plan_generation": 55.68722325901035,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011751863057725132,
+        "tool_execution": 0.00892141496296972,
+        "result_inspection": 0.002937022945843637,
+        "replanning": 7.756896278006025,
+        "graph_finalization": 0.00029011303558945656,
+        "answer_synthesis": 0.0017625349573791027,
+        "tool_executions": 0.0057
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0057
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 55.67340377194341,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.73924522602465,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 9.365550443064421,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q05",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q05_r1_de921e1d",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "Furniture": 0.1739226779820839,
+        "Office Supplies": 0.15728509790906073,
+        "Technology": 0.1323226854358419
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 71.18348003702704,
+      "stage_timings": {
+        "plan_generation": 55.75599296495784,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011776515981182456,
+        "tool_execution": 0.006616716971620917,
+        "result_inspection": 0.0025836359709501266,
+        "replanning": 7.762188491993584,
+        "graph_finalization": 0.00032992102205753326,
+        "answer_synthesis": 0.0017514999490231276,
+        "tool_executions": 0.0041
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0041
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 55.743225847953,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.747141120955348,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.605883541982621,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q06",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q06_r1_790179f8",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Machines",
+        "Copiers",
+        "Copiers",
+        "Copiers",
+        "Copiers"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 207.43250638106838,
+      "stage_timings": {
+        "plan_generation": 57.53548187308479,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012087719980627298,
+        "tool_execution": 0.4849743340164423,
+        "result_inspection": 0.002543198992498219,
+        "replanning": 60.11882107099518,
+        "graph_finalization": 0.014247293001972139,
+        "answer_synthesis": 77.88620400300715,
+        "tool_executions": 0.4823
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.4823
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 57.44925013999455,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.101167713990435,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 11.064951382926665,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q07",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q07_r1_a73115d4",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.13257725292351,
+      "total_time_s": 60.124723401037045,
+      "stage_timings": {
+        "plan_generation": 60.113629495026544,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00024709105491638184,
+        "graph_finalization": 0.0005114329978823662,
+        "answer_synthesis": 0.0009209009585902095,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.099728534929454,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q08",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q08_r1_c45cee4a",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Machines",
+        "Machines",
+        "Binders",
+        "Machines",
+        "Binders"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 139.24672358797397,
+      "stage_timings": {
+        "plan_generation": 17.371098187053576,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012060831999406219,
+        "tool_execution": 0.4197194720618427,
+        "result_inspection": 0.0023551220074295998,
+        "replanning": 60.10978910000995,
+        "graph_finalization": 0.0068911859998479486,
+        "answer_synthesis": 47.66389879304916,
+        "tool_executions": 0.4171
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.4171
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 17.33583072409965,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.09341617801692,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 13.469711425015703,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q09",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q09_r1_889c3c89",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.045077097951435,
+      "total_time_s": 60.044900544919074,
+      "stage_timings": {
+        "plan_generation": 60.03036649199203,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00031350902281701565,
+        "graph_finalization": 0.0005931459600105882,
+        "answer_synthesis": 0.0012545930221676826,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.016967747942545,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q10",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q10_r1_0c0c26ca",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "base_value": 61618.6037,
+        "compare_value": 81795.17430000001,
+        "absolute_change": 20176.570600000014,
+        "relative_growth": 0.32744284012394803
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 60.27900119603146,
+      "stage_timings": {
+        "plan_generation": 36.36605267296545,
+        "question_resolution": 0.0,
+        "plan_validation": 0.013373113004490733,
+        "tool_execution": 0.018185672000981867,
+        "result_inspection": 0.0026147840544581413,
+        "replanning": 9.69520742399618,
+        "graph_finalization": 0.00023738399613648653,
+        "answer_synthesis": 0.0012118519516661763,
+        "tool_executions": 0.0153
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "period_compare",
+          "status": "ok",
+          "duration_s": 0.0153
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 36.341133861918934,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 9.67961230291985,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 14.152683180989698,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q11",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q11_r1_92ec6c1e",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.05414524592925,
+      "total_time_s": 60.05390262405854,
+      "stage_timings": {
+        "plan_generation": 60.0397371139843,
+        "question_resolution": 0.0,
+        "plan_validation": 0.0002874589990824461,
+        "graph_finalization": 0.0005410459125414491,
+        "answer_synthesis": 0.0011112830834463239,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.02374390803743,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q12",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q12_r1_5f8ba93a",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "points": {
+          "2014-Q1": 3811.2289999999994,
+          "2014-Q2": 11204.069200000002,
+          "2014-Q3": 12804.7218,
+          "2014-Q4": 21723.954100000003,
+          "2015-Q1": 9264.9416,
+          "2015-Q2": 12190.9224,
+          "2015-Q3": 16853.6194,
+          "2015-Q4": 23309.1203,
+          "2016-Q1": 11441.3708,
+          "2016-Q2": 16390.3394,
+          "2016-Q3": 15823.604800000001,
+          "2016-Q4": 38139.859300000004,
+          "2017-Q1": 23506.202599999997,
+          "2017-Q2": 15499.208499999999,
+          "2017-Q3": 26985.1325,
+          "2017-Q4": 27448.726
+        },
+        "slope": 1194.7442860294116,
+        "direction": "increasing"
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 38.707726432941854,
+      "stage_timings": {
+        "plan_generation": 18.438526211073622,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011763526010327041,
+        "tool_execution": 0.028477264917455614,
+        "result_inspection": 0.0030786580173298717,
+        "replanning": 11.427314680069685,
+        "graph_finalization": 0.00038886594120413065,
+        "answer_synthesis": 0.005479732993990183,
+        "tool_executions": 0.0261
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "trend",
+          "status": "ok",
+          "duration_s": 0.0261
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 18.39250544901006,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 11.412209203001112,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 8.767049280926585,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q13",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q13_r1_c941d7fd",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "total_value": 2297200.8603,
+        "shares": {
+          "Technology": 0.3639882116754926,
+          "Furniture": 0.32300170530281774,
+          "Office Supplies": 0.3130100830216897
+        }
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 73.52543050108943,
+      "stage_timings": {
+        "plan_generation": 54.953776984941214,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012311066035181284,
+        "tool_execution": 0.007046718033961952,
+        "result_inspection": 0.002561426954343915,
+        "replanning": 7.751134883030318,
+        "graph_finalization": 0.00029444205574691296,
+        "answer_synthesis": 0.0015469419304281473,
+        "tool_executions": 0.0044
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0044
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 54.939564333995804,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.735272275982425,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 10.782125022029504,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q14",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q14_r1_7020e3a8",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.12555819097906,
+      "total_time_s": 60.12532527698204,
+      "stage_timings": {
+        "plan_generation": 60.114464283920825,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00019261694978922606,
+        "graph_finalization": 0.0003771319752559066,
+        "answer_synthesis": 0.000739320064894855,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.100017181946896,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q15",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q15_r1_b9e55695",
+      "status": "passed",
+      "accuracy": true,
+      "answer": -0.21948745637176803,
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 29.280073604080826,
+      "stage_timings": {
+        "plan_generation": 15.249032301013358,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012712014024145901,
+        "tool_execution": 0.005182217922993004,
+        "result_inspection": 0.002445004996843636,
+        "replanning": 6.0996863909531385,
+        "graph_finalization": 0.0002746779937297106,
+        "answer_synthesis": 0.0007631339831277728,
+        "tool_executions": 0.0026
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "correlation",
+          "status": "ok",
+          "duration_s": 0.0026
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 15.227169658057392,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 6.0837167910067365,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.897801446961239,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q16",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q16_r1_abedd057",
+      "status": "passed",
+      "accuracy": true,
+      "answer": 0.4790643497377062,
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 68.0925865980098,
+      "stage_timings": {
+        "plan_generation": 54.731539651053026,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011691987048834562,
+        "tool_execution": 0.005291086970828474,
+        "result_inspection": 0.002389139961451292,
+        "replanning": 6.1313868230208755,
+        "graph_finalization": 0.00030667800456285477,
+        "answer_synthesis": 0.0007910470012575388,
+        "tool_executions": 0.0026
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "correlation",
+          "status": "ok",
+          "duration_s": 0.0026
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 54.71745132596698,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 6.116236479021609,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.196910043014213,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q17",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q17_r1_450acd4a",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.04829874599818,
+      "total_time_s": 60.04809240705799,
+      "stage_timings": {
+        "plan_generation": 60.037754651973955,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00017007405404001474,
+        "graph_finalization": 0.0003815829986706376,
+        "answer_synthesis": 0.000688122003339231,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.023410586989485,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q18",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q18_r1_6b7c5235",
+      "status": "failed",
+      "accuracy": false,
+      "answer": 9994,
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 96.68908838997595,
+      "stage_timings": {
+        "plan_generation": 29.103466822067276,
+        "question_resolution": 0.0,
+        "plan_validation": 0.01162824803031981,
+        "tool_execution": 0.021366502973251045,
+        "result_inspection": 0.002289123018272221,
+        "replanning": 60.11559994099662,
+        "graph_finalization": 0.0024239830672740936,
+        "answer_synthesis": 0.04026097489986569,
+        "tool_executions": 0.0187
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "detect_anomalies_iqr",
+          "status": "ok",
+          "duration_s": 0.0176
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0011
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 29.077295348979533,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.10027328308206,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.335836728918366,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q19",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q19_r1_5a4a20af",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "no_score_shaped_answer",
+      "failure_stage": "graph_finalization",
+      "failure_elapsed_s": 60.16785176994745,
+      "total_time_s": 60.16760160506237,
+      "stage_timings": {
+        "plan_generation": 60.11624351097271,
+        "question_resolution": 0.0,
+        "plan_validation": 0.00018402701243758202,
+        "graph_finalization": 0.00040604593232274055,
+        "answer_synthesis": 0.0008748770924285054,
+        "tool_executions": 0
+      },
+      "tool_executions": [],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 60.10007940803189,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 1,
+      "repair_attempts": []
+    },
+    {
+      "question_id": "q20",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q20_r1_3b7cb1dc",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Seattle",
+        "Newark",
+        "Detroit"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 134.6736453799531,
+      "stage_timings": {
+        "plan_generation": 47.685319212963805,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011798306019045413,
+        "tool_execution": 0.3787445299094543,
+        "result_inspection": 0.0025232949992641807,
+        "replanning": 60.1182074630633,
+        "graph_finalization": 0.0034295300720259547,
+        "answer_synthesis": 14.177962782909162,
+        "tool_executions": 0.3258
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0121
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0802
+        },
+        {
+          "task_id": "t3",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.2335
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 47.66282536298968,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.10103676607832,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 12.089427455910482,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    }
+  ]
+}

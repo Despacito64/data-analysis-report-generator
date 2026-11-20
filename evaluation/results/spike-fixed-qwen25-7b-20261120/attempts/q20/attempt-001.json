@@ -1,0 +1,73 @@
+{
+  "question_id": "q20",
+  "attempt": 1,
+  "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q20_r1_3b7cb1dc",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Seattle",
+    "Newark",
+    "Detroit"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 134.6736453799531,
+  "stage_timings": {
+    "plan_generation": 47.685319212963805,
+    "question_resolution": 0.0,
+    "plan_validation": 0.011798306019045413,
+    "tool_execution": 0.3787445299094543,
+    "result_inspection": 0.0025232949992641807,
+    "replanning": 60.1182074630633,
+    "graph_finalization": 0.0034295300720259547,
+    "answer_synthesis": 14.177962782909162,
+    "tool_executions": 0.3258
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0121
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0802
+    },
+    {
+      "task_id": "t3",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.2335
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 47.66282536298968,
+      "completed": true,
+      "model": "qwen2.5:7b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 60.10103676607832,
+      "completed": false,
+      "error": "TimeoutError: timed out",
+      "model": "qwen2.5:7b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "graph_finalization",
+      "duration_s": 12.089427455910482,
+      "completed": true,
+      "model": "qwen2.5:7b-instruct"
+    }
+  ],
+  "llm_call_count": 3,
+  "repair_attempts": []
+}

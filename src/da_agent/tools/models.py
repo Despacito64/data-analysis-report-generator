@@ -137,7 +137,7 @@ class GroupAggregateArgs(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    by: list[str] = Field(min_length=1)
+    by: list[str] = Field(default_factory=list)
     metric_column: str
     aggregation: AggregationType
 
@@ -176,6 +176,7 @@ class RankArgs(BaseModel):
 
     entity_column: str
     metric_column: str
+    aggregation: AggregationType | None = None
     ascending: bool = False
     top_n: int | None = Field(default=None, gt=0)
     tie_decimals: int = Field(default=9, ge=0)

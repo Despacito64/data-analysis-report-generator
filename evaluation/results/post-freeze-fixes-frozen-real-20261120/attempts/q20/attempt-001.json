@@ -1,0 +1,85 @@
+{
+  "question_id": "q20",
+  "attempt": 1,
+  "run_id": "agent_eval_post-freeze-fixes-frozen-real-20261120_q20_r1_a7132b31",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "Seattle",
+    "Newark",
+    "Detroit"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 130.23495947301853,
+  "stage_timings": {
+    "plan_generation": 35.76721034699585,
+    "question_resolution": 0.0,
+    "plan_validation": 0.013977013994008303,
+    "tool_execution": 0.4244151880266145,
+    "result_inspection": 0.0029712440446019173,
+    "repair_attempt_1": 29.451476001995616,
+    "replanning": 71.52531483198982,
+    "graph_finalization": 0.0032623340375721455,
+    "answer_synthesis": 16.955501051037572,
+    "tool_executions": 0.36279999999999996
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0051
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0914
+    },
+    {
+      "task_id": "t3",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.2663
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 35.751354234991595,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 42.04515938204713,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 29.451476001995616,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 4,
+      "stage": "graph_finalization",
+      "duration_s": 5.406136700999923,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "llm_call_count": 4,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 29.451476001995616
+    }
+  ]
+}

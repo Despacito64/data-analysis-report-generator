@@ -1,0 +1,125 @@
+{
+  "question_id": "q18",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 96.68908838997595,
+  "stage_timings": {
+    "plan_generation": 29.103466822067276,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01162824803031981,
+    "tool_execution": 0.021366502973251045,
+    "result_inspection": 0.002289123018272221,
+    "replanning": 60.11559994099662,
+    "graph_finalization": 0.0024239830672740936,
+    "answer_synthesis": 0.04026097489986569,
+    "tool_executions": 0.0187
+  },
+  "llm_call_count": 3,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 29.077295348979533,
+      "completed": true,
+      "model": "qwen2.5:7b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 60.10027328308206,
+      "completed": false,
+      "error": "TimeoutError: timed out",
+      "model": "qwen2.5:7b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "graph_finalization",
+      "duration_s": 7.335836728918366,
+      "completed": true,
+      "model": "qwen2.5:7b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "detect_anomalies_iqr",
+      "status": "ok",
+      "duration_s": 0.0176
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0011
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q18",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-7b-20261120_q18_r1_6b7c5235",
+      "status": "failed",
+      "accuracy": false,
+      "answer": 9994,
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 96.68908838997595,
+      "stage_timings": {
+        "plan_generation": 29.103466822067276,
+        "question_resolution": 0.0,
+        "plan_validation": 0.01162824803031981,
+        "tool_execution": 0.021366502973251045,
+        "result_inspection": 0.002289123018272221,
+        "replanning": 60.11559994099662,
+        "graph_finalization": 0.0024239830672740936,
+        "answer_synthesis": 0.04026097489986569,
+        "tool_executions": 0.0187
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "detect_anomalies_iqr",
+          "status": "ok",
+          "duration_s": 0.0176
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0011
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 29.077295348979533,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 60.10027328308206,
+          "completed": false,
+          "error": "TimeoutError: timed out",
+          "model": "qwen2.5:7b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 7.335836728918366,
+          "completed": true,
+          "model": "qwen2.5:7b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    }
+  ]
+}

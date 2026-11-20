@@ -1,0 +1,81 @@
+{
+  "question_id": "q15",
+  "attempt": 1,
+  "run_id": "agent_eval_spike-fixed-qwen25-3b-20261120_q15_r1_8bf72f83",
+  "status": "passed",
+  "accuracy": true,
+  "answer": -0.21948745637176803,
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 23.900481714052148,
+  "stage_timings": {
+    "plan_generation": 3.7047568630659953,
+    "question_resolution": 0.0,
+    "plan_validation": 0.011987500940449536,
+    "tool_execution": 0.005339914932847023,
+    "result_inspection": 0.002613177988678217,
+    "repair_attempt_1": 6.00820644304622,
+    "repair_attempt_2": 5.920140378992073,
+    "replanning": 18.653536702971905,
+    "graph_finalization": 0.0002736999886110425,
+    "answer_synthesis": 0.0007583150872960687,
+    "tool_executions": 0.0026
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "correlation",
+      "status": "ok",
+      "duration_s": 0.0026
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 3.689378172974102,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 6.706191699020565,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 6.00820644304622,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 5.920140378992073,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 5,
+      "stage": "graph_finalization",
+      "duration_s": 1.508172066998668,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    }
+  ],
+  "llm_call_count": 5,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 6.00820644304622
+    },
+    {
+      "attempt": 2,
+      "duration_s": 5.920140378992073
+    }
+  ]
+}

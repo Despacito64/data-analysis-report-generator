@@ -34,11 +34,9 @@ Outputs:
 | Agent per-question traces | `evaluation/results/<run_id>/` |
 | Recovery suite | `evaluation/results/recovery_suite/latest.json` |
 
-## Reference run (2026-11-17)
+## Reference runs (2026-11-20)
 
-Measured results with **`qwen3:4b`**, real Ollama, **3 repeats × 20 questions**: see `docs/M10_RESULTS.md`.
-
-Pinned run id: `m10-frozen-real-20261117` → `evaluation/results/m10-frozen-real-20261117/agent_eval.json`.
+Measured results with **`qwen3:4b-instruct`**, real Ollama, one run per question, 20 questions: see `docs/EXPERIMENTS_SUMMARY.md`. The run ids are `post-freeze-fixes-frozen-real-20261120` (replanning on) and `post-freeze-fixes-no-replan-20261120` (replanning off), each with `agent_eval.json` under `evaluation/results/<run id>/`. To reproduce, use `bash scripts/run_experiments.sh`.
 
 ## Refreshing the freeze (owner approval)
 

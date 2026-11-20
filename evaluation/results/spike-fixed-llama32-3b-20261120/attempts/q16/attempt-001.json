@@ -1,0 +1,120 @@
+{
+  "question_id": "q16",
+  "attempt": 1,
+  "run_id": "agent_eval_spike-fixed-llama32-3b-20261120_q16_r1_981afd99",
+  "status": "failed",
+  "accuracy": false,
+  "answer": {
+    "total_value": 286397.0217,
+    "shares": {
+      "Consumer": 0.46829819808841966,
+      "Corporate": 0.32115953390167534,
+      "Home Office": 0.21054226800990508
+    }
+  },
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 99.79281424393412,
+  "stage_timings": {
+    "plan_generation": 23.081812917022035,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012030172976665199,
+    "tool_execution": 0.10551395104266703,
+    "result_inspection": 0.010990894981659949,
+    "replanning": 74.25647189514711,
+    "repair_attempt_1": 2.7403666359605268,
+    "repair_attempt_2": 30.14622280804906,
+    "graph_finalization": 0.0003251020098105073,
+    "answer_synthesis": 0.0028993800515308976,
+    "tool_executions": 0.0296
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "correlation",
+      "status": "ok",
+      "duration_s": 0.003
+    },
+    {
+      "task_id": "t2",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0128
+    },
+    {
+      "task_id": "t3",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0096
+    },
+    {
+      "task_id": "t4",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0042
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 23.066621395992115,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.700849939021282,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 7.8237181949662045,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 25.7687764930306,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 5,
+      "stage": "replanning",
+      "duration_s": 2.7403666359605268,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 6,
+      "stage": "replanning",
+      "duration_s": 30.14622280804906,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 7,
+      "stage": "graph_finalization",
+      "duration_s": 2.2773912699194625,
+      "completed": true,
+      "model": "llama3.2:3b"
+    }
+  ],
+  "llm_call_count": 7,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 2.7403666359605268
+    },
+    {
+      "attempt": 2,
+      "duration_s": 30.14622280804906
+    }
+  ]
+}

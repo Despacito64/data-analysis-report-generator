@@ -1,0 +1,102 @@
+{
+  "question_id": "q13",
+  "status": "passed",
+  "accuracy": true,
+  "total_time_s": 33.77800080599263,
+  "stage_timings": {
+    "plan_generation": 29.78043009690009,
+    "question_resolution": 0.0,
+    "plan_validation": 0.016796160954982042,
+    "tool_execution": 0.007915703929029405,
+    "result_inspection": 0.0030376430368050933,
+    "graph_finalization": 0.000268386909738183,
+    "answer_synthesis": 0.0016077359905466437,
+    "tool_executions": 0.0052
+  },
+  "llm_call_count": 2,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 29.766272315988317,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 3.9551346119260415,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0052
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": null,
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q13",
+      "attempt": 1,
+      "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q13_r1_ddad613d",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "total_value": 2297200.8603,
+        "shares": {
+          "Technology": 0.3639882116754926,
+          "Furniture": 0.32300170530281774,
+          "Office Supplies": 0.3130100830216897
+        }
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 33.77800080599263,
+      "stage_timings": {
+        "plan_generation": 29.78043009690009,
+        "question_resolution": 0.0,
+        "plan_validation": 0.016796160954982042,
+        "tool_execution": 0.007915703929029405,
+        "result_inspection": 0.0030376430368050933,
+        "graph_finalization": 0.000268386909738183,
+        "answer_synthesis": 0.0016077359905466437,
+        "tool_executions": 0.0052
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0052
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 29.766272315988317,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "graph_finalization",
+          "duration_s": 3.9551346119260415,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    }
+  ]
+}

@@ -10,8 +10,7 @@
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19"></a>
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
   <a href="https://langchain-ai.github.io/langgraph/"><img src="https://img.shields.io/badge/LangGraph-0.2+-FF6F61?style=for-the-badge&logo=diagram-next&logoColor=white" alt="LangGraph"></a>
-  <a href="https://duckdb.org/"><img src="https://img.shields.io/badge/DuckDB-1.0+-FFF000?style=for-the-badge&logo=duckdb&logoColor=black" alt="DuckDB"></a>
-  <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Ollama-qwen3:4b-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama"></a>
+  <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Ollama-qwen3:4b--instruct-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama"></a>
   <a href="https://docs.astral.sh/uv/"><img src="https://img.shields.io/badge/Managed%20with-uv-DE5FE9?style=for-the-badge" alt="uv package manager"></a>
   <a href="#-testing--quality"><img src="https://img.shields.io/badge/tests-320%20passed-success?style=for-the-badge&logo=pytest&logoColor=white" alt="320 Tests Passing"></a>
 </p>
@@ -67,7 +66,7 @@ Unlike conventional LLM code-interpreters that execute unchecked Python or SQL i
   - **Modern React 19 + Vite SPA**: Fluid, interactive conversational interface with instant previews, status indicators, and report inspection.
   - **FastAPI Async Backend**: High-performance REST API with session state, file ingestion, and live streaming execution traces.
   - **Streamlit Exploration Console**: Single-command analytical interface for rapid prototyping.
-- **🧪 Scientifically Scored Benchmark**: Rigorously evaluated against an independent DuckDB/Python oracle on a 20-question frozen benchmark and a 12-scenario recovery test harness.
+- **🧪 Scientifically Scored Benchmark**: Rigorously evaluated against an independent pandas/numpy oracle on a 20-question frozen benchmark and a 12-scenario recovery test harness.
 
 ---
 
@@ -201,17 +200,18 @@ Detailed visibility into task DAG resolution, tool invocation parameters, and re
 
 The agent plans workflows using an approved suite of deterministic primitives in `src/da_agent/tools/`:
 
-| Domain | Tool Name | Description |
-| :--- | :--- | :--- |
-| **Data Manipulation** | `filter_rows` | Multi-condition row filtering with comparison operators (`==`, `!=`, `>`, `<`, `in`, `between`). |
-| | `aggregate_group` | Group-by operations with sum, mean, median, min, max, std, count, and distinct count. |
-| | `rank_items` | Top-N and Bottom-N ordering with tie-breaking rules and percentile calculation. |
-| | `period_compare` | Time-series period-over-period variance (absolute and percentage delta). |
-| **Statistical Analysis** | `trend_analysis` | Linear regression slope, R² score, and moving average calculation. |
-| | `segment_contribution` | Percentage of total distribution and Pareto (80/20) analysis. |
-| | `correlation_matrix` | Pearson and Spearman rank correlation between quantitative metrics. |
-| | `detect_anomalies` | Z-score and IQR-based numerical outlier detection. |
-| **Data Visualization** | `generate_chart` | Interactive Plotly visual specs (bar, line, scatter, box plot, distribution). |
+| Tool | Description |
+| :--- | :--- |
+| `filter` | Deterministic multi-condition row filter. |
+| `group_aggregate` | Group by one or more columns and aggregate a metric. |
+| `rank` | Competition ranking of individual rows by a metric, with tie groups. It does not aggregate, so per-entity totals need `group_aggregate` first. |
+| `period_compare` | Compare a metric across two date windows (absolute change and growth rate). |
+| `trend` | Chronological aggregation by grain with a fitted slope and direction label. |
+| `segment_contribution` | Share of a metric contributed by each segment. |
+| `correlation` | Pearson correlation between two numeric columns. |
+| `detect_anomalies_iqr` | Outlier fences using the 1.5 × IQR rule. |
+
+Plotly chart builders live in `tools/charts.py`. They read recorded tool output and are not planner tools.
 
 ---
 
@@ -329,7 +329,7 @@ claim_validation:
 
 ## 📊 Benchmark & Evaluation
 
-The repository includes a scientific evaluation framework comparing the **Dynamic Agent** against a **Fixed-Workflow Baseline** on a frozen test suite scored by an independent DuckDB/Python oracle (`evaluation/oracle.py`).
+The repository includes a scientific evaluation framework comparing the **Dynamic Agent** against a **Fixed-Workflow Baseline** on a frozen test suite scored by an independent pandas/numpy oracle (`evaluation/oracle.py`, answers built by `evaluation/benchmark/build_oracle.py`).
 
 ### Verify the Frozen Manifest
 
@@ -341,22 +341,21 @@ uv run python evaluation/run_frozen_experiment.py --verify-only
 
 ### Reproduce the Evaluation
 
-Run the reference frozen experiment (3 repeats per question, 20 questions):
+Run the evaluation (one run per question, 20 questions; the model is passed explicitly):
 
 ```bash
-uv run python evaluation/run_frozen_experiment.py --mode real --repeats 3 --run-id m10-frozen-real
+uv run python evaluation/run_agent_eval.py --mode real --repeats 1 --model qwen3:4b-instruct --run-id my-run
 ```
 
 ### Benchmark Results & Ablation Studies
 
 | Experiment Variant | Model | Accuracy | Key Takeaway |
 | :--- | :---: | :---: | :--- |
-| **Dynamic Agent** | `qwen3:4b` | **13 / 20 (65%)** | Reference benchmark; 0 timeouts across 3× repeats |
-| **Ablation: No Replanning** | `qwen3:4b` | **12 / 20 (60%)** | Removing dynamic replanning degrades accuracy (q02 fails) |
-| **Model Spike: 7B** | `qwen2.5:7b-instruct` | **2 / 5 (40%)** | Tested on 5 category representative questions |
-| **Model Spike: 3B** | `qwen2.5:3b-instruct` | **0 / 5 (0%)** | Hits repair limits on nested JSON schema validation |
-| **Fixed Baseline** | Templates | 20 / 20 (100%) | Template ceiling (hand-matched to question shapes at design time) |
-| **Adversarial Recovery** | — | **12 / 12 passed** | Controlled-failure recovery suite passes completely |
+| **Dynamic Agent, replanning on (R1)** | `qwen3:4b-instruct` | **10 / 20 (50%)** | One run per question; 84 LLM calls, 29 min; 0 timeouts. The model kept adding analyses after a correct first result, and the last task is scored |
+| **Dynamic Agent, replanning off (R2)** | `qwen3:4b-instruct` | **18 / 20 (90%)** | Same run with `--max-replans 0`; 42 LLM calls, 12 min. Fails q11 and q20 (planning) |
+| **Model comparison** | `qwen2.5:7b-instruct`, `llama3.2:3b`, `qwen2.5:3b-instruct` | 8, 2 and 1 of 20 | One run per question, replanning on, same settings as R1 |
+| **Fixed Baseline** | Keyed by question id | 20 / 20 (100%) | Ceiling: hard-coded per-question plans, never reads the question text |
+| **Recovery suite** | — | **12 / 12 passed** | Mock-only controlled-failure scenarios |
 
 <p align="center">
   <img src="docs/assets/chart_accuracy_by_category.png" alt="Accuracy by Category" width="85%">
@@ -408,14 +407,13 @@ data-analysis-report-generator/
 │
 ├── evaluation/                    # Rigorous benchmarking suite
 │   ├── benchmark/                 # Frozen questions & manifest
-│   ├── oracle.py                  # Independent DuckDB oracle
+│   ├── oracle.py                  # Loads the frozen expected answers
 │   ├── scorer.py                  # Equivalence verification and scoring
 │   └── run_frozen_experiment.py   # Benchmark reproduction runner
 │
 ├── scripts/                       # Experiment scripts, presentation builder & chart tools
 │   ├── generate_metrics_charts.py # Matplotlib visual chart generator
 │   ├── run_experiments.sh         # Reproducible ablation and model spike runner
-│   └── build_review_ppt.py        # Technical slide deck generator
 │
 ├── docs/                          # Architecture guides, contracts & decision records
 │   ├── ARCHITECTURE.md            # Detailed component design & import rules

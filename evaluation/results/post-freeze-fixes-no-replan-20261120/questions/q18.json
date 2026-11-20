@@ -1,0 +1,102 @@
+{
+  "question_id": "q18",
+  "status": "passed",
+  "accuracy": true,
+  "total_time_s": 40.156160874990746,
+  "stage_timings": {
+    "plan_generation": 30.0803291950142,
+    "question_resolution": 0.0,
+    "plan_validation": 0.013233224977739155,
+    "tool_execution": 0.01551124406978488,
+    "result_inspection": 0.0027355370111763477,
+    "graph_finalization": 0.0003084799973294139,
+    "answer_synthesis": 0.009881007019430399,
+    "tool_executions": 0.0124
+  },
+  "llm_call_count": 2,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.06617374101188,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 9.997497029020451,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "detect_anomalies_iqr",
+      "status": "ok",
+      "duration_s": 0.0124
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": null,
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q18",
+      "attempt": 1,
+      "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q18_r1_366d378e",
+      "status": "passed",
+      "accuracy": true,
+      "answer": {
+        "q1": 1.72875,
+        "q3": 29.364,
+        "iqr": 27.63525,
+        "lower_fence": -39.724125,
+        "upper_fence": 70.816875,
+        "flagged_count": 1881
+      },
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 40.156160874990746,
+      "stage_timings": {
+        "plan_generation": 30.0803291950142,
+        "question_resolution": 0.0,
+        "plan_validation": 0.013233224977739155,
+        "tool_execution": 0.01551124406978488,
+        "result_inspection": 0.0027355370111763477,
+        "graph_finalization": 0.0003084799973294139,
+        "answer_synthesis": 0.009881007019430399,
+        "tool_executions": 0.0124
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "detect_anomalies_iqr",
+          "status": "ok",
+          "duration_s": 0.0124
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 30.06617374101188,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "graph_finalization",
+          "duration_s": 9.997497029020451,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        }
+      ],
+      "llm_call_count": 2,
+      "repair_attempts": []
+    }
+  ]
+}

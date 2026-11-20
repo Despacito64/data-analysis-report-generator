@@ -1,0 +1,52 @@
+{
+  "question_id": "q07",
+  "attempt": 1,
+  "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q07_r1_8d8c2d3a",
+  "status": "passed",
+  "accuracy": true,
+  "answer": [
+    "California",
+    "New York",
+    "Washington"
+  ],
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 33.931060724076815,
+  "stage_timings": {
+    "plan_generation": 30.365658178925514,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01290253596380353,
+    "tool_execution": 0.02343193197157234,
+    "result_inspection": 0.003049114951863885,
+    "graph_finalization": 0.00031239097006618977,
+    "answer_synthesis": 0.0015143259661272168,
+    "tool_executions": 0.0205
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.0205
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.350461281021126,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 3.5105417990125716,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

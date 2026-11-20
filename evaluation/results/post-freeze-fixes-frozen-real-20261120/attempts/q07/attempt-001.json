@@ -1,0 +1,60 @@
+{
+  "question_id": "q07",
+  "attempt": 1,
+  "run_id": "agent_eval_post-freeze-fixes-frozen-real-20261120_q07_r1_b0c5feb5",
+  "status": "passed",
+  "accuracy": true,
+  "answer": [
+    "California",
+    "New York",
+    "Washington"
+  ],
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 39.30044245393947,
+  "stage_timings": {
+    "plan_generation": 30.374837020994164,
+    "question_resolution": 0.0,
+    "plan_validation": 0.024481757078319788,
+    "tool_execution": 0.04981094389222562,
+    "result_inspection": 0.006464886944741011,
+    "replanning": 5.234159386949614,
+    "graph_finalization": 0.00039410300087183714,
+    "answer_synthesis": 0.002257136977277696,
+    "tool_executions": 0.0436
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.0436
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.35643498704303,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 5.196963800000958,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "graph_finalization",
+      "duration_s": 3.5877187240403146,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "llm_call_count": 3,
+  "repair_attempts": []
+}
