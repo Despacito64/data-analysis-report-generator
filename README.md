@@ -12,7 +12,7 @@
   <a href="https://langchain-ai.github.io/langgraph/"><img src="https://img.shields.io/badge/LangGraph-0.2+-FF6F61?style=for-the-badge&logo=diagram-next&logoColor=white" alt="LangGraph"></a>
   <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Ollama-qwen3:4b--instruct-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama"></a>
   <a href="https://docs.astral.sh/uv/"><img src="https://img.shields.io/badge/Managed%20with-uv-DE5FE9?style=for-the-badge" alt="uv package manager"></a>
-  <a href="#-testing--quality"><img src="https://img.shields.io/badge/tests-320%20passed-success?style=for-the-badge&logo=pytest&logoColor=white" alt="320 Tests Passing"></a>
+  <a href="#-testing--quality"><img src="https://img.shields.io/badge/tests-328%20passed-success?style=for-the-badge&logo=pytest&logoColor=white" alt="328 Tests Passing"></a>
 </p>
 
 ---
@@ -22,7 +22,7 @@
 - [Overview](#-overview)
 - [Key Highlights](#-key-highlights)
 - [System Architecture](#-system-architecture)
-- [Screenshots & UI Walkthrough](#-screenshots--ui-walkthrough)
+- [Demo Video](#-demo-video)
 - [Analytical Tool Suite](#-analytical-tool-suite)
 - [Quick Start](#-quick-start)
   - [Prerequisites](#prerequisites)
@@ -88,7 +88,7 @@ flowchart TD
 
     subgraph Core ["Agent & Planning Engine"]
         Profile["Data Loader & Profiler<br/>(CSV / XLSX)"]
-        Planner["Dynamic LangGraph Planner<br/>(Ollama / Qwen3:4b)"]
+        Planner["Dynamic LangGraph Planner<br/>(Ollama / qwen3:4b-instruct)"]
         Replan["Recovery & Replanning Policy<br/>(Finite Budgets)"]
     end
 
@@ -140,59 +140,11 @@ To ensure absolute separation of concerns, the repository enforces unidirectiona
 
 ---
 
-## 📸 Screenshots & UI Walkthrough
+## 🎬 Demo Video
 
-> *Note: Placeholders below can be populated with exported screenshots from local UI runs.*
+A short recorded walkthrough (about 85 seconds) of the app answering questions on the Sample Superstore data: [`docs/demo_video.mp4`](docs/demo_video.mp4).
 
-### 1. Modern React Conversational Interface
-Natural language question answering with dataset preview, multi-turn drill-down, and live analytical progress:
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│  Data Analysis Agent                                            [ Sample-Superstore ▼ ] │
-├───────────────────────────────┬────────────────────────────────────────────────────────┤
-│  Dataset Overview             │  Chat & Analysis                                       │
-│  ───────────────────          │  ──────────────────────────────────────────            │
-│  Rows: 9,994 | Columns: 21    │  User: Which customer segment generates highest profit?│
-│  Hash: sha256:e3b0c44...      │                                                        │
-│                               │  Agent: Executed aggregation on [Segment] by sum(Profit)│
-│  [ Upload New CSV / XLSX ]    │  ┌──────────────────────────────────────────────────┐  │
-│                               │  │ Consumer: $134,119.21 (46.8% of total profit)    │  │
-│  Identified Measures:         │  │ Corporate: $91,979.11 (32.1%)                    │  │
-│  - Sales, Profit, Quantity    │  │ Home Office: $60,298.68 (21.0%)                  │  │
-│  Identified Dimensions:       │  └──────────────────────────────────────────────────┘  │
-│  - Category, Segment, Region  │  ✓ Verified against EvidenceRecord #ev-049             │
-│                               │                                                        │
-│                               │  [ Ask follow-up question...                ] [ Send ] │
-└───────────────────────────────┴────────────────────────────────────────────────────────┘
-```
-<p align="center">
-  <img src="docs/assets/screenshot-react-chat.png" alt="React Conversational Workspace" width="90%">
-  <br>
-  <em>Figure 1: React 19 multi-turn dialogue with real-time evidence validation and drill-down support.</em>
-</p>
-
----
-
-### 2. Evidence-Linked HTML Audit Report
-Generated reports embed interactive Plotly charts, methodology records, caveats, and hyperlinked evidence logs:
-
-<p align="center">
-  <img src="docs/assets/screenshot-html-report.png" alt="Generated HTML Report" width="90%">
-  <br>
-  <em>Figure 2: Grounded HTML report with interactive data visualizations and verifiable evidence trails.</em>
-</p>
-
----
-
-### 3. Dynamic Execution & Replanning Trace
-Detailed visibility into task DAG resolution, tool invocation parameters, and recovery attempts:
-
-<p align="center">
-  <img src="docs/assets/screenshot-task-trace.png" alt="Execution DAG and Task Trace" width="90%">
-  <br>
-  <em>Figure 3: Inspection of generated task dependencies, execution state, and recovery budgets.</em>
-</p>
+<video src="docs/demo_video.mp4" controls width="90%"></video>
 
 ---
 
@@ -222,11 +174,11 @@ Plotly chart builders live in `tools/charts.py`. They read recorded tool output 
 - **Python**: `>= 3.11`
 - **uv**: Modern, ultra-fast Python package manager ([installation instructions](https://github.com/astral-sh/uv))
 - **Node.js**: `>= 18.0` & **npm** (for the modern React frontend)
-- **Ollama**: Running locally with `qwen3:4b` (or another supported local LLM)
+- **Ollama**: Running locally with `qwen3:4b-instruct` (or another supported local LLM)
 
 ```bash
 # Pull the default planner model
-ollama pull qwen3:4b
+ollama pull qwen3:4b-instruct
 ```
 
 ---
@@ -421,9 +373,9 @@ data-analysis-report-generator/
 │   ├── DECISIONS.md               # Architecture Decision Records (ADRs)
 │   ├── EXPERIMENTS_SUMMARY.md     # Full empirical results, ablations & model spikes
 │   ├── PROGRESS.md                # Milestone tracking & historical session log
-│   └── M10_RESULTS.md             # Benchmark evaluation reference data
+│   └── M10_RESULTS.md             # Note on the superseded M10 reference run
 │
-└── tests/                         # Comprehensive test suite (320 tests)
+└── tests/                         # Comprehensive test suite (328 tests)
     ├── unit/                      # Fast unit tests covering all components
     ├── integration/               # Multi-component pipeline tests
     └── fixtures/                  # Synthetic test tables and fixtures
@@ -433,7 +385,7 @@ data-analysis-report-generator/
 
 ## 🧪 Testing & Quality
 
-Run the full automated test suite (all 320 tests pass in ~18s):
+Run the full automated test suite (all 328 tests pass in ~18s):
 
 ```bash
 uv run pytest
