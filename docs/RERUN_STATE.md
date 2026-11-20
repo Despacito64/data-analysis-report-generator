@@ -52,4 +52,4 @@ Committed on post-freeze-fixes: Phase 1-2 complete with --repeats 1 per user req
 - The disclosure about post-freeze fixes and model replacement remains required per RERUN_AGENT_PROMPT section 9.0
 
 ## Open questions for the owner
-Phase 3 (paper/deck/charts editing) must be approved by the owner per section 9.0 of RERUN_AGENT_PROMPT. The old result directories (post-freeze-fixes-failed8-*, m10-*, etc.) can be removed in Phase 4 with owner go-ahead. The recovery tag and D-052 entry for post-freeze fixes should be maintained.
+Phase 3 (paper/deck/charts editing) must be approved by the owner per section 9.0 of RERUN_AGENT_PROMPT. Phase 4 was done on the owner's go-ahead on 2026-11-20: the older runs (except the m10 and m6 runs) were removed; recovery tag `pre-cleanup-20261120`. The recovery tag and D-052 entry for post-freeze fixes should be maintained.

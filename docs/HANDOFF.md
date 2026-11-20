@@ -14,10 +14,10 @@ Updated: 2026-11-20 by Claude Code
 - The results are not held-out: the system was fixed after an earlier run on the same questions and the model was replaced after the freeze. The paper and deck say so.
 
 ## Next steps
-1. Owner review of `docs/report/main.pdf` (6 pages) and `docs/Technical-Review-Deck.pptx` (untracked).
-2. Fill the placeholders on deck slide 21 (individual contributions) and decide about the demo video, which was recorded with the previous model.
-3. Phase 4 cleanup of old result directories only on the owner's go-ahead (see `docs/RERUN_AGENT_PROMPT.md` section 11); `m10-*` and `m6-*` runs need a separate decision.
-4. Decide whether to merge `post-freeze-fixes` into `shivam` and push. Nothing is pushed from this branch.
+1. Owner review of the paper (`docs/report/`, 6 pages) and the deck (`docs/Technical-Review-Deck.pptx`, 22 slides). Both are local only: they are not tracked in git (an earlier version of the paper and a deck were pushed to GitHub before this was decided; they remain in history).
+2. Decide about the demo video, which was recorded with the previous model.
+3. Old result directories were removed on 2026-11-20 (M10 and M6 runs kept); recovery tag `pre-cleanup-20261120` is local.
+4. Decide whether to merge `post-freeze-fixes` into `shivam` and push. Nothing from this branch is pushed.
 
 ## Open questions
 - Upstream identity of `qwen3:4b-instruct` was not verified beyond `ollama show` (architecture qwen3, 4.0B, Q4_K_M); the paper says "instruction-tuned model of the Qwen3 family".

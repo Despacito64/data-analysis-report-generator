@@ -7,8 +7,8 @@ and evaluation/benchmark/questions.json.
 Usage:
     uv run python scripts/generate_metrics_charts.py
     uv run python scripts/generate_metrics_charts.py --out scripts/charts
-    uv run python scripts/generate_metrics_charts.py --ablation-json evaluation/results/ablation-no-replan-XXX/agent_eval.json
-    uv run python scripts/generate_metrics_charts.py --spike-3b evaluation/results/model-spike-qwen25-3b-XXX/agent_eval.json --spike-7b evaluation/results/model-spike-qwen25-7b-XXX/agent_eval.json
+    uv run python scripts/generate_metrics_charts.py --ablation-json evaluation/results/<replanning-off run>/agent_eval.json
+    uv run python scripts/generate_metrics_charts.py --spike-3b <3b run>/agent_eval.json --spike-7b <7b run>/agent_eval.json --spike-llama <llama run>/agent_eval.json
 """
 
 from __future__ import annotations

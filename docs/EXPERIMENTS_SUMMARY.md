@@ -81,58 +81,15 @@ The shares overlap, so they do not sum to 100%. Individual tool calls took 0.003
 
 ---
 
-## Experiment 2: Reduced-budget run with the plan-repair cap set to 0 (exploratory)
-
-> **Correction (2026-11-19).** This run was first labelled "No Replanning". That label was wrong. `max_repair_attempts` only caps the planner's re-prompt loop after an invalid plan (`planner.py:397`, `for attempt in range(max_repairs + 1)`). Result-driven replanning is governed by `max_replans` (3, unchanged), and it still ran: the q02 trace shows a replan adding a task. A true no-replan ablation (`max_replans=0`) has not been run.
-
-**What differed from the reference run (four settings at once):**
-
-| Setting | Reference | This run |
-|---|---|---|
-| `max_repair_attempts` | 2 | 0 |
-| `max_llm_calls_per_question` | 8 | 4 |
-| `per_question_budget_s` | 300 | 180 |
-| repeats | 3 | 1 |
-
-**Run ID:** `ablation-no-replan-20261119150629` (name kept for traceability)
-
-| Metric | Reference | This run |
-|---|---|---|
-| Correct | 13 / 20 | 12 / 20 |
-| Accuracy | 65% | 60% |
-
-**Only q02 differs between the two runs.** The reference passed q02 in all 3 repeats. In the reduced-budget run the plan was the same `filter`, but `augment_chat_plan` (added for the chat interface in D-048) appended a `group_aggregate` to the filter-only plan, so the scorer took `{'West': 251991.83}` as the answer instead of the count 599. This is a plan-augmentation effect, not a replan effect. It is present in all final-code runs (see R1 below).
-
-**Interpretation.** With n = 1, one question and four confounded settings, this run cannot show that replanning helps or hurts. What it does show is that, with a 4B model, result-driven replanning can add unnecessary tasks and change a correct answer. A clean test needs one variable at a time (`max_replans=0`) with 3 repeats.
-
----
-
-## Experiment 3: Model Comparison Spike
-
-**Scope:** 5 questions chosen to span categories: q03 (group_aggregate), q06 (rank), q09 (period_compare), q13 (segment_contribution), q17 (anomalies).  
-**1 repeat each, run under the same reduced settings as Experiment 2 (180 s per question).** Both new runs stopped after these 5 (15 of 20 not run), and the qwen3:4b column is taken from the 3-repeat reference run, so the columns are not like-for-like.
-
-| Model | Params | Passed (of the 5) | Avg time/q | What was recorded |
-|---|---|---|---|---|
-| qwen2.5:3b-instruct | 3B | 0 | ~85 s | q03, q17 `no_score_shaped_answer`; q09, q13 `repair_cap`; q06 timeout |
-| qwen3:4b (reference run) | 4B | 4 | ~165 s | only q06 failed |
-| qwen2.5:7b-instruct | 7B | 2 | ~90 s | q03, q13 passed; q09, q17 `no_score_shaped_answer`; q06 timeout |
-
-**What can be said.** Five questions, one repeat and different run settings are not enough to rank the models. The recorded failure types are informative: the 3B model hit the repair cap (its plans failed validation) on two questions, and the 7B model returned answers the scorer could not shape on two. Why the 7B model did worse than qwen3:4b has not been investigated, so no claim about model families is made here.
-
----
-
-## Summary Table
+## Summary Table (earlier experiments)
 
 | Experiment | Variant | Score | What it shows |
 |---|---|---|---|
-| M10 reference | qwen3:4b, full system | 13/20 (65%) | Main result |
-| Exploratory run | repair cap 0, reduced budgets, 1 repeat | 12/20 (60%) | Not a no-replan ablation; four settings changed; only q02 differs |
-| Model spike (partial) | qwen2.5:3b-instruct | 0 of 5 run | 2 repair-cap failures, 2 unshaped answers, 1 timeout |
-| Model spike (partial) | qwen3:4b (reference run) | 4 of the same 5 | From the 3-repeat reference run |
-| Model spike (partial) | qwen2.5:7b-instruct | 2 of 5 run | 2 unshaped answers, 1 timeout |
+| M10 reference | previous qwen3:4b, full system | 13/20 (65%) | Earlier main result (3 repeats), kept as the milestone record |
 | Recovery suite | 12 scenarios | 12/12 | Mock-only failure-recovery scenarios |
 | Baseline | Keyed by question id | 20/20 | Ceiling, not a competitor |
+
+The other earlier runs (a reduced-budget run, a clean ablation on the previous code and two partial model spikes) were removed on 2026-11-20 at the owner's request; they can be restored from git history (tag `pre-cleanup-20261120`).
 
 ---
 
@@ -143,10 +100,10 @@ All charts are saved in both `docs/assets/` and `evaluation/results/charts/` (an
 ### 1. Accuracy by Category
 ![Accuracy by Category](assets/chart_accuracy_by_category.png)
 
-### 2. Exploratory comparison: reference run vs reduced-budget run (repair cap 0)
+### 2. Replanning on versus off, per question (R1 and R2)
 ![Ablation Comparison](assets/chart_ablation_comparison.png)
 
-### 3. Partial 5-question model spike (3B, 4B, 7B)
+### 3. Four local models, one run per question (replanning on)
 ![Model Comparison](assets/chart_model_comparison.png)
 
 ### 4. Stage Time Waterfall
