@@ -21,6 +21,9 @@ _ANALYTIC_TOOLS = frozenset(
         "concentration",
         "pareto",
         "compare_groups",
+        "trend",
+        "correlation",
+        "detect_anomalies_iqr",
     }
 )
 
@@ -63,6 +66,19 @@ def _profile_metric_column(profile: DatasetProfile, preferred: str) -> str:
     return preferred
 
 
+def _asks_for_count(question: str) -> bool:
+    """A row-count question is answered by the filter itself; no breakdown is added."""
+    return "how many" in question.casefold()
+
+
+def _asks_for_plain_total(question: str) -> bool:
+    """A single total (no 'each', 'per', 'by' or ranking wording) needs no grouping column."""
+    text = question.casefold()
+    if re.search(r"\b(each|per|by|breakdown|every|top|bottom|rank)\b", text):
+        return False
+    return bool(re.search(r"\b(total|sum)\b", text))
+
+
 def plan_needs_analysis_augment(plan: Plan) -> bool:
     if len(plan.tasks) == 1 and plan.tasks[0].tool == "filter":
         return True
@@ -87,6 +103,8 @@ def augment_chat_plan(
     """Append group_aggregate after filter-only plans for drill-down questions."""
     if not plan_needs_analysis_augment(plan):
         return plan
+    if _asks_for_count(question):
+        return plan
     filter_task = next((t for t in reversed(plan.tasks) if t.tool == "filter"), None)
     conditions = (filter_task.args.get("conditions") if filter_task else None) or []
     if not conditions and filter_hints:
@@ -98,6 +116,7 @@ def augment_chat_plan(
     group_col = str(conditions[0].get("column", ""))
     if not group_col:
         return plan
+    group_by = [] if _asks_for_plain_total(question) else [group_col]
     metric, agg = infer_metric_from_thread(thread, question)
     metric = _profile_metric_column(profile, metric)
     existing_ids = {t.id for t in plan.tasks}
@@ -108,7 +127,7 @@ def augment_chat_plan(
         id=f"t{suffix}",
         tool="group_aggregate",
         args={
-            "by": [group_col],
+            "by": group_by,
             "metric_column": metric,
             "aggregation": agg,
         },

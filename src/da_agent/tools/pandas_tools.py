@@ -180,6 +180,24 @@ def group_aggregate(
     _check_non_empty(df)
     _check_columns_exist(df, args.by + [args.metric_column])
 
+    if not args.by:
+        # Grand total: one group over all rows, with no grouping keys.
+        val, valid_cnt, missing_cnt = _compute_agg(df[args.metric_column], args.aggregation)
+        total = GroupAggregateRow(
+            group_keys={}, value=val, valid_count=valid_cnt, missing_count=missing_cnt
+        )
+        return ToolResultEnvelope(
+            tool_name="group_aggregate",
+            args=args,
+            input_row_count=len(df),
+            result=GroupAggregateResult(
+                metric_column=args.metric_column,
+                aggregation=args.aggregation,
+                total_groups=1,
+                rows=[total],
+            ),
+        )
+
     # Copy grouping columns and fill nulls with '<missing>'
     work_df = df[args.by + [args.metric_column]].copy()
     for col in args.by:
@@ -234,6 +252,18 @@ def rank(df: pd.DataFrame, args: RankArgs) -> ToolResultEnvelope[RankResult]:
     """Perform deterministic competition ranking (1, 2, 2, 4) with explicit tie groups."""
     _check_non_empty(df)
     _check_columns_exist(df, [args.entity_column, args.metric_column])
+    input_row_count = len(df)
+    if args.aggregation is not None:
+        # Aggregate the metric per entity first, then rank the entity totals.
+        keyed = df[[args.entity_column, args.metric_column]].copy()
+        keyed[args.entity_column] = keyed[args.entity_column].fillna("<missing>")
+        totals = {
+            key: _compute_agg(group[args.metric_column], args.aggregation)[0]
+            for key, group in keyed.groupby(args.entity_column, sort=True)
+        }
+        df = pd.DataFrame(
+            {args.entity_column: list(totals), args.metric_column: list(totals.values())}
+        )
 
     metric_series = df[args.metric_column]
     null_mask = metric_series.isna()
@@ -339,7 +369,7 @@ def rank(df: pd.DataFrame, args: RankArgs) -> ToolResultEnvelope[RankResult]:
     return ToolResultEnvelope(
         tool_name="rank",
         args=args,
-        input_row_count=len(df),
+        input_row_count=input_row_count,
         result=res,
     )
 

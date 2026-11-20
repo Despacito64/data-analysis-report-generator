@@ -113,7 +113,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=group_aggregate,
         args_model=GroupAggregateArgs,
         result_model=GroupAggregateResult,
-        description="Group by dimension columns and compute aggregate metric values. Required args: 'by' (list[str] of dimension column names), 'metric_column' (str), and 'aggregation' ('sum' | 'mean' | 'count' | 'min' | 'max').",
+        description="Group by dimension columns and compute aggregate metric values. Required args: 'by' (list[str] of dimension column names; use an empty list for one overall total), 'metric_column' (str), and 'aggregation' ('sum' | 'mean' | 'count' | 'min' | 'max').",
         invariants=("group_aggregate_reconciliation", "group_aggregate_group_count"),
     ),
     ToolEntry(
@@ -121,7 +121,7 @@ _REGISTERED_TOOLS: list[ToolEntry] = [
         fn=rank,
         args_model=RankArgs,
         result_model=RankResult,
-        description="Compute standard competition rankings (1, 2, 2, 4) with tie groups. Required args: 'entity_column' (dimension column to rank) and 'metric_column' (numeric column to rank by). Optional: 'ascending' (bool, default false for top/highest; true for bottom/lowest), 'top_n' (int).",
+        description="Compute standard competition rankings (1, 2, 2, 4) with tie groups. Required args: 'entity_column' (dimension column to rank) and 'metric_column' (numeric column to rank by). Optional: 'aggregation' ('sum' | 'mean' | 'count' | 'min' | 'max'; when set, the metric is aggregated per entity first so that entities are ranked by their totals, e.g. top 5 sub-categories by total sales), 'ascending' (bool, default false for top/highest; true for bottom/lowest), 'top_n' (int).",
         invariants=(
             "rank_monotonicity",
             "rank_tie_consistency",

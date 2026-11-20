@@ -42,11 +42,22 @@ def gagg(by: str, metric: str, agg: str = "sum") -> tuple[str, dict[str, Any]]:
     return ("group_aggregate", {"by": [by], "metric_column": metric, "aggregation": agg})
 
 
-def rank(entity: str, metric: str, asc: bool, n: int) -> tuple[str, dict[str, Any]]:
-    return (
-        "rank",
-        {"entity_column": entity, "metric_column": metric, "ascending": asc, "top_n": n},
-    )
+def rank(
+    entity: str, metric: str, asc: bool, n: int, agg: str | None = None
+) -> tuple[str, dict[str, Any]]:
+    args: dict[str, Any] = {
+        "entity_column": entity,
+        "metric_column": metric,
+        "ascending": asc,
+        "top_n": n,
+    }
+    if agg:
+        args["aggregation"] = agg
+    return ("rank", args)
+
+
+def total(metric: str) -> tuple[str, dict[str, Any]]:
+    return ("group_aggregate", {"by": [], "metric_column": metric, "aggregation": "sum"})
 
 
 def flt(column: str, value: str) -> tuple[str, dict[str, Any]]:
@@ -74,6 +85,7 @@ TREND_Q = (
 # Extra candidates for the seven questions the agent failed.
 EXTRA: dict[str, dict[str, list[tuple[str, dict[str, Any]]]]] = {
     "q01": {
+        "filter then overall total": [flt("Ship Mode", "First Class"), total("Sales")],
         "filter then group_aggregate(Ship Mode)": [
             flt("Ship Mode", "First Class"),
             gagg("Ship Mode", "Sales"),
@@ -83,20 +95,27 @@ EXTRA: dict[str, dict[str, list[tuple[str, dict[str, Any]]]]] = {
     "q06": {
         "group_aggregate only": [gagg("Sub-Category", "Sales")],
         "rank only": [rank("Sub-Category", "Sales", False, 5)],
+        "rank with sum": [rank("Sub-Category", "Sales", False, 5, "sum")],
     },
     "q07": {
         "group_aggregate only": [gagg("State", "Profit")],
         "rank only": [rank("State", "Profit", False, 3)],
+        "rank with sum": [rank("State", "Profit", False, 3, "sum")],
     },
     "q08": {
         "group_aggregate only": [gagg("Sub-Category", "Profit")],
         "rank only": [rank("Sub-Category", "Profit", True, 5)],
+        "rank with sum": [rank("Sub-Category", "Profit", True, 5, "sum")],
     },
     "q11": {"filter 2017 then trend": [YEAR_2017, TREND_M], "trend only": [TREND_M]},
     "q12": {"trend (quarterly)": [TREND_Q]},
     "q20": {
         "filter then rank": [flt("Segment", "Consumer"), rank("City", "Sales", False, 3)],
         "filter then group_aggregate": [flt("Segment", "Consumer"), gagg("City", "Sales")],
+        "filter then rank with sum": [
+            flt("Segment", "Consumer"),
+            rank("City", "Sales", False, 3, "sum"),
+        ],
     },
 }
 
