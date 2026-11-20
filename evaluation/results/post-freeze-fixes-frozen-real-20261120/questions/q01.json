@@ -1,0 +1,123 @@
+{
+  "question_id": "q01",
+  "status": "passed",
+  "accuracy": true,
+  "total_time_s": 41.54781349992845,
+  "stage_timings": {
+    "plan_generation": 32.98785625700839,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012807205901481211,
+    "tool_execution": 0.06092189205810428,
+    "result_inspection": 0.00522237503901124,
+    "replanning": 5.653449137113057,
+    "graph_finalization": 0.0003568789688870311,
+    "answer_synthesis": 0.0033103140303865075,
+    "tool_executions": 0.004999999999999999
+  },
+  "llm_call_count": 3,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 32.97263777896296,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 5.634737506043166,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "graph_finalization",
+      "duration_s": 2.6636175469029695,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0029
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0021
+    }
+  ],
+  "repair_attempts": [],
+  "attempt_count": 1,
+  "failure_reason": null,
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q01",
+      "attempt": 1,
+      "run_id": "agent_eval_post-freeze-fixes-frozen-real-20261120_q01_r1_2851c1f7",
+      "status": "passed",
+      "accuracy": true,
+      "answer": 351428.4229,
+      "failure_reason": null,
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 41.54781349992845,
+      "stage_timings": {
+        "plan_generation": 32.98785625700839,
+        "question_resolution": 0.0,
+        "plan_validation": 0.012807205901481211,
+        "tool_execution": 0.06092189205810428,
+        "result_inspection": 0.00522237503901124,
+        "replanning": 5.653449137113057,
+        "graph_finalization": 0.0003568789688870311,
+        "answer_synthesis": 0.0033103140303865075,
+        "tool_executions": 0.004999999999999999
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0029
+        },
+        {
+          "task_id": "t2",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0021
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 32.97263777896296,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 5.634737506043166,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "graph_finalization",
+          "duration_s": 2.6636175469029695,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        }
+      ],
+      "llm_call_count": 3,
+      "repair_attempts": []
+    }
+  ]
+}

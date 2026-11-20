@@ -1,0 +1,120 @@
+{
+  "question_id": "q01",
+  "attempt": 1,
+  "run_id": "agent_eval_spike-fixed-qwen25-3b-20261120_q01_r1_02124ef5",
+  "status": "failed",
+  "accuracy": false,
+  "answer": [
+    "High Speed Automatic Electric Letter Opener",
+    "Fellowes PB500 Electric Punch Plastic Comb Binding Machine with Manual Bind",
+    "High Speed Automatic Electric Letter Opener",
+    "Cubify CubeX 3D Printer Double Head Print",
+    "Okidata MB760 Printer"
+  ],
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 175.61273764004,
+  "stage_timings": {
+    "plan_generation": 25.57087670697365,
+    "question_resolution": 0.0,
+    "plan_validation": 0.011701159994117916,
+    "tool_execution": 0.831963830976747,
+    "result_inspection": 0.007677507004700601,
+    "replanning": 127.03159351809882,
+    "repair_attempt_1": 28.545364735997282,
+    "graph_finalization": 0.0068961449433118105,
+    "answer_synthesis": 19.687685240991414,
+    "tool_executions": 0.7107
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0032
+    },
+    {
+      "task_id": "t2",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0014
+    },
+    {
+      "task_id": "t3",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.5264
+    },
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.003
+    },
+    {
+      "task_id": "t2",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.0868
+    },
+    {
+      "task_id": "t3",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.0899
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 25.55871586408466,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.837881191982888,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 30.49687286198605,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 28.545364735997282,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 5,
+      "stage": "replanning",
+      "duration_s": 60.09466783807147,
+      "completed": false,
+      "error": "TimeoutError: timed out",
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 6,
+      "stage": "graph_finalization",
+      "duration_s": 2.1822874289937317,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    }
+  ],
+  "llm_call_count": 6,
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 28.545364735997282
+    }
+  ]
+}

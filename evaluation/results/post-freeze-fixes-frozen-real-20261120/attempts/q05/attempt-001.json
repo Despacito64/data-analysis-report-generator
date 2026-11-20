@@ -1,0 +1,60 @@
+{
+  "question_id": "q05",
+  "attempt": 1,
+  "run_id": "agent_eval_post-freeze-fixes-frozen-real-20261120_q05_r1_ba18d618",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "Furniture": 0.1739226779820839,
+    "Office Supplies": 0.15728509790906073,
+    "Technology": 0.1323226854358419
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 38.42330277606379,
+  "stage_timings": {
+    "plan_generation": 30.227103521930985,
+    "question_resolution": 0.0,
+    "plan_validation": 0.012766140047460794,
+    "tool_execution": 0.008102340041659772,
+    "result_inspection": 0.0028980529168620706,
+    "replanning": 5.185830642934889,
+    "graph_finalization": 0.00029898190405219793,
+    "answer_synthesis": 0.0019663270795717835,
+    "tool_executions": 0.0051
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0051
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.181564299971797,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 5.162357437075116,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "graph_finalization",
+      "duration_s": 2.9366275719366968,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "llm_call_count": 3,
+  "repair_attempts": []
+}

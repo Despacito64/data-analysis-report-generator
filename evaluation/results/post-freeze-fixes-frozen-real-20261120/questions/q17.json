@@ -1,0 +1,267 @@
+{
+  "question_id": "q17",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 170.30791380105074,
+  "stage_timings": {
+    "plan_generation": 30.057914821081795,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01391520700417459,
+    "tool_execution": 0.3870563181117177,
+    "result_inspection": 0.011524954927153885,
+    "replanning": 131.50026964093558,
+    "repair_attempt_1": 35.79232330492232,
+    "graph_finalization": 0.0008526690071448684,
+    "answer_synthesis": 0.7987747159786522,
+    "tool_executions": 0.28
+  },
+  "llm_call_count": 6,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.03968647797592,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 13.11431802297011,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 39.89387126604561,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 35.79232330492232,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 5,
+      "stage": "replanning",
+      "duration_s": 42.64130556106102,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 6,
+      "stage": "graph_finalization",
+      "duration_s": 7.4357527799438685,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "detect_anomalies_iqr",
+      "status": "ok",
+      "duration_s": 0.0106
+    },
+    {
+      "task_id": "t2",
+      "tool": "trend",
+      "status": "ok",
+      "duration_s": 0.0687
+    },
+    {
+      "task_id": "t3",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0039
+    },
+    {
+      "task_id": "t1",
+      "tool": "segment_contribution",
+      "status": "ok",
+      "duration_s": 0.0046
+    },
+    {
+      "task_id": "t2",
+      "tool": "trend",
+      "status": "ok",
+      "duration_s": 0.0826
+    },
+    {
+      "task_id": "t3",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0042
+    },
+    {
+      "task_id": "t4",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0031
+    },
+    {
+      "task_id": "t5",
+      "tool": "group_aggregate",
+      "status": "ok",
+      "duration_s": 0.0083
+    },
+    {
+      "task_id": "t6",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.094
+    }
+  ],
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 35.79232330492232
+    }
+  ],
+  "attempt_count": 1,
+  "failure_reason": "incorrect_answer",
+  "failure_stage": null,
+  "attempts": [
+    {
+      "question_id": "q17",
+      "attempt": 1,
+      "run_id": "agent_eval_post-freeze-fixes-frozen-real-20261120_q17_r1_814a7cf7",
+      "status": "failed",
+      "accuracy": false,
+      "answer": [
+        "Cisco TelePresence System EX90 Videoconferencing Unit",
+        "Canon imageCLASS 2200 Advanced Copier",
+        "Hewlett Packard LaserJet 3310 Copier",
+        "Ibico EPK-21 Electric Binding System",
+        "GBC DocuBind P400 Electric Binding System"
+      ],
+      "failure_reason": "incorrect_answer",
+      "failure_stage": null,
+      "failure_elapsed_s": null,
+      "total_time_s": 170.30791380105074,
+      "stage_timings": {
+        "plan_generation": 30.057914821081795,
+        "question_resolution": 0.0,
+        "plan_validation": 0.01391520700417459,
+        "tool_execution": 0.3870563181117177,
+        "result_inspection": 0.011524954927153885,
+        "replanning": 131.50026964093558,
+        "repair_attempt_1": 35.79232330492232,
+        "graph_finalization": 0.0008526690071448684,
+        "answer_synthesis": 0.7987747159786522,
+        "tool_executions": 0.28
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "detect_anomalies_iqr",
+          "status": "ok",
+          "duration_s": 0.0106
+        },
+        {
+          "task_id": "t2",
+          "tool": "trend",
+          "status": "ok",
+          "duration_s": 0.0687
+        },
+        {
+          "task_id": "t3",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0039
+        },
+        {
+          "task_id": "t1",
+          "tool": "segment_contribution",
+          "status": "ok",
+          "duration_s": 0.0046
+        },
+        {
+          "task_id": "t2",
+          "tool": "trend",
+          "status": "ok",
+          "duration_s": 0.0826
+        },
+        {
+          "task_id": "t3",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0042
+        },
+        {
+          "task_id": "t4",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0031
+        },
+        {
+          "task_id": "t5",
+          "tool": "group_aggregate",
+          "status": "ok",
+          "duration_s": 0.0083
+        },
+        {
+          "task_id": "t6",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.094
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 30.03968647797592,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 13.11431802297011,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "replanning",
+          "duration_s": 39.89387126604561,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 4,
+          "stage": "replanning",
+          "duration_s": 35.79232330492232,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 5,
+          "stage": "replanning",
+          "duration_s": 42.64130556106102,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        },
+        {
+          "call_number": 6,
+          "stage": "graph_finalization",
+          "duration_s": 7.4357527799438685,
+          "completed": true,
+          "model": "qwen3:4b-instruct"
+        }
+      ],
+      "llm_call_count": 6,
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 35.79232330492232
+        }
+      ]
+    }
+  ]
+}

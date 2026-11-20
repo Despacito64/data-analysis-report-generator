@@ -1,0 +1,54 @@
+{
+  "question_id": "q06",
+  "attempt": 1,
+  "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q06_r1_c1094b52",
+  "status": "passed",
+  "accuracy": true,
+  "answer": [
+    "Phones",
+    "Chairs",
+    "Storage",
+    "Tables",
+    "Binders"
+  ],
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 34.35253756202292,
+  "stage_timings": {
+    "plan_generation": 30.52774282207247,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01384417898952961,
+    "tool_execution": 0.015870079048909247,
+    "result_inspection": 0.003779705031774938,
+    "graph_finalization": 0.0003257299540564418,
+    "answer_synthesis": 0.002355330972932279,
+    "tool_executions": 0.0126
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.0126
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.433070936938748,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 3.775234868982807,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

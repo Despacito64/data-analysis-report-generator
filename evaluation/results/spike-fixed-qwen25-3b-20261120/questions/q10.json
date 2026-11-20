@@ -1,0 +1,177 @@
+{
+  "question_id": "q10",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 87.39651530503761,
+  "stage_timings": {
+    "plan_generation": 25.763764542993158,
+    "question_resolution": 0.0,
+    "plan_validation": 0.011717990972101688,
+    "tool_execution": 0.5081811040872708,
+    "result_inspection": 0.005087167024612427,
+    "repair_attempt_1": 4.76575038197916,
+    "replanning": 12.25566816702485,
+    "repair_attempt_2": 23.04761162097566,
+    "tool_executions": 0.5029
+  },
+  "llm_call_count": 5,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 25.74934600503184,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "replanning",
+      "duration_s": 7.472434279043227,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 3,
+      "stage": "replanning",
+      "duration_s": 4.76575038197916,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 25.772514153039083,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    },
+    {
+      "call_number": 5,
+      "stage": "replanning",
+      "duration_s": 23.04761162097566,
+      "completed": true,
+      "model": "qwen2.5:3b-instruct"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "period_compare",
+      "status": "ok",
+      "duration_s": 0.0119
+    },
+    {
+      "task_id": "t2",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.491
+    }
+  ],
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 4.76575038197916
+    },
+    {
+      "attempt": 2,
+      "duration_s": 23.04761162097566
+    },
+    {
+      "attempt": 3,
+      "duration_s": null
+    }
+  ],
+  "attempt_count": 1,
+  "failure_reason": "repair_cap",
+  "failure_stage": "replanning",
+  "attempts": [
+    {
+      "question_id": "q10",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-qwen25-3b-20261120_q10_r1_2ae3e6fe",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "repair_cap",
+      "failure_stage": "replanning",
+      "failure_elapsed_s": 87.3965917089954,
+      "total_time_s": 87.39651530503761,
+      "stage_timings": {
+        "plan_generation": 25.763764542993158,
+        "question_resolution": 0.0,
+        "plan_validation": 0.011717990972101688,
+        "tool_execution": 0.5081811040872708,
+        "result_inspection": 0.005087167024612427,
+        "repair_attempt_1": 4.76575038197916,
+        "replanning": 12.25566816702485,
+        "repair_attempt_2": 23.04761162097566,
+        "tool_executions": 0.5029
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "period_compare",
+          "status": "ok",
+          "duration_s": 0.0119
+        },
+        {
+          "task_id": "t2",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.491
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 25.74934600503184,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 2,
+          "stage": "replanning",
+          "duration_s": 7.472434279043227,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 3,
+          "stage": "replanning",
+          "duration_s": 4.76575038197916,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 4,
+          "stage": "replanning",
+          "duration_s": 25.772514153039083,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        },
+        {
+          "call_number": 5,
+          "stage": "replanning",
+          "duration_s": 23.04761162097566,
+          "completed": true,
+          "model": "qwen2.5:3b-instruct"
+        }
+      ],
+      "llm_call_count": 5,
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 4.76575038197916
+        },
+        {
+          "attempt": 2,
+          "duration_s": 23.04761162097566
+        },
+        {
+          "attempt": 3,
+          "duration_s": null
+        }
+      ]
+    }
+  ]
+}

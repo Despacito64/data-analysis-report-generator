@@ -1,0 +1,69 @@
+{
+  "question_id": "q12",
+  "attempt": 1,
+  "run_id": "agent_eval_post-freeze-fixes-no-replan-20261120_q12_r1_0729b853",
+  "status": "passed",
+  "accuracy": true,
+  "answer": {
+    "points": {
+      "2014-Q1": 3811.2289999999994,
+      "2014-Q2": 11204.069200000002,
+      "2014-Q3": 12804.7218,
+      "2014-Q4": 21723.954100000003,
+      "2015-Q1": 9264.9416,
+      "2015-Q2": 12190.9224,
+      "2015-Q3": 16853.6194,
+      "2015-Q4": 23309.1203,
+      "2016-Q1": 11441.3708,
+      "2016-Q2": 16390.3394,
+      "2016-Q3": 15823.604800000001,
+      "2016-Q4": 38139.859300000004,
+      "2017-Q1": 23506.202599999997,
+      "2017-Q2": 15499.208499999999,
+      "2017-Q3": 26985.1325,
+      "2017-Q4": 27448.726
+    },
+    "slope": 1194.7442860294116,
+    "direction": "increasing"
+  },
+  "failure_reason": null,
+  "failure_stage": null,
+  "failure_elapsed_s": null,
+  "total_time_s": 34.06567919207737,
+  "stage_timings": {
+    "plan_generation": 30.394564675050788,
+    "question_resolution": 0.0,
+    "plan_validation": 0.014059214969165623,
+    "tool_execution": 0.034654482966288924,
+    "result_inspection": 0.0030037190299481153,
+    "graph_finalization": 0.0003645610995590687,
+    "answer_synthesis": 0.005247936001978815,
+    "tool_executions": 0.0316
+  },
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "trend",
+      "status": "ok",
+      "duration_s": 0.0316
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 30.37907920195721,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    },
+    {
+      "call_number": 2,
+      "stage": "graph_finalization",
+      "duration_s": 3.6006836929591373,
+      "completed": true,
+      "model": "qwen3:4b-instruct"
+    }
+  ],
+  "llm_call_count": 2,
+  "repair_attempts": []
+}

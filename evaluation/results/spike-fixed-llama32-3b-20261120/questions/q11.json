@@ -1,0 +1,161 @@
+{
+  "question_id": "q11",
+  "status": "failed",
+  "accuracy": false,
+  "total_time_s": 69.1774559620535,
+  "stage_timings": {
+    "repair_attempt_1": 7.7994719370035455,
+    "repair_attempt_2": 7.904586686985567,
+    "plan_generation": 42.463233788032085,
+    "question_resolution": 0.0,
+    "plan_validation": 0.01085156504996121,
+    "tool_execution": 0.20441097707953304,
+    "result_inspection": 0.0024376020301133394,
+    "tool_executions": 0.15990000000000001
+  },
+  "llm_call_count": 4,
+  "llm_calls": [
+    {
+      "call_number": 1,
+      "stage": "plan_generation",
+      "duration_s": 26.74242238595616,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 2,
+      "stage": "plan_generation",
+      "duration_s": 7.7994719370035455,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 3,
+      "stage": "plan_generation",
+      "duration_s": 7.904586686985567,
+      "completed": true,
+      "model": "llama3.2:3b"
+    },
+    {
+      "call_number": 4,
+      "stage": "replanning",
+      "duration_s": 26.47199669503607,
+      "completed": true,
+      "model": "llama3.2:3b"
+    }
+  ],
+  "tool_executions": [
+    {
+      "task_id": "t1",
+      "tool": "filter",
+      "status": "ok",
+      "duration_s": 0.0037
+    },
+    {
+      "task_id": "t2",
+      "tool": "rank",
+      "status": "ok",
+      "duration_s": 0.1562
+    }
+  ],
+  "repair_attempts": [
+    {
+      "attempt": 1,
+      "duration_s": 7.7994719370035455
+    },
+    {
+      "attempt": 2,
+      "duration_s": 7.904586686985567
+    },
+    {
+      "attempt": 3,
+      "duration_s": null
+    }
+  ],
+  "attempt_count": 1,
+  "failure_reason": "repair_cap",
+  "failure_stage": "replanning",
+  "attempts": [
+    {
+      "question_id": "q11",
+      "attempt": 1,
+      "run_id": "agent_eval_spike-fixed-llama32-3b-20261120_q11_r1_f2bbc9bc",
+      "status": "failed",
+      "accuracy": false,
+      "answer": null,
+      "failure_reason": "repair_cap",
+      "failure_stage": "replanning",
+      "failure_elapsed_s": 69.17766778508667,
+      "total_time_s": 69.1774559620535,
+      "stage_timings": {
+        "repair_attempt_1": 7.7994719370035455,
+        "repair_attempt_2": 7.904586686985567,
+        "plan_generation": 42.463233788032085,
+        "question_resolution": 0.0,
+        "plan_validation": 0.01085156504996121,
+        "tool_execution": 0.20441097707953304,
+        "result_inspection": 0.0024376020301133394,
+        "tool_executions": 0.15990000000000001
+      },
+      "tool_executions": [
+        {
+          "task_id": "t1",
+          "tool": "filter",
+          "status": "ok",
+          "duration_s": 0.0037
+        },
+        {
+          "task_id": "t2",
+          "tool": "rank",
+          "status": "ok",
+          "duration_s": 0.1562
+        }
+      ],
+      "llm_calls": [
+        {
+          "call_number": 1,
+          "stage": "plan_generation",
+          "duration_s": 26.74242238595616,
+          "completed": true,
+          "model": "llama3.2:3b"
+        },
+        {
+          "call_number": 2,
+          "stage": "plan_generation",
+          "duration_s": 7.7994719370035455,
+          "completed": true,
+          "model": "llama3.2:3b"
+        },
+        {
+          "call_number": 3,
+          "stage": "plan_generation",
+          "duration_s": 7.904586686985567,
+          "completed": true,
+          "model": "llama3.2:3b"
+        },
+        {
+          "call_number": 4,
+          "stage": "replanning",
+          "duration_s": 26.47199669503607,
+          "completed": true,
+          "model": "llama3.2:3b"
+        }
+      ],
+      "llm_call_count": 4,
+      "repair_attempts": [
+        {
+          "attempt": 1,
+          "duration_s": 7.7994719370035455
+        },
+        {
+          "attempt": 2,
+          "duration_s": 7.904586686985567
+        },
+        {
+          "attempt": 3,
+          "duration_s": null
+        }
+      ]
+    }
+  ]
+}
