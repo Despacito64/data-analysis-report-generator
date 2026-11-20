@@ -10,7 +10,7 @@
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19"></a>
   <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
   <a href="https://langchain-ai.github.io/langgraph/"><img src="https://img.shields.io/badge/LangGraph-0.2+-FF6F61?style=for-the-badge&logo=diagram-next&logoColor=white" alt="LangGraph"></a>
-  <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Ollama-qwen3:4b-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama"></a>
+  <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Ollama-qwen3:4b--instruct-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama"></a>
   <a href="https://docs.astral.sh/uv/"><img src="https://img.shields.io/badge/Managed%20with-uv-DE5FE9?style=for-the-badge" alt="uv package manager"></a>
   <a href="#-testing--quality"><img src="https://img.shields.io/badge/tests-320%20passed-success?style=for-the-badge&logo=pytest&logoColor=white" alt="320 Tests Passing"></a>
 </p>
@@ -341,20 +341,19 @@ uv run python evaluation/run_frozen_experiment.py --verify-only
 
 ### Reproduce the Evaluation
 
-Run the reference frozen experiment (3 repeats per question, 20 questions):
+Run the evaluation (one run per question, 20 questions; the model is passed explicitly):
 
 ```bash
-uv run python evaluation/run_frozen_experiment.py --mode real --repeats 3 --run-id m10-frozen-real
+uv run python evaluation/run_agent_eval.py --mode real --repeats 1 --model qwen3:4b-instruct --run-id my-run
 ```
 
 ### Benchmark Results & Ablation Studies
 
 | Experiment Variant | Model | Accuracy | Key Takeaway |
 | :--- | :---: | :---: | :--- |
-| **Dynamic Agent** | `qwen3:4b` | **13 / 20 (65%)** | Reference benchmark; 0 timeouts across 3× repeats |
-| **Exploratory run (repair cap 0)** | `qwen3:4b` | 12 / 20 (60%) | Reduced budgets, 1 repeat, replanning active; q02 differs because of plan augmentation, not replanning. Not a clean ablation; see the final-code runs in `docs/report` |
-| **Model spike (partial)** | `qwen2.5:7b-instruct` | 2 of 5 questions passed | Stopped after 5 questions; not comparable with the 3-repeat reference |
-| **Model spike (partial)** | `qwen2.5:3b-instruct` | 0 of 5 questions passed | Two plans hit the repair cap; stopped after 5 questions |
+| **Dynamic Agent, replanning on (R1)** | `qwen3:4b-instruct` | **10 / 20 (50%)** | One run per question; 84 LLM calls, 29 min; 0 timeouts. The model kept adding analyses after a correct first result, and the last task is scored |
+| **Dynamic Agent, replanning off (R2)** | `qwen3:4b-instruct` | **18 / 20 (90%)** | Same run with `--max-replans 0`; 42 LLM calls, 12 min. Fails q11 and q20 (planning). The system was fixed after an earlier run on the same questions, so this is not a held-out result |
+| **Model comparison** | `qwen2.5:7b-instruct`, `llama3.2:3b`, `qwen2.5:3b-instruct` | 8, 2 and 1 of 20 | One run per question, replanning on, same settings as R1 |
 | **Fixed Baseline** | Keyed by question id | 20 / 20 (100%) | Ceiling: hard-coded per-question plans, never reads the question text |
 | **Recovery suite** | — | **12 / 12 passed** | Mock-only controlled-failure scenarios |
 

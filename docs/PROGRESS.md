@@ -105,3 +105,4 @@ Format: `YYYY-MM-DD | tool | module | what was done | tests run and result | com
 2026-11-19 | Cursor | M6/M9 | D-048 second LLM narrative + filter drill-down augment; freeze config hash | uv run pytest -q: 318 passed | pending
 2026-11-19 | Antigravity | M10/Eval | reduced-budget repair-cap-0 run (12/20 vs 13/20, not a clean ablation), partial 5-question model spike, metrics chart generator, failure diagnosis and doc corrections (D-050) | uv run pytest -q: 320 passed; ruff clean | pending
 2026-11-20 | Claude Code | Report/Eval | R1 final-code 12/20, R2 clean ablation 12/20 (118 vs 258 calls), ceiling check 12/20 reachable, IEEE report in docs/report (D-051) | report compiles; full pytest not re-run | pending
+2026-11-20 | Claude Code | Eval/Report | post-freeze fixes (1703cf7); R1 replanning on 10/20, R2 replanning off 18/20, 3-model comparison, recovery 12/12, ceiling 20/20; paper, deck, charts, docs updated (D-052) | uv run pytest -q: 328 passed | pending

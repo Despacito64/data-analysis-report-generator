@@ -488,7 +488,7 @@ def build(deck: Deck, repo: Path) -> None:
         [
             ("Name", "Student ID"),
             ("Shivam Singh", "2023UAI1819"),
-            ("[Second member]", "[Student ID]"),
+            ("Menakshi", "2023UAI2000"),
         ]
     ):
         tbl.rows[r].height = Inches(0.42)
@@ -526,7 +526,7 @@ def build(deck: Deck, repo: Path) -> None:
         "Proposed Methodology: Dataset, Architecture, Flow, LLM Technique",
         "Results and Experiments",
         "Future Work",
-        "Learning: Module 09 and Individual Contribution",
+        "Learning: Module 09",
         "References",
     ]
     text(
@@ -562,19 +562,19 @@ def build(deck: Deck, repo: Path) -> None:
     s = deck.content(
         "Readiness (TRL)",
         "TRL 4 is our assessment for this review; no project file assigns a TRL.",
-        "TRL 4 = component validated in a laboratory setting. Evidence: 320 passing tests, frozen benchmark, recovery suite.",
+        "TRL 4 = component validated in a laboratory setting. Evidence: 328 passing tests, frozen benchmark, recovery suite.",
     )
     rows_card(deck, s, 0.5, BLUE, NAVY, "Why TRL 4", "verified", [
         ("flask", "Validated in the lab", "One dataset, 20 frozen questions, independent oracle"),
-        ("checklist", "Tested", "320 unit and integration tests pass"),
+        ("checklist", "Tested", "328 unit and integration tests pass"),
         ("shield", "Failure handling", "12 recovery scenarios pass (mock, no benchmark data)"),
         ("layers", "Working application", "FastAPI service with React and Streamlit interfaces"),
     ], NAVY)  # fmt: skip
     rows_card(deck, s, 6.83, CREAM, AMBER, "What stops a higher level", "warn", [
         ("folders", "One dataset", "Sample Superstore only; no claim beyond it"),
-        ("chip", "Small model", "qwen3:4b passes 12 of 20 on the frozen set"),
+        ("chip", "Small model", "qwen3:4b-instruct passes 10 to 18 of 20 questions"),
         ("ban", "No field trial", "No real users, no deployment, no authentication"),
-        ("sliders", "Known gaps", "Rank and trend failures are diagnosed but not yet fixed"),
+        ("sliders", "Known gaps", "Two questions still fail; replanning lowered the score"),
     ], AMBER)  # fmt: skip
 
     # 5 Project type -----------------------------------------------------------
@@ -586,16 +586,16 @@ def build(deck: Deck, repo: Path) -> None:
     feature_card(deck, s, 0.5, 2.05, BLUE, NAVY, "layers", "A working application", "FastAPI, React 19, Streamlit",
                  "Upload a CSV or XLSX, ask a question, get an evidence-linked HTML report.", NAVY)  # fmt: skip
     feature_card(deck, s, 6.83, 2.05, CREAM, AMBER, "shield", "Engineering focus", "Tools, validators, contracts",
-                 "Eight registered tools, typed contracts, five validation layers and 320 tests.", AMBER)  # fmt: skip
+                 "Eight registered tools, typed contracts, five validation layers and 328 tests.", AMBER)  # fmt: skip
     feature_card(deck, s, 0.5, 4.45, CREAM, AMBER, "gauge", "Measured, not only built", "Frozen benchmark",
-                 "20 questions scored against separately computed expected answers, 3 repeats each.", AMBER)  # fmt: skip
+                 "20 questions scored against separately computed expected answers, one run each.", AMBER)  # fmt: skip
     feature_card(deck, s, 6.83, 4.45, BLUE, NAVY, "flask", "Exploratory part", "Two small runs after the benchmark",
-                 "A reduced-budget comparison and a partial model spike, each shown with its limits.", NAVY)  # fmt: skip
+                 "A replanning ablation and a four-model comparison, each shown with its limits.", NAVY)  # fmt: skip
 
     # 6 Demo -------------------------------------------------------------------
     s = deck.content(
         "Working Demo",
-        "Real output from a recorded run (qwen3:4b, 'What are total sales by category?'). A 60-90 s screen recording goes here.",
+        "Real output from a recorded run (a local 4B model, 'What are total sales by category?'). A 60-90 s screen recording goes here.",
         "Screenshot of demo/report.html, produced by demo/run_real_demo.py with the real model (meta.json: mock false). Live demo questions: q03, q09, q19.",
     )
     s.shapes.add_picture(
@@ -751,8 +751,8 @@ def build(deck: Deck, repo: Path) -> None:
         ["Task graph", "Task and action graphs, regenerated on failure", "Typed task DAG, revised from results or failures"],
         ["Where numbers come from", "Code output", "EvidenceRecord with argument and dataset hashes"],
         ["Output check", "Run the code, reflect on errors", "Claims matched to evidence (rtol 0.001), unsupported claims dropped"],
-        ["Model", "GPT-4 class (gpt-4o, gpt-4-0613)", "qwen3:4b on a local machine through Ollama"],
-        ["Evaluation", "Public benchmarks, task success", "20 frozen questions, independent oracle, 3 repeats"],
+        ["Model", "GPT-4 class (gpt-4o, gpt-4-0613)", "qwen3:4b-instruct on a local machine through Ollama"],
+        ["Evaluation", "Public benchmarks, task success", "20 questions, independent oracle, one run each"],
     ], row_h=0.58, size=13)  # fmt: skip
     takeaway(
         deck,
@@ -858,7 +858,7 @@ def build(deck: Deck, repo: Path) -> None:
         [
             ("1", "Interface", "React 19 + Vite chat UI, FastAPI service, Streamlit app", "layers", False, False),
             ("2", "Data layer", "CSV/XLSX loader, input checks, profiler, SHA-256 hash", "folders", False, False),
-            ("3", "Planner", "qwen3:4b via Ollama, 3-shot JSON-schema prompt, LangGraph", "brain", True, False),
+            ("3", "Planner", "qwen3:4b-instruct via Ollama, 3-shot JSON-schema prompt, LangGraph", "brain", True, False),
         ],
         "B. Deterministic core",
         [
@@ -904,7 +904,7 @@ def build(deck: Deck, repo: Path) -> None:
         ("book", "Three few-shot plans", "Example question and plan pairs act as the support set"),
         ("list", "Eight tool specs", "Tool schemas plus each column's name and semantic type"),
         ("sliders", "JSON-schema output", "The reply is constrained to a list of typed tasks"),
-        ("gauge", "Fixed decoding", "Temperature 0, seed 42, local qwen3:4b, no fine-tuning"),
+        ("gauge", "Fixed decoding", "Temperature 0, seed 42, local qwen3:4b-instruct, no fine-tuning"),
     ], NAVY)  # fmt: skip
     rows_card(deck, s, 6.83, CREAM, AMBER, "Where the model is called", "chat", [
         ("pencil", "Plan", "Writes the first typed task DAG for the question"),
@@ -960,34 +960,42 @@ def build(deck: Deck, repo: Path) -> None:
 
     # 15 Results ---------------------------------------------------------------
     s = deck.content(
-        "Results: Final-Code Run",
-        "Run final-code-frozen-real-20261119: 20 frozen questions, 3 repeats each, qwen3:4b through Ollama.",
-        "Source: evaluation/results/final-code-frozen-real-20261119/agent_eval.json. An earlier revision (m10-frozen-real-20261117) scored 13/20; the difference is q02. A question counts as passed when any repeat matches the oracle. Baseline: BASELINE_TASKS keyed by question id (baseline.py).",
+        "Results: Replanning On and Off",
+        "20 questions, one run each, qwen3:4b-instruct through Ollama. R1: replanning on. R2: replanning off.",
+        "Source: saved evaluation results (agent_eval.json) for the two runs. The system was fixed after an earlier run on the same questions, so these are not held-out results. Baseline: BASELINE_TASKS keyed by question id (baseline.py).",
     )
     cards = [
         (
-            "12/20",
-            "Dynamic agent",
-            "36 of 60 attempts; 12 of 12 reachable",
+            "10/20",
+            "R1: replanning on",
+            "84 LLM calls, 29 min",
             BLUE,
             NAVY,
             NAVY,
             "brain",
         ),
         (
-            "20/20",
-            "Fixed baseline",
-            "Keyed by question id: a ceiling, not a competitor",
+            "18/20",
+            "R2: replanning off",
+            "42 LLM calls, 12 min",
             CREAM,
             AMBER,
             AMBER,
             "list",
         ),
-        ("12/12", "Recovery suite", "Mock-only failure scenarios", BLUE, NAVY, NAVY, "shield"),
         (
-            "93 min",
-            "Final-code run",
-            "60 question runs, 258 LLM calls",
+            "20/20",
+            "Fixed baseline",
+            "Keyed by question id: a ceiling, not a competitor",
+            BLUE,
+            NAVY,
+            NAVY,
+            "list",
+        ),
+        (
+            "12/12",
+            "Recovery suite",
+            "Mock-only failure scenarios",
             CREAM,
             AMBER,
             AMBER,
@@ -1010,7 +1018,7 @@ def build(deck: Deck, repo: Path) -> None:
             [
                 ("Passed: ", 14, INK, True, False),
                 (
-                    "group_aggregate 3/3, period_compare 2/2, segment_contribution 2/2, correlation 2/2, anomalies 2/2, multistep 1/2",
+                    "R2 passes group_aggregate 3/3, rank 3/3, filter 2/2, period_compare 2/2, segment_contribution 2/2, correlation 2/2, anomalies 2/2",
                     14,
                     INK,
                     False,
@@ -1031,7 +1039,7 @@ def build(deck: Deck, repo: Path) -> None:
             [
                 ("Failed: ", 14, INK, True, False),
                 (
-                    "rank 0/3, trend 0/2, filter 0/2 (q01, q02) and q20 (multistep); 8 questions in all",
+                    "R2 fails trend 1/2 (q11) and multistep 1/2 (q20); R1 also loses 8 more",
                     14,
                     INK,
                     False,
@@ -1046,15 +1054,15 @@ def build(deck: Deck, repo: Path) -> None:
         s,
         6.3,
         "Reading it:",
-        "Only 12 of 20 questions can be passed through the scoring path at all (model-free check); the agent passes all 12 in 3 of 3 repeats.",
+        "Replanning on passes 10 of 20, off passes 18 of 20. The system was fixed after an earlier run on the same questions.",
         h=0.55,
     )
 
     # 16 Failures --------------------------------------------------------------
     s = deck.content(
-        "Results: Why Eight Questions Failed",
-        "The tools ran ok in all eight. A model-free ceiling check shows none of them can be passed through the scoring path.",
-        "Method: compared each failed attempt's answer with the oracle and read tool arguments in runs/<id>/trace.jsonl. rank has no aggregation argument (RankArgs). q12 numbers and slope match the oracle; only the direction label differs (volatile vs increasing).",
+        "Results: Why Replanning Lowered the Score",
+        "Same first plan in both runs. In R1 the inspection step then added tasks, and the last task's output was scored.",
+        "Method: for each question, compared the plan versions and executed tools in the two runs (runs/<id>/trace.jsonl). First plans have the same tool list for all 20 questions.",
     )
     cats = [
         "group_aggregate",
@@ -1067,39 +1075,36 @@ def build(deck: Deck, repo: Path) -> None:
         "rank",
         "trend",
     ]
-    agent = [3 / 3, 2 / 2, 2 / 2, 2 / 2, 2 / 2, 0, 1 / 2, 0, 0]
+    r1 = [1 / 3, 1 / 2, 2 / 2, 2 / 2, 0, 2 / 2, 0, 2 / 3, 0]
+    r2 = [3 / 3, 2 / 2, 2 / 2, 2 / 2, 2 / 2, 2 / 2, 1 / 2, 3 / 3, 1 / 2]
     bar_chart(s, 0.5, 1.95, 7.4, 4.8, [c.replace("_", " ") for c in cats],
-              [("Dynamic agent", agent, NAVY)], title="Share of questions passed, by category", number_format="0%", ymax=1.15, major_unit=0.25, axis_format="0%")  # fmt: skip
+              [("R1 replanning on", r1, NAVY), ("R2 replanning off", r2, AMBER)], title="Share of questions passed, by category", number_format="0%", ymax=1.15, major_unit=0.25, axis_format="0%", legend=True)  # fmt: skip
     card(s, 8.1, 2.05, 4.73, 4.7, CREAM)
     text(s, 8.3, 2.15, 4.4, 0.5, "Diagnosed causes", 20, AMBER, bold=True, anchor=MSO_ANCHOR.MIDDLE)
     causes = [
         (
-            "q06, q07, q08, q20",
-            "One rank task. rank orders rows and does not aggregate, so it returned top single sales, not totals.",
+            "q03, q04, q06, q09, q12, q17, q18, q19",
+            "Pass with replanning off. In R1 the inspection step added tasks (2 to 4 plan versions) after a correct first result.",
         ),
         (
-            "q01",
-            "Right number, wrong shape: a group-to-value mapping where the oracle stores a scalar.",
+            "Example: q03",
+            "One group_aggregate by Region was right. Four replan calls added more analyses; the answer became profit shares by segment.",
         ),
         (
-            "q02",
-            "Plan augmentation appends group_aggregate, so a count becomes a region-sales mapping.",
-        ),
-        (
-            "q11, q12",
-            "q11 lost the 2017 restriction or the trend shape; q12 direction label is volatile, oracle says increasing.",
+            "q11, q20 (fail in both)",
+            "q11: no 2017 restriction in the plan. q20: rank had no aggregation and works on the table, not the grouped output.",
         ),
     ]
     top = 2.75
     for head, body in causes:
         text(s, 8.3, top, 4.4, 0.95, head_body(head, body, 14, 13))
-        top += 0.98
+        top += 1.3
 
     # 17 Experiments -----------------------------------------------------------
     s = deck.content(
-        "Results: Exploratory Experiments",
-        "A clean ablation of replanning, and a partial model spike with its limits.",
-        "Run ablation-no-replan-20261119150629 changed max_repair_attempts 2 to 0, LLM calls 8 to 4, question budget 300 to 180 s and repeats 3 to 1; replanning (max_replans 3) stayed on. Spike runs model-spike-qwen25-{3b,7b}-instruct-20261119150629 stopped after 5 questions.",
+        "Results: Replanning Ablation and Model Comparison",
+        "Replanning off against on, and four local models, one run per question.",
+        "R2 sets the replan limit to zero and changes nothing else. The four-model comparison used replanning on for every model. All runs: one run per question, temperature 0, seed 42.",
     )
     card(s, 0.5, 2.05, 6.0, 4.0, BLUE)
     text(
@@ -1108,18 +1113,18 @@ def build(deck: Deck, repo: Path) -> None:
         2.15,
         5.6,
         0.5,
-        "Clean ablation: max_replans = 0",
+        "Ablation: replanning off (R2)",
         19,
         NAVY,
         bold=True,
         anchor=MSO_ANCHOR.MIDDLE,
     )
-    text(s, 0.7, 2.7, 5.6, 0.9, "12 / 20", 38, NAVY, bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 0.7, 2.7, 5.6, 0.9, "18 / 20", 38, NAVY, bold=True, anchor=MSO_ANCHOR.MIDDLE)
     text(s, 0.7, 3.5, 5.6, 2.4, [
-        [("Final-code run with replanning: 12 / 20", 16, INK, False, False)],
-        [("Same 12 questions pass, 36 of 60 attempts both", 16, INK, False, False)],
-        [("LLM calls 258 to 118; time 93 to 61 minutes", 16, INK, False, False)],
-        [("Replanning added cost, not accuracy, on these easy questions", 16, INK, False, False)],
+        [("With replanning (R1): 10 / 20", 16, INK, False, False)],
+        [("Eight questions pass only without replanning", 16, INK, False, False)],
+        [("LLM calls 84 to 42; time 29 to 12 minutes", 16, INK, False, False)],
+        [("The model added analyses; the last task was scored", 16, INK, False, False)],
     ], space_after=9)  # fmt: skip
     card(s, 6.83, 2.05, 6.0, 4.0, CREAM)
     text(
@@ -1128,38 +1133,39 @@ def build(deck: Deck, repo: Path) -> None:
         2.15,
         5.6,
         0.5,
-        "Partial model spike (reachable questions)",
+        "Four models (replanning on)",
         19,
         AMBER,
         bold=True,
         anchor=MSO_ANCHOR.MIDDLE,
     )
-    table(s, 7.03, 2.8, [3.3, 2.3], ["Model", "Passed of 4"], [
-        ["qwen2.5:3b-instruct", "0"],
-        ["qwen3:4b (earlier run)", "4"],
-        ["qwen2.5:7b-instruct", "2"],
-    ], row_h=0.5, size=15)  # fmt: skip
-    text(s, 7.03, 4.85, 5.6, 1.2, [
-        [("1 repeat versus the 3-repeat reference", 16, INK, False, False)],
-        [("Both new runs stopped after 5 questions; no ranking is claimed", 16, INK, False, False)],
+    table(s, 7.03, 2.8, [3.3, 2.3], ["Model", "Passed of 20"], [
+        ["qwen3:4b-instruct", "10"],
+        ["qwen2.5:7b-instruct", "8"],
+        ["llama3.2:3b", "2"],
+        ["qwen2.5:3b-instruct", "1"],
+    ], row_h=0.4, size=14)  # fmt: skip
+    text(s, 7.03, 5.1, 5.6, 0.9, [
+        [("Other models were not run with replanning off", 14, INK, False, False)],
+        [("7B does not fit in 4 GB, so timings are not comparable", 14, INK, False, False)],
     ], space_after=8)  # fmt: skip
     takeaway(
         deck,
         s,
         6.2,
         "Next:",
-        "add longer dependent questions, where replanning can matter, and fix the answer shapes.",
+        "read the answer from the designated task, and add longer questions where replanning can matter.",
         h=0.6,
     )
 
     # 18 Cost ------------------------------------------------------------------
     s = deck.content(
         "Results: Cost and Latency",
-        "Time goes to the local model, not to the tools (aggregate over 60 question runs).",
-        "Source: final-code-frozen-real-20261119 agent_eval.json stage timings (replanning 1867 s, plan generation 1670 s, repair 933 s, answer synthesis 648 s, tool execution 7 s of 5584 s).",
+        "Time goes to the local model, not to the tools (summed over the 20 question runs of R1).",
+        "Source: R1 stage timings from agent_eval.json (replanning 971 s, plan generation 636 s, repair 187 s, answer synthesis 35 s, tool execution 3 s of 1,736 s). Repair prompts run inside planning and replanning calls, so stage times overlap.",
     )
     bar_chart(s, 0.5, 1.95, 7.4, 4.8, ["Replanning", "Plan generation", "Repair", "Answer synthesis", "Tool execution"],
-              [("Seconds", [1867, 1670, 933, 648, 7], NAVY)], title="Aggregate time by stage (seconds)", horizontal=True, number_format="#,##0", ymax=2200)  # fmt: skip
+              [("R1 seconds", [971, 636, 187, 35, 3], NAVY)], title="Aggregate time by stage, R1 (seconds)", horizontal=True, number_format="#,##0", ymax=1200)  # fmt: skip
     stat_card(
         deck,
         s,
@@ -1170,9 +1176,9 @@ def build(deck: Deck, repo: Path) -> None:
         BLUE,
         NAVY,
         "gauge",
-        "0.1%",
+        "0.2%",
         "Share spent in tools",
-        "7 s of 5,584 s",
+        "3 s of 1,736 s (R1)",
         NAVY,
     )
     card(s, 8.1, 4.45, 4.73, 2.3, CREAM)
@@ -1183,7 +1189,7 @@ def build(deck: Deck, repo: Path) -> None:
         5.05,
         4.35,
         1.65,
-        "Turning replanning off (max_replans = 0) kept 12/20 and cut LLM calls from 258 to 118 and time from 93 to 61 minutes.",
+        "Turning replanning off (R2) cut LLM calls from 84 to 42 and time from 29 to 12 minutes, and raised the score from 10 to 18 of 20.",
         13,
         INK,
     )
@@ -1192,32 +1198,32 @@ def build(deck: Deck, repo: Path) -> None:
     s = deck.content(
         "Future Work",
         "Next steps stay inside the current scope (single agent, registered tools, no code execution).",
-        "Items 1-2 follow directly from the failure diagnosis; item 3 fixes the confounds of the exploratory runs.",
+        "Items 1-2 follow directly from the failure diagnosis; the results are not held-out, so item 3 matters most.",
     )
     future = [
         (
-            "Fix the rank gap",
-            "Let rank aggregate, or teach the planner to chain group_aggregate then rank; restrict trends to the asked period; align the trend direction rule with the oracle.",
+            "Answer from the designated task",
+            "Read the answer from the task the plan marks as final, not the last one to run, so added analyses cannot displace a correct result.",
             "merge",
         ),
         (
-            "Test replanning properly",
-            "The clean ablation showed no accuracy change on easy questions; add longer dependent chains where a result should change the next step.",
-            "flask",
-        ),
-        (
-            "Compare models fairly",
-            "All 20 questions, 3 repeats per model, identical settings; score plan validity apart from answer correctness.",
-            "chip",
-        ),
-        (
-            "Reduce replanning noise",
-            "Replan only when a result calls for it, and constrain the replan output to valid task lists.",
+            "Fix the two remaining failures",
+            "Restrict trends to the period asked about (q11); let rank work on grouped output (q20).",
             "sliders",
         ),
         (
+            "Test replanning properly",
+            "Longer dependent questions where a result should change the next step, plus a stop rule for the inspection step.",
+            "flask",
+        ),
+        (
+            "Evaluate on unseen questions",
+            "A held-out set, and an external benchmark such as InfiAgent-DABench for the subset our tools cover.",
+            "chip",
+        ),
+        (
             "Widen coverage",
-            "A second dataset, more registered tools, and a bounded DuckDB tool from the project cut list.",
+            "A second dataset, more registered tools, and measuring the claim checker and narration directly.",
             "folders",
         ),
     ]
@@ -1256,25 +1262,6 @@ def build(deck: Deck, repo: Path) -> None:
         ("spark", "Selective tool routing", "A few of eight tools per plan (analogy to sparse experts)"),
     ], AMBER)  # fmt: skip
 
-    # 21 Individual ------------------------------------------------------------
-    s = deck.content(
-        "Individual Contribution and Learning",
-        "What each presenter did and learned. Edit this slide so each part is stated in the presenter's own words.",
-        "Statements here come from the project history; git shows two authors (Antigravity Agent and shivam singh). Add each presenter's own work before presenting.",
-    )
-    rows_card(deck, s, 0.5, BLUE, NAVY, "Contribution", "check", [
-        ("merge", "Redirected the design", "Checked Module 10 against the base paper; moved to an agentic loop"),
-        ("gauge", "Experiments and metrics", "Post-M10 runs, charts and failure analysis"),
-        ("doc", "Documentation", "Developer guide, experiments summary and this deck"),
-        ("pencil", "[Add your own item]", "[Replace with your specific contribution]"),
-    ], NAVY)  # fmt: skip
-    rows_card(deck, s, 6.83, CREAM, AMBER, "Learning", "bulb", [
-        ("search", "Read the traces", "Mislabeled runs and wrong causes showed up only in traces"),
-        ("verified", "Tool ok is not correct", "The plan decides correctness, not the tool status"),
-        ("flask", "Evaluate fairly", "A keyed baseline is a ceiling; confounded runs prove little"),
-        ("chip", "Small models plan fragilely", "A 4B model needed repair and replans added noise"),
-    ], AMBER)  # fmt: skip
-
     # 22 References ------------------------------------------------------------
     s = deck.content(
         "References",
@@ -1287,7 +1274,7 @@ def build(deck: Deck, repo: Path) -> None:
         "[3] Guo et al., DS-Agent (2024); Data-Copilot; AutoGen; TaskWeaver, as cited in [1].",
         "[4] Toolformer (Schick et al.); HuggingGPT (Shen et al.), as cited in [1].",
         "[5] Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, as cited in [1].",
-        "[6] Qwen3 (qwen3:4b) served locally with Ollama; LangGraph; pandas and numpy (tools and oracle).",
+        "[6] Qwen3 family (qwen3:4b-instruct) served locally with Ollama; LangGraph; pandas and numpy (tools and oracle).",
         "[7] Sample Superstore dataset, registered in docs/DECISIONS.md D-007 (SHA-256 dc81c957...).",
         "[8] Project code and experiments: github.com/Despacito64/data-analysis-report-generator (branch shivam).",
     ]

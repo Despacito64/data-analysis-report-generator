@@ -5,19 +5,22 @@ Every figure in the paper is read from the saved evaluation runs, so a change
 in a run directory is picked up by rebuilding rather than by retyping.
 
     uv run python scripts/make_report_assets.py \
-        --final evaluation/results/final-code-frozen-real-20261119 \
-        --ablation evaluation/results/clean-ablation-max-replans-0-20261119 \
-        --early evaluation/results/m10-frozen-real-20261117
+        --main evaluation/results/post-freeze-fixes-frozen-real-20261120 \
+        --noreplan evaluation/results/post-freeze-fixes-no-replan-20261120 \
+        --ceiling docs/report/generated/ceiling_check_fixed.json \
+        --spike docs/report/generated/spike_fixed_summary.csv
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from collections import OrderedDict
 from pathlib import Path
 
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -123,53 +126,94 @@ def write_numbers(out: Path, runs: dict[str, dict]) -> None:
     (out / "numbers.tex").write_text("".join(lines), encoding="utf-8")
 
 
-def write_category_table(out: Path, final: dict, ablation: dict | None) -> None:
+def write_category_table(out: Path, main: dict, noreplan: dict | None) -> None:
+    """One row per category: questions passed by each run (one attempt per question) and the baseline."""
     rows = []
     for key, label in CATEGORY_LABEL.items():
-        f = final["per_cat"][key]
-        cells = [label, str(f["n"]), str(f["reach"]), f"{f['q']}", f"{f['a']}/{f['at']}"]
-        if ablation is not None:
-            a = ablation["per_cat"][key]
-            cells += [f"{a['q']}", f"{a['a']}/{a['at']}"]
-        cells.append(f"{f['base']}")
+        m = main["per_cat"][key]
+        cells = [label, str(m["n"]), f"{m['q']}"]
+        if noreplan is not None:
+            cells.append(f"{noreplan['per_cat'][key]['q']}")
+        cells.append(f"{m['base']}")
         rows.append(" & ".join(cells) + r" \\")
-    ft = final["totals"]
-    total = ["\\textbf{All}", str(ft["n"]), str(ft["reach"]), f"{ft['q']}", f"{ft['a']}/{ft['at']}"]
-    if ablation is not None:
-        at = ablation["totals"]
-        total += [f"{at['q']}", f"{at['a']}/{at['at']}"]
-    total.append(f"{ft['base']}")
+    mt = main["totals"]
+    total = ["\\textbf{All}", str(mt["n"]), str(mt["q"])]
+    if noreplan is not None:
+        total.append(str(noreplan["totals"]["q"]))
+    total.append(str(mt["base"]))
     body = "\n".join(rows) + "\n\\hline\n" + " & ".join(total) + r" \\" + "\n\\hline\n"
     (out / "tab_category_body.tex").write_text(body, encoding="utf-8")
 
 
-def write_time_figure(out: Path, final: dict) -> None:
-    stages = final["stages"]
+def write_spike_table(out: Path, spike_csv: Path) -> None:
+    """Model comparison rows from the spike summary (one attempt per question for every model)."""
+    rows = []
+    with spike_csv.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            name = row["model"].split(" (")[0]
+            rows.append(
+                " & ".join(
+                    [
+                        f"\\texttt{{{name}}}".replace("_", "\\_"),
+                        f"{row['questions_passed']}/{row['questions_total']}",
+                        row["timeouts"],
+                        row["no_score_shaped_answer"],
+                        row["total_llm_calls"],
+                    ]
+                )
+                + r" \\"
+            )
+    (out / "tab_spike_body.tex").write_text("\n".join(rows) + "\n\\hline\n", encoding="utf-8")
+
+
+def write_time_figure(out: Path, main: dict, noreplan: dict | None) -> None:
+    """Seconds per stage, replanning on versus off (repair prompts shown as their own stage)."""
     order = [
         ("plan_generation", "plan"),
         ("replanning", "replan"),
+        ("repair", "repair"),
         ("answer_synthesis", "answer"),
         ("tool_execution", "tools"),
     ]
-    stages = dict(stages)
-    stages["repair"] = sum(v for k, v in stages.items() if k.startswith("repair_attempt_"))
-    order.insert(2, ("repair", "repair"))
-    labels = [lab for key, lab in order if stages.get(key)]
-    values = [stages[key] for key, _ in order if stages.get(key)]
+
+    def stage_values(stages: dict) -> list[float]:
+        stages = dict(stages)
+        stages["repair"] = sum(v for k, v in stages.items() if k.startswith("repair_attempt_"))
+        return [stages.get(key, 0.0) for key, _ in order]
+
+    labels = [lab for _, lab in order]
     plt.rcParams.update({"font.family": "serif", "font.size": 8})
-    fig, ax = plt.subplots(figsize=(3.3, 1.7))
-    bars = ax.barh(labels, values, color="0.45", edgecolor="black", linewidth=0.6)
-    ax.invert_yaxis()
-    ax.set_xlabel("seconds, summed over all question runs")
-    for bar, value in zip(bars, values):
-        ax.text(
-            bar.get_width() + max(values) * 0.01,
-            bar.get_y() + bar.get_height() / 2,
-            f"{value:,.0f}",
-            va="center",
-            fontsize=7,
+    fig, ax = plt.subplots(figsize=(3.3, 2.0))
+    positions = np.arange(len(labels))
+    series = [("R1", stage_values(main["stages"]), "0.35")]
+    if noreplan is not None:
+        series.append(("R2", stage_values(noreplan["stages"]), "0.75"))
+    height = 0.38
+    top = max(max(v) for _, v, _ in series)
+    for idx, (name, values, colour) in enumerate(series):
+        offset = (idx - (len(series) - 1) / 2) * height
+        bars = ax.barh(
+            positions + offset,
+            values,
+            height,
+            color=colour,
+            edgecolor="black",
+            linewidth=0.5,
+            label=name,
         )
-    ax.set_xlim(0, max(values) * 1.18)
+        for bar, value in zip(bars, values):
+            ax.text(
+                bar.get_width() + top * 0.01,
+                bar.get_y() + bar.get_height() / 2,
+                f"{value:,.0f}",
+                va="center",
+                fontsize=6.5,
+            )
+    ax.set_yticks(positions, labels)
+    ax.invert_yaxis()
+    ax.set_xlabel("seconds, summed over the 20 question runs")
+    ax.set_xlim(0, top * 1.2)
+    ax.legend(frameon=False, loc="lower right")
     for spine in ("top", "right"):
         ax.spines[spine].set_visible(False)
     fig.tight_layout(pad=0.4)
@@ -181,9 +225,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--final", type=Path, required=True)
-    parser.add_argument("--ablation", type=Path)
-    parser.add_argument("--early", type=Path)
+    parser.add_argument("--main", type=Path, required=True, help="run with replanning on")
+    parser.add_argument("--noreplan", type=Path, help="same run with replanning off")
+    parser.add_argument("--ceiling", type=Path, help="ceiling_check JSON for the evaluated code")
+    parser.add_argument("--spike", type=Path, help="spike summary CSV")
     parser.add_argument(
         "--questions", type=Path, default=Path("evaluation/benchmark/questions.json")
     )
@@ -191,25 +236,22 @@ def main() -> None:
     args = parser.parse_args()
 
     cat_of = categories(args.questions)
-    reach_file = args.out / "generated" / "ceiling_check.json"
-    reachable = (
-        set(json.loads(reach_file.read_text())["reachable"]) if reach_file.exists() else None
-    )
+    reachable = set(json.loads(args.ceiling.read_text())["reachable"]) if args.ceiling else None
     runs: dict[str, dict] = {}
-    final = summarise(load_run(args.final), cat_of, reachable)
-    runs["Final"] = final
-    ablation = None
-    if args.ablation:
-        ablation = summarise(load_run(args.ablation), cat_of, reachable)
-        runs["Abl"] = ablation
-    if args.early:
-        runs["Early"] = summarise(load_run(args.early), cat_of, reachable)
+    main_run = summarise(load_run(args.main), cat_of, reachable)
+    runs["Main"] = main_run
+    noreplan = None
+    if args.noreplan:
+        noreplan = summarise(load_run(args.noreplan), cat_of, reachable)
+        runs["NoRep"] = noreplan
 
     (args.out / "generated").mkdir(parents=True, exist_ok=True)
     (args.out / "figures").mkdir(parents=True, exist_ok=True)
     write_numbers(args.out / "generated", runs)
-    write_category_table(args.out / "generated", final, ablation)
-    write_time_figure(args.out, final)
+    write_category_table(args.out / "generated", main_run, noreplan)
+    if args.spike:
+        write_spike_table(args.out / "generated", args.spike)
+    write_time_figure(args.out, main_run, noreplan)
     for tag, s in runs.items():
         t = s["totals"]
         print(

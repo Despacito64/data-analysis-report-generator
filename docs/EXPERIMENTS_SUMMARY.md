@@ -1,5 +1,31 @@
 # Experiments Summary
 
+## Current results (2026-11-20): post-freeze-fixes code, `qwen3:4b-instruct`, one run per question
+
+All runs: GTX 1650 (4 GB), Ollama 0.23.3, temperature 0, seed 42, 60 s per call, 300 s per question, 8 LLM calls per question. The model is passed with `--model qwen3:4b-instruct`; `config.yaml` and the freeze manifest still name `qwen3:4b` and were not edited. The question file, oracle and configuration hashes match the freeze manifest.
+
+**Important:** the system was changed after an earlier run on the same questions (tool changes in commit `1703cf7`), and the planner model was replaced after the freeze. These results are not a held-out measurement.
+
+| Run | Run id | Passed | LLM calls | Minutes | Failed questions |
+|---|---|---|---|---|---|
+| R1: replanning on | `post-freeze-fixes-frozen-real-20261120` | 10 / 20 | 84 | 29 | q03, q04, q06, q09, q11, q12, q17, q18, q19, q20 |
+| R2: replanning off (`--max-replans 0`) | `post-freeze-fixes-no-replan-20261120` | 18 / 20 | 42 | 12 | q11, q20 |
+| qwen2.5:7b-instruct | `spike-fixed-qwen25-7b-20261120` | 8 / 20 | 47 | | |
+| llama3.2:3b | `spike-fixed-llama32-3b-20261120` | 2 / 20 | 92 | | |
+| qwen2.5:3b-instruct | `spike-fixed-qwen25-3b-20261120` | 1 / 20 | 93 | | |
+
+The model comparison used replanning on. Recovery suite: 12 / 12 pass (model-free, run separately). Model-free ceiling check on the fixed code: a passing plan exists for 20 of 20 questions (`docs/report/generated/ceiling_check_fixed.json`).
+
+**Why replanning lowered the score (from traces, `docs/report/generated/rerun_failure_causes.md`):** the first plan has the same tool list in both runs for all 20 questions. In eight questions (q03, q04, q06, q09, q12, q17, q18, q19) the inspection step added tasks after a correct first result in R1, and the scorer, which reads the last executed task, took an added analysis as the answer. q11 (no 2017 restriction in the plan) and q20 (`rank` without `aggregation` after a `group_aggregate`) fail in both runs. This is one model with one prompt; it is not a general claim about replanning.
+
+Per-question data: `docs/report/generated/rerun_outcomes.csv`; numbers: `docs/report/generated/rerun_numbers.json`.
+
+---
+
+# Earlier experiments (previous model `qwen3:4b`, superseded)
+
+The sections below describe runs made before the code fixes and the model replacement. They are kept as a record. Do not quote their numbers as current results.
+
 All experiments run on: local machine, GPU GTX 1650, qwen3:4b via Ollama, 2026-11-19.
 
 ---

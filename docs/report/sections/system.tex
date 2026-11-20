@@ -1,6 +1,38 @@
 \section{System Design}
 \subsection{Overview}
-The system is a single agent. A LangGraph~\cite{langgraph} state machine fixes the order of the steps: plan, validate, execute, inspect, and then either replan or finalize (Fig.~\ref{fig:graph}). The control graph never changes. What changes during a run is the task graph that the state carries. In our usage ``dynamic'' means that after a result or a failure the model may add, change or cancel pending tasks while completed evidence stays valid. Retrying with identical arguments does not count as a revision. When a task or an argument does change, the system records a plan revision with the new plan version, the evidence or failure that triggered it, and the affected tasks.
+The system is a single agent (Fig.~\ref{fig:arch}). A LangGraph~\cite{langgraph} state machine fixes the order of the steps: plan, validate, execute, inspect, and then either replan or finalize (Fig.~\ref{fig:graph}). The control graph never changes. What changes during a run is the task graph that the state carries. In our usage ``dynamic'' means that after a result or a failure the model may add, change or cancel pending tasks while completed evidence stays valid. Retrying with identical arguments does not count as a revision. When a task or an argument does change, the system records a plan revision with the new plan version, the evidence or failure that triggered it, and the affected tasks.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  bx/.style={draw, rounded corners=2pt, minimum height=0.55cm, minimum width=3.6cm, font=\scriptsize, inner sep=2pt, align=center},
+  wide/.style={bx, minimum width=7.6cm},
+  llm/.style={bx, fill=black!12},
+  ar/.style={-{Latex[length=1.5mm]}, thick}]
+  \node[wide] (ui) at (0,0) {React / Streamlit interface $\rightarrow$ FastAPI service};
+  \node[wide] (data) at (0,-0.95) {Data layer: loader, input checks, profiler, SHA-256 hash};
+  \node[llm] (plan) at (-1.95,-2.05) {Planner\\(qwen3:4b-instruct)};
+  \node[bx] (graph) at (1.95,-2.05) {LangGraph control graph};
+  \node[bx] (tools) at (-1.95,-3.15) {Tool registry (8 tools)\\and invariant checks};
+  \node[bx] (ev) at (1.95,-3.15) {Evidence store\\and run trace};
+  \node[bx] (claim) at (-1.95,-4.25) {Claim checker};
+  \node[llm] (nar) at (1.95,-4.25) {Narrator (optional)};
+  \node[wide] (rep) at (0,-5.3) {Report: escaped HTML and JSON, numbers linked to evidence};
+  \draw[ar] (ui) -- (data);
+  \draw[ar] (-1.95,-1.22) -- (plan.north);
+  \draw[ar] (1.95,-1.22) -- (graph.north);
+  \draw[ar] (plan.east) -- (graph.west);
+  \draw[ar] (graph.south) -- (ev.north);
+  \draw[ar] (graph.south west) -- (tools.north east);
+  \draw[ar] (tools.south) -- (claim.north);
+  \draw[ar] (ev.south) -- (nar.north);
+  \draw[ar] (ev.south west) -- (claim.north east);
+  \draw[ar] (claim.south) -- (-1.95,-5.02);
+  \draw[ar] (nar.south) -- (1.95,-5.02);
+\end{tikzpicture}
+\caption{Components. Shaded boxes are the only places the model is called. Every number comes from the tool registry; the claim checker compares the report text with the stored evidence before anything is rendered.}
+\label{fig:arch}
+\end{figure}
 
 \begin{figure}[t]
 \centering
@@ -32,7 +64,7 @@ The loader accepts CSV and XLSX files up to 50~MB and 100{,}000 rows and reports
 \subsection{Planning}
 The planning prompt contains a role statement that restricts the model to the registered tools, each tool's description and JSON argument schema, the column names with their semantic types, the output schema, a few rules (for example that a task working on a filtered subset lists the filter task in \texttt{depends\_on}), and three worked examples: a mean per category, a filter followed by a ranking, and a share per segment. Column names and types are shown but cell values are not. A test checks that none of the frozen benchmark questions appears in the prompt. The reply is constrained with the JSON schema of a plan, sent to Ollama~\cite{ollama} through its \texttt{format} option. A plan is a list of tasks, each with an identifier, a tool name, arguments, dependencies and a one-sentence rationale. Decoding uses temperature 0 and a fixed seed.
 
-In the conversational interface a deterministic step can extend a plan that stops after filtering: it appends a \texttt{group\_aggregate} task that groups by the first filter column. This step is part of the system version evaluated in Section~V, and it matters for one result there.
+In the conversational interface a deterministic step can extend a plan that stops after filtering by appending a \texttt{group\_aggregate} task. It does not extend plans for counting questions (how many''), it treats a filter followed by an analysis tool such as \texttt{trend} as complete, and for a plain total (the wording contains total'' or sum'' and no each'', per'', by'' or ranking word) it appends an overall total with an empty grouping list instead of a breakdown by the filter column. The tool descriptions given to the model state that an empty grouping list is allowed and that \texttt{rank} accepts an aggregation.
 
 \subsection{Tool registry}
 All numbers come from eight registered tools (Table~\ref{tab:tools}). Each has a Pydantic argument model that rejects unknown fields, a typed result, and a set of numerical invariants that are checked after every call; for example the group counts of an aggregation must add up to the number of input rows, and contribution shares must sum to one within $10^{-9}$. A call that exceeds the per-call limit of 60~s is treated as a transient failure.
@@ -47,10 +79,10 @@ All numbers come from eight registered tools (Table~\ref{tab:tools}). Each has a
 Tool & What it computes \\
 \hline
 \texttt{filter} & rows matching conditions (eleven operators, e.g.\ \texttt{eq}, \texttt{between}); returns the count and matched indices \\
-\texttt{group\_\allowbreak aggregate} & sum, mean, count, min or max of a metric per group \\
-\texttt{rank} & competition ranking of the \emph{rows} of its input by a metric; ties flagged; no aggregation \\
+\texttt{group\_\allowbreak aggregate} & sum, mean, count, min or max of a metric per group; an empty grouping list gives one overall total \\
+\texttt{rank} & competition ranking by a metric; optionally totals the metric per entity first; ties flagged \\
 \texttt{period\_\allowbreak compare} & a metric over two date windows, with absolute change and growth; a zero or missing base gives an undefined result with a reason \\
-\texttt{trend} & a metric by day, month, quarter or year; least-squares slope over the period index; a direction label \\
+\texttt{trend} & a metric by day, month, quarter or year; least-squares slope over the period index; direction (increasing, decreasing or flat) from the sign of the slope \\
 \texttt{segment\_\allowbreak contribution} & share of the total per segment, with a reconciliation flag \\
 \texttt{correlation} & Pearson $r$ of two columns (at least three valid pairs) \\
 \texttt{detect\_\allowbreak anomalies\_\allowbreak iqr} & Tukey fences at $k=1.5$; flagged values \\

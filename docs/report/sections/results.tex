@@ -1,46 +1,54 @@
 \section{Results}
 
 \subsection{Main result}
-On the final code (R1) the agent passed \FinalQ{} of \FinalN{} questions (\FinalPct\%), and 36 of 60 individual attempts. No run timed out. The 60 runs used \FinalCalls{} model calls and \FinalMinutes{} minutes on the GTX 1650. Table~\ref{tab:category} gives the counts by category. The fixed baseline passes all twenty, but as explained in Section~IV-C it assembles several answers outside the tools, so this figure is a ceiling and not a competing result. The twelve scenarios of the recovery suite all passed.
+With replanning enabled (R1) the agent passed \MainQ{} of \MainN{} questions (\MainPct\%), using \MainCalls{} model calls in \MainMinutes{} minutes on the GTX 1650, with no timeouts. With replanning disabled (R2) it passed \NoRepQ{} of \NoRepN{} (\NoRepPct\%), using \NoRepCalls{} calls in \NoRepMinutes{} minutes, again with no timeouts. Table~\ref{tab:category} gives the counts by category. The fixed baseline passes all twenty, but several of its answers are assembled by code written for the question outside the tools (Section~IV-C), so it is a ceiling and not a competing result. The twelve scenarios of the recovery suite all passed.
 
 \begin{table}[t]
-\caption{Questions passed by category. R1: final code; R2: R1 without replanning. Q is questions passed out of $n$, Att.\ is attempts passed out of three per question, Reach.\ is the number of questions the scoring path can pass at all (Section~V-B), Base.\ is the baseline.}
+\caption{Questions passed by category, one run per question. R1: replanning enabled; R2: replanning disabled; Base.\ is the baseline.}
 \label{tab:category}
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccc}
 \hline
- & & & \multicolumn{2}{c}{R1} & \multicolumn{2}{c}{R2} & \\
-Category & $n$ & Reach. & Q & Att. & Q & Att. & Base. \\
+Category & $n$ & R1 & R2 & Base. \\
 \hline
 \input{generated/tab_category_body.tex}
 \end{tabular}
 \end{table}
 
-\subsection{What the scoring path can reach}
-Reading Table~\ref{tab:category}, the failures are not spread evenly. Every failure is in the filter, rank and trend categories, plus the one multi-step question that ends in a ranking, and in those categories there is not a single passing attempt. We therefore checked, without any model, whether those questions can be passed at all. For each question we fed hand-written plans, the baseline's own plan and a few alternatives, through the same executor, answer extraction and scorer, with a mock model that returns the plan unchanged and replanning disabled. A question is \emph{reachable} if at least one such plan is scored as correct.
-
-Twelve questions are reachable and eight are not (q01, q02, q06, q07, q08, q11, q12, q20). The reasons are visible in the saved answers. The \texttt{rank} tool ranks the rows of its input and has no aggregation argument, so the four questions that ask for the top or bottom groups by a total (q06, q07, q08, q20) cannot be answered by it; the answer for q06, for instance, repeats the same sub-category several times because it ranks individual order lines. For q01 the extractor returns a group-to-value mapping, \{``First Class'': 351428.42\}, whose number equals the expected total, but the oracle stores a scalar and the scorer compares the shapes. For q02, a row count, the plan is filter-only and the extractor would return the count, but in the final code an added step (Section~V-D) turns the answer into a mapping. The two trend questions fail on the trend object. For q12 the monthly slope (1194.74) equals the oracle's, but the tool labels the direction \emph{volatile} where the oracle says \emph{increasing}. For q11 the agent's answer covers all 48 months, so the 2017 restriction was not applied; when a filter step is put in front of the trend, the extractor returns a mapping keyed by individual dates and not the trend object, and the question still fails. The baseline passes these only because its answer is assembled by hand, which is exactly the difference noted in Section~IV-C.
-
-\subsection{The agent on the reachable questions}
-On the \FinalReach{} reachable questions the agent passed \FinalReachPassed{} of \FinalReach{}, and each of those passed in all three repeats (36 of 36 attempts). The agent's failures are therefore not planning failures in the usual sense: on this benchmark the score measures how well the answer shape matches the oracle as much as it measures the planner. We report the 12 of 20 as the score, and the 12 of 12 as a statement about planning on the questions that can be scored.
+\subsection{Development history}
+The two runs were made after the system had been changed. An earlier version was run once on these same 20 questions. That run showed that the scoring path could not accept several of the answer shapes the tools returned: a ranking by totals needs an aggregation that the ranking tool lacked, a plain total came back as a one-group mapping, a counting question was turned into a mapping by the step that extends filter-only plans (Section~III-C), and the trend direction label followed a rule that differed from the oracle's. We changed the tools and that step accordingly, and the planner model was replaced, before the runs reported here. Because the changes were designed after seeing failures on these questions, the results below are not a held-out measurement. A model-free check that feeds hand-written plans through the same executor, answer extractor and scorer, with a mock model that returns the plan unchanged, finds a passing plan for all \MainReach{} questions on the version evaluated here.
 
 \subsection{Effect of replanning}
-Setting the replan limit to zero (R2) changed nothing in the outcome (Table~\ref{tab:category}): the same twelve questions passed, the same 36 attempts out of 60. It did change the cost. R2 used \AblCalls{} model calls and \AblMinutes{} minutes, against \FinalCalls{} calls and \FinalMinutes{} minutes for R1, so result-driven and failure-driven replanning added about 2.2 times the model calls and 1.5 times the time. On this benchmark replanning bought no accuracy. We do not conclude that it is useless. All twenty questions here are one- or two-step, the baseline plans are short, and the model produced a usable first plan for every reachable question, so there was little for a revision to fix. A benchmark with longer chains, or one in which a first result changes what should be asked next, is needed to test the mechanism.
+Disabling replanning raised the number of questions passed from \MainQ{} to \NoRepQ{}. Eight questions pass only without replanning (q03, q04, q06, q09, q12, q17, q18, q19), none passes only with it, ten pass in both, and q11 and q20 fail in both. For all twenty questions the first plan has the same tool list in both runs, so the difference comes after the first result. In the eight questions the first plan is the one that passes in R2. In R1 the inspection step then returned new tasks, in two to four plan versions, and the agent executed between 3 and 12 tools where R2 executed one or two. The answer handed to the scorer is read from the last executed task, so an added analysis displaced the correct one. For q03 the first plan was a single \texttt{group\_aggregate} of sales by region. Four replanning calls followed, which added \texttt{segment\_contribution}, \texttt{trend}, \texttt{filter}, \texttt{rank} and further tasks, and the final answer was a set of profit shares by segment.
 
-\subsection{Change between the earlier revision and the final code}
-The earlier revision R0 passed 13 questions and the final code passed \FinalQ{}. The one difference is q02, which passed in R0 and fails in R1 in all three repeats. The model's plan in R1 is a filter, but a function added for the conversational interface appends a \texttt{group\_aggregate} to filter-only plans so that drill-down questions get a breakdown. For a counting question that appended step replaces the count by a mapping from region to sales (\{``West'': 251991.83\}) and the answer no longer matches 599. The change was made for the chat interface and its effect on the frozen benchmark was not checked at the time. We report it as a regression introduced by that change. Note also that R0 and R1 differ in more than that function (R0 had a resolver node and no narration step), so the comparison is between two revisions and not a controlled ablation.
+Replanning also cost time: R1 used \MainCalls{} calls and \MainMinutes{} minutes against \NoRepCalls{} calls and \NoRepMinutes{} minutes for R2. This is a measurement of one model with one inspection prompt. It does not show that replanning is harmful in general. The questions need one or two steps, and here the model chose to add analyses when it could have returned an empty list. It does show that a replanning step has to be paired with an answer rule that does not depend on which task ran last.
+
+\subsection{Failures with replanning disabled}
+The two failures in R2 are planning failures, and the tools ran correctly in both. For q11 (monthly trend of sales in 2017) the model planned a monthly trend with no restriction to 2017, so the points cover all four years. For q20 (top three cities by sales in the Consumer segment) the model planned a filter, a \texttt{group\_aggregate} by city and a \texttt{rank}, but gave \texttt{rank} no aggregation argument; \texttt{rank} works on the table it is given and not on the grouped output, so it ranked single transactions and returned Seattle, Newark and Detroit.
 
 \subsection{Cost and latency}
-Figure~\ref{fig:time} shows where the time went in R1. Almost all of it is spent in the model. Plan generation, replanning, repair prompts and answer synthesis account for nearly all of the \FinalMinutes{} minutes, and the tools themselves took about seven seconds in total across the 60 runs. The repair prompts (at most two per question) cost about 930 seconds in R1. R2 recorded no repair stage at all, which suggests that in R1 the invalid plans came from the replanning calls and not from the first plan.
+Figure~\ref{fig:time} shows where the time went. Almost all of it is spent in the model. In R1, planning took 636 seconds, replanning 971, repair prompts 187, answer synthesis 35, and the tools 3, over the 20 question runs. In R2 there is no replanning time, repair prompts took 9 seconds, and the tools took 1 second. Repair prompts are issued inside planning and replanning calls, so the stage totals overlap and do not add up to the run time.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_stage_time.pdf}
-\caption{Time spent per stage in R1, summed over 60 question runs. }
+\caption{Seconds spent in each stage, summed over the 20 question runs, with replanning enabled (R1) and disabled (R2). Repair prompts are issued inside the planning and replanning calls, so their time is also counted in those stages.}
 \label{fig:time}
 \end{figure}
 
 \subsection{Smaller models}
-We also tried two other local models, qwen2.5 3B Instruct and 7B Instruct, with one repeat on the first questions of the set before stopping the runs for time. On the four reachable questions in that subset (q03, q09, q13, q17) the 3B model passed none and the 7B model passed two. The qwen3:4b result for the same four questions, four of four, comes from the earlier R0 run with three repeats, so the comparison is not like for like and we do not rank the models from it. We make no further claim from it.
+We ran three other local models under the same protocol and the same limits, with replanning enabled. Table~\ref{tab:models} gives the outcome. qwen3:4b-instruct passed \MainQ{} questions, qwen2.5:7b-instruct 8, llama3.2:3b 2 and qwen2.5:3b-instruct 1. No run timed out. ``No answer shape'' counts runs from which the scorer could not build an answer at all; it accounts for 8 of the 12 failures of the 7B model. The 7B model does not fit in 4~GB of GPU memory, so its timings are not comparable. Replanning lowered the score of qwen3:4b-instruct (Section~V-C), so a comparison with replanning enabled understates it, but we did not run the other models with replanning disabled.
+
+\begin{table}[t]
+\caption{Four models, one run per question, replanning enabled.}
+\label{tab:models}
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\hline
+Model & Passed & Timeouts & No answer shape & Calls \\
+\hline
+\input{generated/tab_spike_body.tex}
+\end{tabular}
+\end{table}

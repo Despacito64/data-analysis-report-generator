@@ -158,7 +158,6 @@ def trend(df: pd.DataFrame, args: TrendArgs) -> ToolResultEnvelope[TrendResult]:
             numerator = np.sum((x - x_mean) * (y - y_mean))
             slope = float(numerator / denominator)
 
-
             if abs(slope) < 1e-6:
                 direction = TrendDirection.FLAT
             elif slope > 0:

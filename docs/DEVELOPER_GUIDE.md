@@ -31,7 +31,7 @@ Our system demonstrates an alternative paradigm: **Dynamic analytical task plann
 ### 1.2 Core Research Question
 > *Can an autonomous LLM agent dynamically formulate, execute, and revise multi-step analytical investigations on tabular data with zero code-execution safety risks and zero numerical hallucinations?*
 
-**Answer (as far as one dataset and 20 questions can show):** on the final code the agent passes **12/20 (60%)** of a 20-question frozen benchmark scored by a separately computed (pandas/numpy) oracle, using a small local model (`qwen3:4b` on a GTX 1650). A model-free check (`scripts/ceiling_check.py`) shows only **12 of the 20 can be passed through the scoring path at all**, and the agent passes all 12 in 3 of 3 repeats. The 8 others fail because of how tool outputs map to the expected answers, not because a tool crashed (see 9.4). A clean ablation (`max_replans=0`) gave the same 12/20 with 118 instead of 258 LLM calls (see 10.1). Every number in a report passes through claim validation against a recorded evidence record.
+**Answer (as far as one dataset and 20 questions can show):** with a small local model (`qwen3:4b-instruct` on a GTX 1650), one run per question, the agent passes **10 of 20** questions with replanning on (R1) and **18 of 20** with replanning off (R2), against a separately computed (pandas/numpy) oracle. With replanning on, the model kept adding analyses after a correct first result, and because the scorer reads the answer from the *last executed task*, the added analyses displaced correct answers (see 9.4). The system was fixed after an earlier run on the same questions, so these are not held-out results. Every number in a report passes through claim validation against a recorded evidence record.
 
 ---
 
@@ -48,7 +48,7 @@ Our assigned base paper is:
 | **Numerical Grounding** | Text stdout parsed from Python `print()` statements | `EvidenceRecord` with SHA-256 arguments and dataset hashes | Numbers are first-class data contracts, not scraped strings (`docs/CONTRACTS.md:80`). |
 | **Claim Verification** | None (assumes code output is truthful if it doesn't crash) | 5-Layer claim validation (`rtol: 0.001`, `atol: 0.01`) | Model cannot claim a trend or number that contradicts evidence (`src/da_agent/validation/claims.py`). |
 | **Control Flow** | Dynamic DAG generated via hierarchical LLM prompts | **Fixed control graph** (LangGraph) + **dynamic task graph** in state | Predictable lifecycle with bounded execution budgets (`docs/DECISIONS.md:D-001`). |
-| **Model Requirements** | Frontier cloud LLMs (GPT-4 / Claude 3.5 Sonnet) | Small local open-weights LLMs (`qwen3:4b` via Ollama) | Runs entirely on consumer GPUs (GTX 1650), offline, privacy-preserving (`docs/DECISIONS.md:D-006`). |
+| **Model Requirements** | Frontier cloud LLMs (GPT-4 / Claude 3.5 Sonnet) | Small local open-weights LLMs (`qwen3:4b-instruct` via Ollama) | Runs entirely on consumer GPUs (GTX 1650), offline, privacy-preserving (`docs/DECISIONS.md:D-006`). |
 | **Evaluation Oracle** | Self-reported execution success or public benchmarks | Expected answers computed by a standalone pandas/numpy script that imports no agent code | Prevents data leakage and circular verification bugs (`evaluation/oracle.py`). |
 
 ### 2.2 How to Defend This Pivot in Viva
@@ -154,10 +154,10 @@ The registry (`src/da_agent/tools/registry.py`, `DEFAULT_REGISTRY`) exposes **8 
 | # | Tool Name | Analytical Function | Mathematical Invariants Enforced |
 |---|---|---|---|
 | 1 | `filter` | Slices DataFrame based on typed operators (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`). | Output row count $\le$ input row count; output rows strictly meet predicate. |
-| 2 | `group_aggregate` | Multi-column grouping with aggregations (`sum`, `mean`, `count`, `min`, `max`). | Sum of group counts equals total non-null input rows. |
-| 3 | `rank` | Ranks **individual rows** by a metric column (top-N or bottom-N). It has **no aggregation argument** (`RankArgs`: `entity_column`, `metric_column`, `ascending`, `top_n`, `tie_decimals`), so ranking per-entity totals needs `group_aggregate` first. | Deterministic tie-breaking by entity label; ties flagged. |
+| 2 | `group_aggregate` | Multi-column grouping with aggregations (`sum`, `mean`, `count`, `min`, `max`); an empty `by` list gives one overall total. | Sum of group counts equals total non-null input rows. |
+| 3 | `rank` | Ranks entities by a metric column (top-N or bottom-N). With the optional `aggregation` argument (`RankArgs`: `entity_column`, `metric_column`, `aggregation`, `ascending`, `top_n`, `tie_decimals`) it totals the metric per entity first; without it, it ranks the rows it is given (it does not rank the output of an earlier `group_aggregate` task). | Deterministic tie-breaking by entity label; ties flagged. |
 | 4 | `period_compare` | Compares aggregate metric across two explicit date ranges. | Absolute change: $\Delta = V_{comp} - V_{base}$; Relative growth: $\frac{\Delta}{V_{base}}$ (undefined if $V_{base} = 0$). |
-| 5 | `trend` | Computes time-grain metrics (daily, monthly, quarterly) and linear trend. | Slope via least-squares: $m = \frac{\sum (t - \bar{t})(y - \bar{y})}{\sum (t - \bar{t})^2}$; direction label: `increasing`, `decreasing`, `flat` or `volatile`. |
+| 5 | `trend` | Computes time-grain metrics (daily, monthly, quarterly) and linear trend. | Slope via least-squares: $m = \frac{\sum (t - \bar{t})(y - \bar{y})}{\sum (t - \bar{t})^2}$; direction label from the sign of the slope: `increasing`, `decreasing` or `flat` (the `volatile` enum value exists but is no longer produced). |
 | 6 | `segment_contribution`| Computes percentage contribution of each segment to the whole. | Shares sum to $1.0 \pm 0.001$; individual shares bounded in $[0, 1]$. |
 | 7 | `correlation` | Computes Pearson correlation coefficient between two numeric columns. | Coefficient $r \in [-1.0, 1.0]$; NaN if variance is zero. |
 | 8 | `detect_anomalies_iqr` | Detects outliers via Tukey's fence ($1.5 \times \text{IQR}$). | $\text{IQR} = Q_3 - Q_1$; Lower fence: $Q_1 - 1.5\text{IQR}$; Upper fence: $Q_3 + 1.5\text{IQR}$. |
@@ -265,43 +265,48 @@ To prevent circular evaluation bugs, the oracle:
 * Outlier/Anomaly detection (2 Qs)
 * Multi-step diagnostic (2 Qs)
 
-### 9.3 Main Evaluation Results (final code: `final-code-frozen-real-20261119`)
-* **Hardware / model**: one GTX 1650 (4 GB), `qwen3:4b` through local Ollama, temperature 0, seed 42.
-* **Protocol**: 20 questions, 3 repeats each, 60 s per call, 300 s per question, 8 LLM calls per question. A question passes if any repeat matches the oracle; attempts are also reported.
+### 9.3 Main Evaluation Results (post-freeze-fixes code, one run per question)
+* **Hardware / model**: one GTX 1650 (4 GB), `qwen3:4b-instruct` through local Ollama (4.0B, Q4_K_M), temperature 0, seed 42. `config.yaml` and the freeze manifest still name `qwen3:4b-instruct`; the model is passed with `--model`.
+* **Protocol**: 20 questions, one run each, 60 s per call, 300 s per question, 8 LLM calls per question.
 
-| Metric | Fixed baseline | Dynamic agent (`da-agent`) | Notes |
+| Metric | R1: replanning on | R2: replanning off | Notes |
 |---|:---:|:---:|---|
-| Questions passed | 20 / 20 | **12 / 20 (60%)** | 36 of 60 attempts. 0 timeouts. |
-| Reachable questions passed | n/a | **12 / 12**, each 3 of 3 | 12 questions can be passed through the scoring path (`scripts/ceiling_check.py`). |
-| Baseline reality | 20 / 20 | n/a | A **ceiling, not a competitor**: `BASELINE_TASKS` is keyed by question id, never reads the question text, and assembles several answers (q01, q06-q08, q20, trend direction) with hand-written code outside the tools. |
-| Recovery suite | n/a | **12 / 12** | Mock-only scenarios; no benchmark questions. |
-| LLM calls / time | 0 | 258 calls, 93 min | Earlier revision R0 (`m10-frozen-real-20261117`): 13/20, 168 calls, 48 min. |
+| Questions passed | **10 / 20 (50%)** | **18 / 20 (90%)** | 0 timeouts in both. |
+| LLM calls | 84 | 42 | R1 spends about twice the calls. |
+| Time | 29 min | 12 min | |
+| Failed | q03, q04, q06, q09, q11, q12, q17, q18, q19, q20 | q11, q20 | |
+| Baseline | 20 / 20 | 20 / 20 | A **ceiling, not a competitor**: `BASELINE_TASKS` is keyed by question id and assembles several answers with code outside the tools. |
+| Recovery suite | 12 / 12 (run separately, model-free) | | |
 
-R0 (earlier revision, resolver node, no narration) scored 13/20. The one difference is q02 (see 9.4).
+The system was changed after an earlier run on the same questions, and the planner model was replaced after the freeze, so neither number is a held-out result. Say that first if asked.
 
-### 9.4 Why 8 questions fail (diagnosed from traces and the ceiling check)
-The tools ran with status `ok` in every failure. The ceiling check feeds hand-written plans (including the baseline's own) through the real executor, answer extractor and scorer with a mock model; none of the 8 below passes under any candidate plan:
+### 9.4 Why questions fail (diagnosed from the saved traces)
+For all 20 questions the first plan has the same tool list in both runs.
+* **Eight questions fail only with replanning on** (q03, q04, q06, q09, q12, q17, q18, q19). In R1 the inspection step returned new tasks after a correct first result (2 to 4 plan versions, 3 to 12 tool executions against 1 or 2 in R2). The scorer builds the answer from the **last executed task**, so an added analysis replaced the correct one. Example, q03: one `group_aggregate` by Region (correct); four replan calls added `segment_contribution`, `trend`, `filter`, `rank` and more; the final answer was profit shares by segment.
+* **q11** (fails in both): the plan is a monthly `trend` with no restriction to 2017.
+* **q20** (fails in both): the plan is `filter`, `group_aggregate` by City, `rank` with no `aggregation`; `rank` works on the table, not the grouped output, so it returned single transactions (Seattle, Newark, Detroit).
+* **Ten questions pass in both runs** and stop after the first plan.
 
-* **q06, q07, q08, q20 (rank)**: `rank` ranks individual rows and has no aggregation argument, so it returns top single transactions (q06: "Copiers" four times), not per-entity totals.
-* **q01 (filter)**: the extractor returns `{"First Class": 351428.42}`; the number equals the expected total, but the oracle stores a scalar, so the shape mismatch fails it.
-* **q02 (row count 599)**: the model plans a filter, but `augment_chat_plan` (D-048) appends `group_aggregate` to filter-only plans, so the scored answer becomes `{"West": 251991.83}`. This is why q02 regressed from R0.
-* **q11 (trend 2017)**: the agent's answer covers all 48 months; with a filter step the extractor returns a date-keyed mapping, not the trend object.
-* **q12 (quarterly trend)**: slope (1194.74) matches; the tool's direction label is `volatile`, the oracle's is `increasing`.
-
-**What this shows**: the score measures the match between tool output shape and the oracle as much as it measures planning. Say "12 of 20, and 12 of 12 of the questions that can be scored". An earlier version of this guide blamed LLM answer extraction and then incomplete plans; both were wrong.
+**What this shows**: with this model and this inspection prompt, replanning lowered the score. It does not show that replanning is harmful in general (all 20 questions are one or two steps). It does show that a replanning step must be paired with an answer rule that does not depend on which task ran last.
 
 ---
 
 ## 10. Ablation Study & Model Comparison Findings
 
-### 10.1 Clean ablation: replanning off
-* **Run**: `clean-ablation-max-replans-0-20261119`, identical to the final-code run except `--max-replans 0` (3 repeats, same budgets).
-* **Result**: 12/20 and 36/60 attempts, the same questions as with replanning. LLM calls fell from 258 to 118 and time from 93 to 61 minutes.
-* **Meaning**: on these easy one- or two-step questions replanning bought no accuracy and cost about 2.2 times the calls. It does not show replanning is useless; the benchmark has no questions where a first result should change the next step.
-* **Older run**: the earlier reduced-budget run (repair cap 0, 4 LLM calls, 180 s, 1 repeat) changed four settings and the code, so it is not an ablation. Its q02 difference came from plan augmentation.
+### 10.1 Replanning ablation
+R1 versus R2 is the controlled comparison: same code, model, seed and budgets, only `--max-replans 0` differs. R2 passes 8 more questions and uses half the calls. Earlier exploratory runs (a reduced-budget run and a partial spike, made with the previous model) are superseded by these; see D-052.
 
-### 10.2 Partial model spike
-`qwen2.5:3b-instruct` and `qwen2.5:7b-instruct`, 1 repeat, stopped after five questions (q03, q06, q09, q13, q17). On the four reachable ones (q03, q09, q13, q17): 3B passed 0, 7B passed 2; qwen3:4b's 4 of 4 comes from the 3-repeat R0 run, so it is not like for like. No ranking of models is justified, and no reason for the differences was investigated.
+### 10.2 Model comparison
+All four models: one run per question, replanning on, same budgets.
+
+| Model | Passed (of 20) | Timeouts | No scorable answer | LLM calls |
+|---|:---:|:---:|:---:|:---:|
+| `qwen3:4b-instruct` | 10 | 0 | 0 | 84 |
+| `qwen2.5:7b-instruct` | 8 | 0 | 8 | 47 |
+| `llama3.2:3b` | 2 | 0 | 5 | 92 |
+| `qwen2.5:3b-instruct` | 1 | 0 | 7 | 93 |
+
+The 7B model does not fit in 4 GB, so its timings are not comparable. Replanning lowered qwen3's score, so a comparison with replanning on understates it; the other models were not run with replanning off. No reason for the differences was investigated.
 
 ---
 
@@ -351,21 +356,21 @@ Here are the most critical questions a professor or interviewer will ask, with b
 
 ### Category 2: Evaluation & Benchmark Defense
 
-#### Q6: "Your dynamic agent scored 12/20, while the baseline scored 20/20. Doesn't that mean your baseline is better?"
+#### Q6: "Your agent scored 10/20 (or 18/20), while the baseline scored 20/20. Doesn't that mean your baseline is better?"
 **Answer**:
-> *"No. The baseline is a ceiling, not a competitor. Its plans are in `BASELINE_TASKS`, keyed by question id; it never reads the question text, and several of its answers (q01, q06-q08, q20, the trend direction) are assembled by hand-written code outside the tools, which the agent does not get. We also checked, without any model, what the scoring path can accept: only 12 of the 20 questions can be passed through it, and the agent passes all 12 in three of three repeats. So the fair statement is 12 of 20, and 12 of 12 on the questions that can be scored. A fairer baseline would use the same answer extraction and would score the same twelve."*
+> *"No. The baseline is a ceiling, not a competitor. Its plans are in `BASELINE_TASKS`, keyed by question id; it never reads the question text, and several of its answers are assembled by hand-written code outside the tools, which the agent does not get. A fairer baseline would use the same answer extraction as the agent. Our two numbers are 10 of 20 with replanning on and 18 of 20 with it off, and I should say that the system was fixed after an earlier run on the same questions, so neither is a held-out result."*
 
-#### Q7: "What caused the 8 failed questions? Did the tools fail?"
+#### Q7: "What caused the failed questions? Did the tools fail?"
 **Answer**:
-> *"No tool crashed; every failed run had tool status `ok`. The ceiling check shows none of the eight can be passed under any plan. `rank` has no aggregation argument, so q06, q07, q08 and q20 return top single rows instead of totals. For q01 the number is right but it comes back as a group-to-value mapping where the oracle stores a scalar. For q02 a function added for the chat interface appends a group_aggregate, turning the count into a mapping; that is a regression from our earlier revision. q12's slope matches but the direction label is `volatile` against the oracle's `increasing`, and q11 loses the 2017 restriction or the trend shape. These are interface mismatches between tool outputs and the expected answers, not arithmetic errors."*
+> *"No tool crashed; every failed run had tool status `ok`. With replanning on, eight questions fail only because the inspection step added tasks after a correct first result and our scorer reads the answer from the last task that ran. With replanning off, two fail for planning reasons: q11 has no 2017 restriction in the plan, and in q20 `rank` is given no aggregation and works on the table, not on the grouped output."*
 
-#### Q8: "What was the result of your ablation?"
+#### Q8: "What was the result of your replanning ablation?"
 **Answer**:
-> *"Clean ablation: we set `max_replans` to 0 and changed nothing else, three repeats. It passed the same 12 questions, 36 of 60 attempts, using 118 LLM calls instead of 258 and 61 minutes instead of 93. So on this benchmark replanning cost about 2.2 times the calls and bought no accuracy. I would not call replanning useless: all 20 questions are one or two steps, and the model made a usable first plan for every question that can be scored. Testing the mechanism needs longer dependent questions. An earlier reduced-budget run changed four settings at once and is not an ablation."*
+> *"Same code, model and settings, one run per question; only the replan limit differs. Replanning on: 10 of 20, 84 LLM calls, 29 minutes. Replanning off: 18 of 20, 42 calls, 12 minutes. The first plan is identical in both runs for all 20 questions; with replanning on the model added analyses after a correct result and the last task was scored. I would not conclude replanning is harmful in general: the questions are one or two steps, and this is one model with one prompt. A better design reads the answer from the task the plan marks as final."*
 
 #### Q9: "Why did Qwen3-4B do better than the other models?"
 **Answer**:
-> *"We can't say. The spike used one repeat and stopped after five questions. On the four reachable ones, 3B passed none and 7B passed two, but the qwen3:4b figure of four comes from a different, three-repeat run, so it is not like for like. We make no ranking and did not investigate why. A fair test runs all 20 questions with three repeats per model under identical settings."*
+> *"We can't say. One run per question, replanning on for all four: qwen3:4b-instruct 10, qwen2.5 7B 8, llama3.2 3B 2, qwen2.5 3B 1 of 20. Replanning lowered qwen3's score, and we did not run the others with it off, so the comparison is limited. We did not investigate why. A fair test would repeat each model under identical settings, with and without replanning."*
 
 ---
 
@@ -413,8 +418,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 
 #### Q16: "What is the average latency per query, and where is the bottleneck?"
 **Answer**:
-> *"On a standard GTX 1650 GPU, the final-code run took 93 minutes for 60 question runs, about 93 seconds per run. 
-> Our stage-time breakdown (`chart_stage_time_waterfall.png`, `agent_eval.md`) shows tool execution at about 0.1% of total time (7 s of 5,584 s). The bottleneck is local LLM inference: replanning 1,867 s, plan generation 1,670 s, repair prompts 933 s and answer synthesis 648 s. Turning replanning off cut the run to 61 minutes. We have not measured other hardware, so we don't claim how latency would scale."*
+> *"With replanning on, 20 questions took 29 minutes on a GTX 1650, about 87 seconds each; with replanning off, 12 minutes, about 37 seconds. Almost all of it is local model inference. In R1: replanning 971 s, plan generation 636 s, repair prompts 187 s, answer synthesis 35 s, tool execution 3 s (repair time overlaps the planning and replanning calls, so the stages do not add up). We have not measured other hardware."*
 
 #### Q17: "What are Tukey's fences and how does your anomaly tool work?"
 **Answer**:
@@ -436,7 +440,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 #### Q20: "If you had 3 more months on this project, what would be your top priorities?"
 **Answer**:
 > *"Three specific technical enhancements:
-> 1. **Fix the rank gap**: let `rank` aggregate (or teach the planner to chain `group_aggregate` then `rank`), restrict trends to the requested period, and align the trend direction rule with the oracle. These address the answer-shape failures; we have not run them, so we don't promise a score.
+> 1. **Answer from the designated task** instead of the last task to run, so added analyses cannot displace a correct result; restrict trends to the requested period (q11); let `rank` work on grouped output (q20). We have not run these, so we don't promise a score.
 > 2. **DuckDB In-Process Analytical Tools**: Allowing the agent to plan SQL queries executed in an in-memory DuckDB sandbox for complex multi-table aggregations, retaining full argument validation.
 > 3. **Streaming Token Generation**: Adding server-sent events (SSE) to the FastAPI backend so the React UI visualizes the agent's thought chain in real-time."*
 
@@ -492,4 +496,4 @@ uv run python evaluation/recovery_suite/run_recovery_suite.py
 
 ---
 
-*Updated 2026-11-20 against the final-code run, the clean ablation and the ceiling check (D-051). Items marked "not verified" should be checked before the viva.*
+*Updated 2026-11-20 against the post-fix runs R1 and R2 and the model comparison (D-052). Items marked "not verified" should be checked before the viva.*
