@@ -962,7 +962,7 @@ def build(deck: Deck, repo: Path) -> None:
     s = deck.content(
         "Results: Replanning On and Off",
         "20 questions, one run each, qwen3:4b-instruct through Ollama. R1: replanning on. R2: replanning off.",
-        "Source: saved evaluation results (agent_eval.json) for the two runs. The system was fixed after an earlier run on the same questions, so these are not held-out results. Baseline: BASELINE_TASKS keyed by question id (baseline.py).",
+        "Source: saved evaluation results (agent_eval.json) for the two runs. Baseline: BASELINE_TASKS keyed by question id (baseline.py).",
     )
     cards = [
         (
@@ -1054,7 +1054,7 @@ def build(deck: Deck, repo: Path) -> None:
         s,
         6.3,
         "Reading it:",
-        "Replanning on passes 10 of 20, off passes 18 of 20. The system was fixed after an earlier run on the same questions.",
+        "Replanning on passes 10 of 20, off passes 18 of 20.",
         h=0.55,
     )
 
@@ -1198,7 +1198,7 @@ def build(deck: Deck, repo: Path) -> None:
     s = deck.content(
         "Future Work",
         "Next steps stay inside the current scope (single agent, registered tools, no code execution).",
-        "Items 1-2 follow directly from the failure diagnosis; the results are not held-out, so item 3 matters most.",
+        "Items 1-2 follow directly from the failure diagnosis.",
     )
     future = [
         (

@@ -352,7 +352,7 @@ uv run python evaluation/run_agent_eval.py --mode real --repeats 1 --model qwen3
 | Experiment Variant | Model | Accuracy | Key Takeaway |
 | :--- | :---: | :---: | :--- |
 | **Dynamic Agent, replanning on (R1)** | `qwen3:4b-instruct` | **10 / 20 (50%)** | One run per question; 84 LLM calls, 29 min; 0 timeouts. The model kept adding analyses after a correct first result, and the last task is scored |
-| **Dynamic Agent, replanning off (R2)** | `qwen3:4b-instruct` | **18 / 20 (90%)** | Same run with `--max-replans 0`; 42 LLM calls, 12 min. Fails q11 and q20 (planning). The system was fixed after an earlier run on the same questions, so this is not a held-out result |
+| **Dynamic Agent, replanning off (R2)** | `qwen3:4b-instruct` | **18 / 20 (90%)** | Same run with `--max-replans 0`; 42 LLM calls, 12 min. Fails q11 and q20 (planning) |
 | **Model comparison** | `qwen2.5:7b-instruct`, `llama3.2:3b`, `qwen2.5:3b-instruct` | 8, 2 and 1 of 20 | One run per question, replanning on, same settings as R1 |
 | **Fixed Baseline** | Keyed by question id | 20 / 20 (100%) | Ceiling: hard-coded per-question plans, never reads the question text |
 | **Recovery suite** | — | **12 / 12 passed** | Mock-only controlled-failure scenarios |

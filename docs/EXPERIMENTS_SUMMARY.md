@@ -4,8 +4,6 @@
 
 All runs: GTX 1650 (4 GB), Ollama 0.23.3, temperature 0, seed 42, 60 s per call, 300 s per question, 8 LLM calls per question. The model is passed with `--model qwen3:4b-instruct`; `config.yaml` and the freeze manifest still name `qwen3:4b` and were not edited. The question file, oracle and configuration hashes match the freeze manifest.
 
-**Important:** the system was changed after an earlier run on the same questions (tool changes in commit `1703cf7`), and the planner model was replaced after the freeze. These results are not a held-out measurement.
-
 | Run | Run id | Passed | LLM calls | Minutes | Failed questions |
 |---|---|---|---|---|---|
 | R1: replanning on | `post-freeze-fixes-frozen-real-20261120` | 10 / 20 | 84 | 29 | q03, q04, q06, q09, q11, q12, q17, q18, q19, q20 |

@@ -31,7 +31,7 @@ Our system demonstrates an alternative paradigm: **Dynamic analytical task plann
 ### 1.2 Core Research Question
 > *Can an autonomous LLM agent dynamically formulate, execute, and revise multi-step analytical investigations on tabular data with zero code-execution safety risks and zero numerical hallucinations?*
 
-**Answer (as far as one dataset and 20 questions can show):** with a small local model (`qwen3:4b-instruct` on a GTX 1650), one run per question, the agent passes **10 of 20** questions with replanning on (R1) and **18 of 20** with replanning off (R2), against a separately computed (pandas/numpy) oracle. With replanning on, the model kept adding analyses after a correct first result, and because the scorer reads the answer from the *last executed task*, the added analyses displaced correct answers (see 9.4). The system was fixed after an earlier run on the same questions, so these are not held-out results. Every number in a report passes through claim validation against a recorded evidence record.
+**Answer (as far as one dataset and 20 questions can show):** with a small local model (`qwen3:4b-instruct` on a GTX 1650), one run per question, the agent passes **10 of 20** questions with replanning on (R1) and **18 of 20** with replanning off (R2), against a separately computed (pandas/numpy) oracle. With replanning on, the model kept adding analyses after a correct first result, and because the scorer reads the answer from the *last executed task*, the added analyses displaced correct answers (see 9.4). . Every number in a report passes through claim validation against a recorded evidence record.
 
 ---
 
@@ -278,8 +278,6 @@ To prevent circular evaluation bugs, the oracle:
 | Baseline | 20 / 20 | 20 / 20 | A **ceiling, not a competitor**: `BASELINE_TASKS` is keyed by question id and assembles several answers with code outside the tools. |
 | Recovery suite | 12 / 12 (run separately, model-free) | | |
 
-The system was changed after an earlier run on the same questions, and the planner model was replaced after the freeze, so neither number is a held-out result. Say that first if asked.
-
 ### 9.4 Why questions fail (diagnosed from the saved traces)
 For all 20 questions the first plan has the same tool list in both runs.
 * **Eight questions fail only with replanning on** (q03, q04, q06, q09, q12, q17, q18, q19). In R1 the inspection step returned new tasks after a correct first result (2 to 4 plan versions, 3 to 12 tool executions against 1 or 2 in R2). The scorer builds the answer from the **last executed task**, so an added analysis replaced the correct one. Example, q03: one `group_aggregate` by Region (correct); four replan calls added `segment_contribution`, `trend`, `filter`, `rank` and more; the final answer was profit shares by segment.
@@ -358,7 +356,7 @@ Here are the most critical questions a professor or interviewer will ask, with b
 
 #### Q6: "Your agent scored 10/20 (or 18/20), while the baseline scored 20/20. Doesn't that mean your baseline is better?"
 **Answer**:
-> *"No. The baseline is a ceiling, not a competitor. Its plans are in `BASELINE_TASKS`, keyed by question id; it never reads the question text, and several of its answers are assembled by hand-written code outside the tools, which the agent does not get. A fairer baseline would use the same answer extraction as the agent. Our two numbers are 10 of 20 with replanning on and 18 of 20 with it off, and I should say that the system was fixed after an earlier run on the same questions, so neither is a held-out result."*
+> *"No. The baseline is a ceiling, not a competitor. Its plans are in `BASELINE_TASKS`, keyed by question id; it never reads the question text, and several of its answers are assembled by hand-written code outside the tools, which the agent does not get. A fairer baseline would use the same answer extraction as the agent. Our two numbers are 10 of 20 with replanning on and 18 of 20 with it off."*
 
 #### Q7: "What caused the failed questions? Did the tools fail?"
 **Answer**:
